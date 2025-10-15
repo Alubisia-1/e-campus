@@ -1,0 +1,506 @@
+###############################################################################
+# E-CAMPUS MARKETPLACE API - REST CLIENT REQUESTS
+###############################################################################
+# This file can be used with the REST Client extension for VS Code
+# Install: https://marketplace.visualstudio.com/items?itemName=humao.rest-client
+#
+# Usage:
+# 1. Click "Send Request" above any request
+# 2. Variables are defined at the top
+# 3. Update @baseUrl if your server runs on a different port
+# 4. After login/register, copy the token to @authToken variable
+###############################################################################
+
+# ============================================
+# VARIABLES
+# ============================================
+@baseUrl = http://localhost:5000
+@authToken = your-jwt-token-here
+@userId = your-user-id-here
+@productId = your-product-id-here
+@categoryId = your-category-id-here
+@adId = your-ad-id-here
+
+###############################################################################
+# HEALTH CHECK
+###############################################################################
+
+### Check API Health
+GET {{baseUrl}}/health
+
+### Get API Info
+GET {{baseUrl}}/
+
+###############################################################################
+# AUTHENTICATION ENDPOINTS
+###############################################################################
+
+### Register New User
+POST {{baseUrl}}/api/auth/register
+Content-Type: application/json
+
+{
+  "name": "Test User",
+  "email": "test@ecampus.com",
+  "password": "Test123!",
+  "phone": "+1234567890",
+  "whatsapp": "+1234567890",
+  "campus": "Main Campus"
+}
+
+### Register Another User (for testing)
+POST {{baseUrl}}/api/auth/register
+Content-Type: application/json
+
+{
+  "name": "Jane Smith",
+  "email": "jane@ecampus.com",
+  "password": "Jane123!",
+  "phone": "+1234567891",
+  "campus": "North Campus"
+}
+
+### Login User
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "test@ecampus.com",
+  "password": "Test123!"
+}
+
+### Login Admin (if seeded)
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "admin@ecampus.com",
+  "password": "Admin123!"
+}
+
+### Get Current User Profile (Protected)
+GET {{baseUrl}}/api/auth/me
+Authorization: Bearer {{authToken}}
+
+### Update User Profile (Protected)
+PUT {{baseUrl}}/api/auth/profile
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "name": "Updated Name",
+  "phone": "+1234567899",
+  "whatsapp": "+1234567899",
+  "campus": "South Campus"
+}
+
+###############################################################################
+# AUTHENTICATION - ERROR SCENARIOS
+###############################################################################
+
+### Register with Missing Fields
+POST {{baseUrl}}/api/auth/register
+Content-Type: application/json
+
+{
+  "email": "incomplete@ecampus.com"
+}
+
+### Register with Weak Password
+POST {{baseUrl}}/api/auth/register
+Content-Type: application/json
+
+{
+  "name": "Test User",
+  "email": "weak@ecampus.com",
+  "password": "123"
+}
+
+### Login with Wrong Password
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "test@ecampus.com",
+  "password": "WrongPassword123"
+}
+
+### Access Protected Route Without Token
+GET {{baseUrl}}/api/auth/me
+
+### Access Protected Route With Invalid Token
+GET {{baseUrl}}/api/auth/me
+Authorization: Bearer invalid-token-here
+
+###############################################################################
+# PRODUCT ENDPOINTS
+###############################################################################
+
+### Get All Products (Public)
+GET {{baseUrl}}/api/products
+
+### Get Products with Pagination
+GET {{baseUrl}}/api/products?page=1&limit=10
+
+### Get Products with Filters
+GET {{baseUrl}}/api/products?category={{categoryId}}&minPrice=10&maxPrice=500&condition=Excellent
+
+### Get Products by Category
+GET {{baseUrl}}/api/products?category={{categoryId}}
+
+### Get Products by Price Range
+GET {{baseUrl}}/api/products?minPrice=50&maxPrice=200
+
+### Get Products by Condition
+GET {{baseUrl}}/api/products?condition=Like New
+
+### Search Products
+GET {{baseUrl}}/api/products/search?q=laptop
+
+### Search Products by Keyword
+GET {{baseUrl}}/api/products/search?q=macbook&limit=5
+
+### Get Single Product (Public)
+GET {{baseUrl}}/api/products/{{productId}}
+
+### Get Single Product with Auth (tracks views differently)
+GET {{baseUrl}}/api/products/{{productId}}
+Authorization: Bearer {{authToken}}
+
+### Create New Product (Protected)
+POST {{baseUrl}}/api/products
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "title": "iPhone 13 Pro Max 256GB",
+  "description": "Excellent condition iPhone 13 Pro Max. Battery health 98%. No scratches. Comes with original box and charger. Used for only 6 months.",
+  "price": 799.99,
+  "category": "{{categoryId}}",
+  "condition": "Excellent",
+  "images": [
+    {
+      "url": "https://res.cloudinary.com/demo/image/upload/sample.jpg",
+      "publicId": "ecampus/products/sample_phone"
+    }
+  ],
+  "location": {
+    "campus": "Main Campus",
+    "building": "Engineering Building"
+  },
+  "tags": ["iphone", "apple", "smartphone", "ios"]
+}
+
+### Create Product - Minimal Required Fields
+POST {{baseUrl}}/api/products
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "title": "Calculus Textbook - 10th Edition",
+  "description": "Stewart's Calculus textbook in good condition. Some highlighting but all pages intact.",
+  "price": 50,
+  "category": "{{categoryId}}",
+  "condition": "Good",
+  "images": [
+    {
+      "url": "https://res.cloudinary.com/demo/image/upload/sample_book.jpg",
+      "publicId": "ecampus/products/sample_book_1"
+    }
+  ]
+}
+
+### Update Product (Protected - Owner Only)
+PUT {{baseUrl}}/api/products/{{productId}}
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "title": "iPhone 13 Pro Max 256GB - Price Reduced!",
+  "price": 749.99,
+  "status": "available"
+}
+
+### Update Product Status
+PUT {{baseUrl}}/api/products/{{productId}}
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "status": "sold"
+}
+
+### Mark Product as Reserved
+PUT {{baseUrl}}/api/products/{{productId}}
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "status": "reserved"
+}
+
+### Delete Product (Protected - Owner Only)
+DELETE {{baseUrl}}/api/products/{{productId}}
+Authorization: Bearer {{authToken}}
+
+### Get My Listings (Protected)
+GET {{baseUrl}}/api/products/user/my-listings
+Authorization: Bearer {{authToken}}
+
+###############################################################################
+# PRODUCT - ERROR SCENARIOS
+###############################################################################
+
+### Create Product Without Auth
+POST {{baseUrl}}/api/products
+Content-Type: application/json
+
+{
+  "title": "Test Product",
+  "description": "This should fail",
+  "price": 100
+}
+
+### Create Product with Missing Required Fields
+POST {{baseUrl}}/api/products
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "title": "Incomplete Product"
+}
+
+### Create Product with Invalid Price
+POST {{baseUrl}}/api/products
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "title": "Invalid Price Product",
+  "description": "This has a negative price",
+  "price": -50,
+  "category": "{{categoryId}}",
+  "condition": "New",
+  "images": [{"url": "http://example.com/image.jpg"}]
+}
+
+### Create Product with Invalid Condition
+POST {{baseUrl}}/api/products
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "title": "Invalid Condition Product",
+  "description": "This has invalid condition",
+  "price": 100,
+  "category": "{{categoryId}}",
+  "condition": "Brand New",
+  "images": [{"url": "http://example.com/image.jpg"}]
+}
+
+### Update Someone Else's Product (Should Fail)
+PUT {{baseUrl}}/api/products/{{productId}}
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "price": 1.00
+}
+
+### Get Non-existent Product
+GET {{baseUrl}}/api/products/507f1f77bcf86cd799439011
+
+###############################################################################
+# CATEGORY ENDPOINTS
+###############################################################################
+
+### Get All Categories (Public)
+GET {{baseUrl}}/api/categories
+
+### Get Single Category (Public)
+GET {{baseUrl}}/api/categories/{{categoryId}}
+
+### Get Category with Products Count
+GET {{baseUrl}}/api/categories/{{categoryId}}
+
+###############################################################################
+# IMAGE UPLOAD ENDPOINTS
+###############################################################################
+
+### Upload Product Images (Protected)
+# Note: This requires multipart/form-data
+# Use Postman or Thunder Client for file uploads
+POST {{baseUrl}}/api/upload/product-images
+Authorization: Bearer {{authToken}}
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="images"; filename="product1.jpg"
+Content-Type: image/jpeg
+
+< ./path/to/image1.jpg
+------WebKitFormBoundary7MA4YWxkTrZu0gW--
+
+### Upload User Avatar (Protected)
+# Note: This requires multipart/form-data
+POST {{baseUrl}}/api/upload/avatar
+Authorization: Bearer {{authToken}}
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="avatar"; filename="avatar.jpg"
+Content-Type: image/jpeg
+
+< ./path/to/avatar.jpg
+------WebKitFormBoundary7MA4YWxkTrZu0gW--
+
+### Delete Image from Cloudinary (Protected)
+DELETE {{baseUrl}}/api/upload/image/ecampus_products_sample_image_id
+Authorization: Bearer {{authToken}}
+
+###############################################################################
+# ADVERTISEMENT ENDPOINTS
+###############################################################################
+
+### Get All Active Ads (Public)
+GET {{baseUrl}}/api/ads
+
+### Get Ads with Filters
+GET {{baseUrl}}/api/ads?type=banner&position=top&limit=3
+
+### Get Banner Ads Only
+GET {{baseUrl}}/api/ads?type=banner
+
+### Get Sidebar Ads Only
+GET {{baseUrl}}/api/ads?type=sidebar
+
+### Get Limited Number of Ads
+GET {{baseUrl}}/api/ads?limit=2
+
+### Get Single Advertisement
+GET {{baseUrl}}/api/ads/{{adId}}
+
+### Track Advertisement Impression
+POST {{baseUrl}}/api/ads/{{adId}}/impression
+
+### Track Advertisement Click (Redirects)
+# This will redirect to the ad's link
+GET {{baseUrl}}/api/ads/{{adId}}/click
+
+### Get Advertisement Statistics
+GET {{baseUrl}}/api/ads/{{adId}}/stats
+
+###############################################################################
+# COMPLETE USER WORKFLOW EXAMPLE
+###############################################################################
+
+### 1. Register New User
+POST {{baseUrl}}/api/auth/register
+Content-Type: application/json
+
+{
+  "name": "Workflow Test User",
+  "email": "workflow@ecampus.com",
+  "password": "Workflow123!",
+  "phone": "+1234567895",
+  "campus": "Main Campus"
+}
+
+### 2. Login and Get Token (Copy the token from response)
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "workflow@ecampus.com",
+  "password": "Workflow123!"
+}
+
+### 3. Get My Profile
+GET {{baseUrl}}/api/auth/me
+Authorization: Bearer {{authToken}}
+
+### 4. Create a Product (After getting category ID)
+POST {{baseUrl}}/api/products
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "title": "Gaming Laptop - RTX 3060",
+  "description": "High-performance gaming laptop. RTX 3060, 16GB RAM, 512GB SSD. Perfect for gaming and video editing.",
+  "price": 1200,
+  "category": "{{categoryId}}",
+  "condition": "Like New",
+  "images": [
+    {
+      "url": "https://res.cloudinary.com/demo/image/upload/gaming_laptop.jpg",
+      "publicId": "ecampus/products/gaming_laptop_1"
+    }
+  ],
+  "location": {
+    "campus": "Main Campus",
+    "building": "Computer Science Building"
+  },
+  "tags": ["laptop", "gaming", "nvidia", "rtx"]
+}
+
+### 5. View My Listings
+GET {{baseUrl}}/api/products/user/my-listings
+Authorization: Bearer {{authToken}}
+
+### 6. Update My Product
+PUT {{baseUrl}}/api/products/{{productId}}
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "price": 1100,
+  "description": "High-performance gaming laptop. RTX 3060, 16GB RAM, 512GB SSD. Perfect for gaming and video editing. PRICE REDUCED!"
+}
+
+### 7. Search for Products
+GET {{baseUrl}}/api/products/search?q=laptop
+
+### 8. View a Product (Increments view count)
+GET {{baseUrl}}/api/products/{{productId}}
+Authorization: Bearer {{authToken}}
+
+###############################################################################
+# TESTING NOTES
+###############################################################################
+
+# 1. Start by registering a user or use seeded credentials:
+#    Email: admin@ecampus.com / Password: Admin123!
+#    Email: john@ecampus.com / Password: Student123!
+
+# 2. After login, copy the JWT token from response and update @authToken variable
+
+# 3. Get category IDs by calling GET /api/categories and update @categoryId
+
+# 4. Create a product and get its ID, then update @productId variable
+
+# 5. For file uploads, use Postman or Thunder Client as they have better
+#    support for multipart/form-data
+
+# 6. Rate limiting is active, so if you hit limits:
+#    - Auth endpoints: 5 requests per 15 minutes
+#    - Upload endpoints: 10 requests per hour
+#    - General API: 100 requests per 15 minutes
+
+# 7. Product images should be actual Cloudinary URLs if testing with real data
+
+# 8. All timestamps are in ISO 8601 format
+
+###############################################################################
+# COMMON HTTP STATUS CODES
+###############################################################################
+
+# 200 OK - Success
+# 201 Created - Resource created successfully
+# 400 Bad Request - Validation error or bad input
+# 401 Unauthorized - Missing or invalid authentication token
+# 403 Forbidden - Authenticated but not authorized for this resource
+# 404 Not Found - Resource not found
+# 429 Too Many Requests - Rate limit exceeded
+# 500 Internal Server Error - Server error
+
+###############################################################################
