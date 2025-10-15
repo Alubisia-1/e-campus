@@ -119,7 +119,7 @@ export const api = {
   }),
 
   // Health check
-  healthCheck: () => fetch('http://localhost:5000/health').then(res => res.json()),
+  healthCheck: () => fetch(`${API_BASE_URL.replace('/api', '')}/health`).then(res => res.json()),
 };
 
 export default api;
