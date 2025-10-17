@@ -52,6 +52,7 @@ const allowedOrigins = [
   'http://localhost:5175',
   'http://localhost:5174',
   'http://localhost:5173',
+  'https://e-campus-nine.vercel.app',
   process.env.FRONTEND_URL
 ].filter(Boolean); // Remove undefined values
 
