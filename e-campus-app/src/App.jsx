@@ -38,6 +38,8 @@ function App() {
   const [user, setUser] = useState(null)
   const [authToken, setAuthToken] = useState(null)
   const [showAuthModal, setShowAuthModal] = useState(false)
+  const [authModalMode, setAuthModalMode] = useState('login')
+  const [authModalMessage, setAuthModalMessage] = useState('')
 
   // Toast notification state
   const [toast, setToast] = useState(null)
@@ -785,7 +787,15 @@ function App() {
 
   // Post item functionality
   const handlePostItem = () => {
-    setShowPostModal(true)
+    if (!user) {
+      // User not logged in, show register modal with message
+      setAuthModalMode('register')
+      setAuthModalMessage('Create an account to post items and connect with buyers!')
+      setShowAuthModal(true)
+    } else {
+      // User logged in, show post modal
+      setShowPostModal(true)
+    }
   }
 
   const handleClosePostModal = () => {
@@ -1103,17 +1113,13 @@ function App() {
 
               <button
                 onClick={() => handleTabSwitch('official-store')}
-                className={`relative font-medium transition-colors duration-200 ${
+                className={`font-medium transition-colors duration-200 ${
                   activeTab === 'official-store'
                     ? 'text-blue-600'
                     : 'text-gray-700 hover:text-blue-600'
                 }`}
               >
                 Official Store
-                {/* Pulsing NEW Badge */}
-                <span className="absolute -top-2 -right-10 bg-orange-500 text-white text-xs px-2 py-0.5 rounded-full animate-pulse">
-                  NEW
-                </span>
               </button>
 
               <button
@@ -1146,8 +1152,8 @@ function App() {
                 Post Item
               </button>
 
-              {/* User Auth Button */}
-              {user ? (
+              {/* User Menu - Show logout only when logged in */}
+              {user && (
                 <div className="flex items-center gap-3">
                   <span className="text-sm text-gray-700">Hi, <span className="font-semibold">{user.username}</span></span>
                   <button
@@ -1158,14 +1164,6 @@ function App() {
                     Logout
                   </button>
                 </div>
-              ) : (
-                <button
-                  onClick={() => setShowAuthModal(true)}
-                  className="flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors font-medium text-sm"
-                >
-                  <User size={18} />
-                  Login
-                </button>
               )}
 
               {/* Admin Login/Logout - Only visible when logged in */}
@@ -1188,81 +1186,130 @@ function App() {
             </button>
           </div>
 
-          {/* Mobile Menu Dropdown */}
+          {/* Mobile Menu Sidebar */}
           {mobileMenuOpen && (
-            <div className="md:hidden py-4 border-t animate-fadeIn">
-              <div className="flex flex-col gap-4">
-                <button
-                  onClick={() => handleTabSwitch('marketplace')}
-                  className={`text-left font-medium transition-colors duration-200 ${
-                    activeTab === 'marketplace'
-                      ? 'text-blue-600'
-                      : 'text-gray-700'
-                  }`}
-                >
-                  Marketplace
-                </button>
+            <>
+              {/* Backdrop */}
+              <div
+                className="fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden"
+                onClick={() => setMobileMenuOpen(false)}
+              />
 
-                <button
-                  onClick={() => handleTabSwitch('official-store')}
-                  className={`relative text-left font-medium transition-colors duration-200 flex items-center gap-2 ${
-                    activeTab === 'official-store'
-                      ? 'text-blue-600'
-                      : 'text-gray-700'
-                  }`}
-                >
-                  Official Store
-                  <span className="bg-orange-500 text-white text-xs px-2 py-0.5 rounded-full animate-pulse">
-                    NEW
-                  </span>
-                </button>
-
-                <button
-                  onClick={() => handleTabSwitch('my-listings')}
-                  className={`text-left font-medium transition-colors duration-200 ${
-                    activeTab === 'my-listings'
-                      ? 'text-blue-600'
-                      : 'text-gray-700'
-                  }`}
-                >
-                  My Listings
-                </button>
-
-                <button className="text-left text-gray-700 font-medium">
-                  How It Works
-                </button>
-
-                <button
-                  onClick={handlePostItem}
-                  className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors font-medium w-full justify-center"
-                >
-                  <Plus size={20} />
-                  Post Item
-                </button>
-
-                {/* Mobile Auth Button */}
-                {user ? (
-                  <div className="flex flex-col gap-2">
-                    <div className="text-sm text-gray-700 text-center">Hi, <span className="font-semibold">{user.username}</span></div>
+              {/* Sidebar */}
+              <div className="fixed top-0 right-0 h-full w-64 bg-white shadow-2xl z-50 md:hidden transform transition-transform duration-300 ease-in-out">
+                <div className="flex flex-col h-full">
+                  {/* Sidebar Header */}
+                  <div className="flex items-center justify-between p-4 border-b">
+                    <div className="flex items-center gap-2">
+                      <ShoppingBag className="text-blue-600" size={24} />
+                      <span className="font-bold text-gray-900">Menu</span>
+                    </div>
                     <button
-                      onClick={handleLogout}
-                      className="flex items-center gap-2 bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors font-medium w-full justify-center"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="text-gray-500 hover:text-gray-700"
                     >
-                      <LogOut size={18} />
-                      Logout
+                      <X size={24} />
                     </button>
                   </div>
-                ) : (
-                  <button
-                    onClick={() => setShowAuthModal(true)}
-                    className="flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors font-medium w-full justify-center"
-                  >
-                    <User size={18} />
-                    Login
-                  </button>
-                )}
+
+                  {/* Sidebar Content */}
+                  <div className="flex-1 overflow-y-auto py-4">
+                    <div className="flex flex-col gap-2 px-4">
+                      <button
+                        onClick={() => {
+                          handleTabSwitch('marketplace')
+                          setMobileMenuOpen(false)
+                        }}
+                        className={`text-left font-medium py-3 px-4 rounded-lg transition-colors duration-200 ${
+                          activeTab === 'marketplace'
+                            ? 'bg-blue-50 text-blue-600'
+                            : 'text-gray-700 hover:bg-gray-50'
+                        }`}
+                      >
+                        Marketplace
+                      </button>
+
+                      <button
+                        onClick={() => {
+                          handleTabSwitch('official-store')
+                          setMobileMenuOpen(false)
+                        }}
+                        className={`text-left font-medium py-3 px-4 rounded-lg transition-colors duration-200 ${
+                          activeTab === 'official-store'
+                            ? 'bg-blue-50 text-blue-600'
+                            : 'text-gray-700 hover:bg-gray-50'
+                        }`}
+                      >
+                        Official Store
+                      </button>
+
+                      <button
+                        onClick={() => {
+                          handleTabSwitch('my-listings')
+                          setMobileMenuOpen(false)
+                        }}
+                        className={`text-left font-medium py-3 px-4 rounded-lg transition-colors duration-200 ${
+                          activeTab === 'my-listings'
+                            ? 'bg-blue-50 text-blue-600'
+                            : 'text-gray-700 hover:bg-gray-50'
+                        }`}
+                      >
+                        My Listings
+                      </button>
+
+                      <button
+                        onClick={() => {
+                          handleTabSwitch('about')
+                          setMobileMenuOpen(false)
+                        }}
+                        className={`text-left font-medium py-3 px-4 rounded-lg transition-colors duration-200 ${
+                          activeTab === 'about'
+                            ? 'bg-blue-50 text-blue-600'
+                            : 'text-gray-700 hover:bg-gray-50'
+                        }`}
+                      >
+                        About Us
+                      </button>
+
+                      <div className="border-t my-4"></div>
+
+                      <button
+                        onClick={() => {
+                          handlePostItem()
+                          setMobileMenuOpen(false)
+                        }}
+                        className="flex items-center justify-center gap-2 bg-blue-600 text-white px-4 py-3 rounded-lg hover:bg-blue-700 transition-colors font-medium w-full"
+                      >
+                        <Plus size={20} />
+                        Post Item
+                      </button>
+
+                      {/* Mobile User Menu */}
+                      {user && (
+                        <>
+                          <div className="border-t my-4"></div>
+                          <div className="flex flex-col gap-2">
+                            <div className="text-sm text-gray-600 px-4 py-2">
+                              Hi, <span className="font-semibold text-gray-900">{user.username}</span>
+                            </div>
+                            <button
+                              onClick={() => {
+                                handleLogout()
+                                setMobileMenuOpen(false)
+                              }}
+                              className="flex items-center justify-center gap-2 bg-gray-600 text-white px-4 py-3 rounded-lg hover:bg-gray-700 transition-colors font-medium w-full"
+                            >
+                              <LogOut size={18} />
+                              Logout
+                            </button>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                </div>
               </div>
-            </div>
+            </>
           )}
         </div>
       </nav>
@@ -2127,30 +2174,34 @@ function App() {
             {/* Contact Us */}
             <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
               <h2 className="text-2xl font-semibold text-gray-900 mb-4">Contact Us</h2>
-              <p className="text-gray-700 mb-4">Have questions or need assistance? Reach out to us:</p>
-              <div className="space-y-2 text-gray-700">
-                <p><strong>Email:</strong> support@ecampus.com</p>
-                <p><strong>Response Time:</strong> We aim to respond within 24-48 hours</p>
+              <p className="text-gray-700 mb-4">Have questions, need assistance, or want to report an issue? Reach out to us:</p>
+              <div className="space-y-3 text-gray-700">
+                <div className="bg-blue-50 rounded-lg p-4">
+                  <p className="text-lg"><strong>Email:</strong> <a href="mailto:support@ecampus.com" className="text-blue-600 hover:underline">support@ecampus.com</a></p>
+                  <p className="text-sm text-gray-600 mt-2">Use this email for all inquiries including:</p>
+                  <ul className="text-sm text-gray-600 space-y-1 ml-4 mt-1">
+                    <li>• General questions and support</li>
+                    <li>• Reporting fraudulent listings</li>
+                    <li>• Technical issues</li>
+                    <li>• Account assistance</li>
+                    <li>• Feedback and suggestions</li>
+                  </ul>
+                </div>
+                <p className="text-sm text-gray-600"><strong>Response Time:</strong> We aim to respond within 24-48 hours</p>
               </div>
             </div>
 
-            {/* Report Issue */}
+            {/* Tips for Reporting Issues */}
             <div className="bg-white rounded-xl shadow-sm p-6">
-              <h2 className="text-2xl font-semibold text-gray-900 mb-4">Report an Issue</h2>
-              <p className="text-gray-700 mb-4">Found a problem or encountered suspicious activity? Let us know:</p>
-              <div className="space-y-3">
+              <h2 className="text-2xl font-semibold text-gray-900 mb-4">Reporting Issues</h2>
+              <p className="text-gray-700 mb-4">When reporting a problem, please include:</p>
+              <div className="space-y-2">
                 <div className="bg-gray-50 rounded-lg p-4">
-                  <h3 className="font-semibold text-gray-900 mb-2">Report Fraudulent Listings</h3>
-                  <p className="text-gray-700 text-sm mb-2">If you suspect a listing is fraudulent or violates our policies, email us at <strong>report@ecampus.com</strong> with:</p>
-                  <ul className="text-gray-600 text-sm space-y-1 ml-4">
-                    <li>• Link or screenshot of the listing</li>
-                    <li>• Description of the issue</li>
-                    <li>• Any relevant evidence</li>
+                  <ul className="text-gray-700 text-sm space-y-2">
+                    <li>• <strong>For Fraudulent Listings:</strong> Link or screenshot, description of the issue, and any relevant evidence</li>
+                    <li>• <strong>For Technical Issues:</strong> Detailed description of the problem, steps to reproduce, and device/browser information</li>
+                    <li>• <strong>For General Inquiries:</strong> Clear description of your question or concern</li>
                   </ul>
-                </div>
-                <div className="bg-gray-50 rounded-lg p-4">
-                  <h3 className="font-semibold text-gray-900 mb-2">Technical Issues</h3>
-                  <p className="text-gray-700 text-sm">Experiencing technical problems? Email <strong>tech@ecampus.com</strong> with details of the issue.</p>
                 </div>
               </div>
             </div>
@@ -2879,11 +2930,19 @@ function App() {
       {/* Auth Modal */}
       <AuthModal
         isOpen={showAuthModal}
-        onClose={() => setShowAuthModal(false)}
+        onClose={() => {
+          setShowAuthModal(false)
+          setAuthModalMode('login')
+          setAuthModalMessage('')
+        }}
         onAuthSuccess={(userData, token) => {
           setUser(userData)
           setAuthToken(token)
+          setAuthModalMode('login')
+          setAuthModalMessage('')
         }}
+        initialMode={authModalMode}
+        message={authModalMessage}
       />
 
       {/* Footer */}
@@ -2906,19 +2965,20 @@ function App() {
               <h3 className="text-white font-semibold mb-4">Quick Links</h3>
               <ul className="space-y-2">
                 <li>
-                  <a href="#" className="text-gray-400 hover:text-white transition-colors text-sm">
+                  <button
+                    onClick={() => handleTabSwitch('about')}
+                    className="text-gray-400 hover:text-white transition-colors text-sm"
+                  >
                     About Us
-                  </a>
+                  </button>
                 </li>
                 <li>
-                  <a href="#" className="text-gray-400 hover:text-white transition-colors text-sm">
-                    How It Works
-                  </a>
-                </li>
-                <li>
-                  <a href="#" className="text-gray-400 hover:text-white transition-colors text-sm">
+                  <button
+                    onClick={() => handleTabSwitch('about')}
+                    className="text-gray-400 hover:text-white transition-colors text-sm"
+                  >
                     Safety Tips
-                  </a>
+                  </button>
                 </li>
               </ul>
             </div>
@@ -2928,19 +2988,28 @@ function App() {
               <h3 className="text-white font-semibold mb-4">Support</h3>
               <ul className="space-y-2">
                 <li>
-                  <a href="#" className="text-gray-400 hover:text-white transition-colors text-sm">
+                  <button
+                    onClick={() => handleTabSwitch('about')}
+                    className="text-gray-400 hover:text-white transition-colors text-sm"
+                  >
                     Help Center
-                  </a>
+                  </button>
                 </li>
                 <li>
-                  <a href="#" className="text-gray-400 hover:text-white transition-colors text-sm">
+                  <button
+                    onClick={() => handleTabSwitch('about')}
+                    className="text-gray-400 hover:text-white transition-colors text-sm"
+                  >
                     Contact Us
-                  </a>
+                  </button>
                 </li>
                 <li>
-                  <a href="#" className="text-gray-400 hover:text-white transition-colors text-sm">
+                  <button
+                    onClick={() => handleTabSwitch('about')}
+                    className="text-gray-400 hover:text-white transition-colors text-sm"
+                  >
                     Report Issue
-                  </a>
+                  </button>
                 </li>
               </ul>
             </div>
@@ -2955,20 +3024,6 @@ function App() {
                   aria-label="Instagram"
                 >
                   <Instagram size={20} className="text-gray-300" />
-                </a>
-                <a
-                  href="#"
-                  className="bg-gray-700 hover:bg-gray-600 p-2 rounded-lg transition-colors"
-                  aria-label="Facebook"
-                >
-                  <Facebook size={20} className="text-gray-300" />
-                </a>
-                <a
-                  href="#"
-                  className="bg-gray-700 hover:bg-gray-600 p-2 rounded-lg transition-colors"
-                  aria-label="Twitter"
-                >
-                  <Twitter size={20} className="text-gray-300" />
                 </a>
               </div>
             </div>

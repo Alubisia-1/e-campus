@@ -1,8 +1,8 @@
 import { useState } from 'react'
 import '../styles/AuthModal.css'
 
-export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
-  const [isLogin, setIsLogin] = useState(true)
+export default function AuthModal({ isOpen, onClose, onAuthSuccess, initialMode = 'login', message = '' }) {
+  const [isLogin, setIsLogin] = useState(initialMode === 'login')
   const [formData, setFormData] = useState({
     username: '',
     password: ''
@@ -82,7 +82,14 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
 
         <h2>{isLogin ? 'Login' : 'Create an Account'}</h2>
 
-        {!isLogin && (
+        {message && (
+          <div className="info-banner">
+            <span className="info-icon">✨</span>
+            <p>{message}</p>
+          </div>
+        )}
+
+        {!isLogin && !message && (
           <div className="info-banner">
             <span className="info-icon">ℹ️</span>
             <p>Create an account to post items, manage your listings, and connect with buyers.</p>
