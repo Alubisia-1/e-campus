@@ -86,7 +86,13 @@ export const api = {
       method: 'POST',
       headers: headers,
       body: formData, // FormData object
-    }).then(res => res.json());
+    }).then(async (res) => {
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.message || `HTTP error! status: ${res.status}`);
+      }
+      return data;
+    });
   },
 
   // Advertisements
