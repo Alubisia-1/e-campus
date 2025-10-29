@@ -127,13 +127,15 @@ const updateProductValidation = [
 // Public routes
 router.get('/', getAllProducts);
 router.get('/search', searchLimiter, searchProducts);
-router.get('/:id', getProductById);
-router.post('/:id/reveal-contact', revealContact);
 
 // Protected routes (require authentication)
+router.get('/user/my-listings', protect, getMyListings);
 router.post('/', createProductLimiter, protect, createProductValidation, createProduct);
 router.put('/:id', protect, updateProductValidation, updateProduct);
 router.delete('/:id', protect, deleteProduct);
-router.get('/user/my-listings', protect, getMyListings);
+
+// Public routes with :id parameter (must come after specific routes)
+router.get('/:id', getProductById);
+router.post('/:id/reveal-contact', revealContact);
 
 module.exports = router;
