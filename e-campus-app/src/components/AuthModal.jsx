@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import '../styles/AuthModal.css'
+import { api } from '../services/api'
 
 export default function AuthModal({ isOpen, onClose, onAuthSuccess, initialMode = 'login', message = '' }) {
   const [isLogin, setIsLogin] = useState(initialMode === 'login')
@@ -26,41 +27,31 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, initialMode 
     setLoading(true)
 
     try {
-      const endpoint = isLogin ? '/auth/login' : '/auth/register'
-      const body = {
+      const credentials = {
         username: formData.username,
         password: formData.password
       }
 
-      const response = await fetch(`http://localhost:5000/api${endpoint}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(body)
+      // Use the api service which uses the correct environment variable
+      const data = isLogin
+        ? await api.login(credentials)
+        : await api.register(credentials)
+
+      // Store token and user data
+      localStorage.setItem('authToken', data.data.token)
+      localStorage.setItem('user', JSON.stringify(data.data.user))
+
+      // Call success callback
+      onAuthSuccess(data.data.user, data.data.token)
+
+      // Reset form and close
+      setFormData({
+        username: '',
+        password: ''
       })
-
-      const data = await response.json()
-
-      if (response.ok) {
-        // Store token and user data
-        localStorage.setItem('authToken', data.data.token)
-        localStorage.setItem('user', JSON.stringify(data.data.user))
-
-        // Call success callback
-        onAuthSuccess(data.data.user, data.data.token)
-
-        // Reset form and close
-        setFormData({
-          username: '',
-          password: ''
-        })
-        onClose()
-      } else {
-        setError(data.message || 'Authentication failed')
-      }
+      onClose()
     } catch (err) {
-      setError('Network error. Please try again.')
+      setError(err.message || 'Authentication failed. Please try again.')
     } finally {
       setLoading(false)
     }
