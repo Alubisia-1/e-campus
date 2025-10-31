@@ -1,14 +1,6 @@
 // API Base URL - uses environment variable or defaults to localhost
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
-// Debug logging - shows what API URL is being used
-console.log('🔍 API Configuration:', {
-  VITE_API_URL: import.meta.env.VITE_API_URL,
-  API_BASE_URL: API_BASE_URL,
-  MODE: import.meta.env.MODE,
-  ALL_ENV_VARS: import.meta.env
-});
-
 // Generic API request function
 async function apiRequest(endpoint, options = {}) {
   const url = `${API_BASE_URL}${endpoint}`;
@@ -23,12 +15,24 @@ async function apiRequest(endpoint, options = {}) {
 
   try {
     const response = await fetch(url, config);
+    const data = await response.json();
 
     if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+      // Handle validation errors from express-validator
+      if (data.errors && Array.isArray(data.errors)) {
+        const errorMessages = data.errors.map(err => err.msg).join(', ');
+        throw new Error(errorMessages);
+      }
+
+      // Handle other API errors
+      if (data.message) {
+        throw new Error(data.message);
+      }
+
+      // Fallback error message
+      throw new Error(`Request failed with status ${response.status}`);
     }
 
-    const data = await response.json();
     return data;
   } catch (error) {
     console.error('API request failed:', error);
@@ -54,17 +58,13 @@ export const api = {
     return apiRequest(`/products/search?${searchParams}`);
   },
 
-  createProduct: (productData, token) => {
-    console.log('🔍 API createProduct called with:', productData);
-    console.log('🔍 Stringified body:', JSON.stringify(productData));
-    return apiRequest('/products', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-      },
-      body: JSON.stringify(productData),
-    });
-  },
+  createProduct: (productData, token) => apiRequest('/products', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+    },
+    body: JSON.stringify(productData),
+  }),
 
   deleteProduct: (productId, token, data) => apiRequest(`/products/${productId}`, {
     method: 'DELETE',

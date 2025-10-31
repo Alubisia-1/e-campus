@@ -837,14 +837,44 @@ function App() {
       return
     }
 
-    // Basic validation
-    if (!postFormData.title || !postFormData.description || !postFormData.price || !postFormData.category) {
-      showToast('Please fill in all required fields', 'error')
+    // Detailed validation
+    if (!postFormData.title || postFormData.title.trim().length < 5) {
+      showToast('Title must be at least 5 characters long', 'error')
+      return
+    }
+
+    if (postFormData.title.trim().length > 100) {
+      showToast('Title must not exceed 100 characters', 'error')
+      return
+    }
+
+    if (!postFormData.description || postFormData.description.trim().length < 10) {
+      showToast('Description must be at least 10 characters long', 'error')
+      return
+    }
+
+    if (postFormData.description.trim().length > 2000) {
+      showToast('Description must not exceed 2000 characters', 'error')
+      return
+    }
+
+    if (!postFormData.price || parseFloat(postFormData.price) <= 0) {
+      showToast('Please enter a valid price greater than 0', 'error')
+      return
+    }
+
+    if (!postFormData.category) {
+      showToast('Please select a category', 'error')
       return
     }
 
     if (selectedImages.length === 0) {
       showToast('Please upload at least one image', 'error')
+      return
+    }
+
+    if (selectedImages.length > 3) {
+      showToast('You can only upload up to 3 images', 'error')
       return
     }
 
@@ -905,11 +935,6 @@ function App() {
         },
         tags: postFormData.tags || []
       }
-
-      // Debug logging
-      console.log('🔍 Product Data being sent:', productData)
-      console.log('🔍 Form Data state:', postFormData)
-      console.log('🔍 Auth Token:', authToken ? 'Present' : 'Missing')
 
       const createResponse = await api.createProduct(productData, authToken)
 
@@ -2535,8 +2560,12 @@ function App() {
                     onChange={(e) => handlePostFormChange('title', e.target.value)}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     placeholder="e.g., iPhone 13 Pro - Like New"
+                    maxLength={100}
                     required
                   />
+                  <p className={`text-xs mt-1 ${postFormData.title.length < 5 ? 'text-red-500' : 'text-gray-500'}`}>
+                    {postFormData.title.length}/100 characters (minimum 5)
+                  </p>
                 </div>
 
                 {/* Description */}
@@ -2550,8 +2579,12 @@ function App() {
                     rows={4}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     placeholder="Describe your item in detail..."
+                    maxLength={2000}
                     required
                   />
+                  <p className={`text-xs mt-1 ${postFormData.description.length < 10 ? 'text-red-500' : 'text-gray-500'}`}>
+                    {postFormData.description.length}/2000 characters (minimum 10)
+                  </p>
                 </div>
 
                 {/* Price and Category */}
