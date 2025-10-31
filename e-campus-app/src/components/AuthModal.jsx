@@ -6,7 +6,10 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, initialMode 
   const [isLogin, setIsLogin] = useState(initialMode === 'login')
   const [formData, setFormData] = useState({
     username: '',
-    password: ''
+    password: '',
+    phone: '',
+    whatsapp: '',
+    campus: ''
   })
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
@@ -27,10 +30,18 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, initialMode 
     setLoading(true)
 
     try {
-      const credentials = {
-        username: formData.username,
-        password: formData.password
-      }
+      const credentials = isLogin
+        ? {
+            username: formData.username,
+            password: formData.password
+          }
+        : {
+            username: formData.username,
+            password: formData.password,
+            phone: formData.phone,
+            whatsapp: formData.whatsapp,
+            campus: formData.campus
+          }
 
       // Use the api service which uses the correct environment variable
       const data = isLogin
@@ -47,7 +58,10 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, initialMode 
       // Reset form and close
       setFormData({
         username: '',
-        password: ''
+        password: '',
+        phone: '',
+        whatsapp: '',
+        campus: ''
       })
       onClose()
     } catch (err) {
@@ -62,7 +76,10 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, initialMode 
     setError('')
     setFormData({
       username: '',
-      password: ''
+      password: '',
+      phone: '',
+      whatsapp: '',
+      campus: ''
     })
   }
 
@@ -116,6 +133,44 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, initialMode 
               placeholder="Enter your password"
             />
           </div>
+
+          {!isLogin && (
+            <>
+              <div className="form-group">
+                <label>Phone Number (Required for buyers to contact you)</label>
+                <input
+                  type="tel"
+                  name="phone"
+                  value={formData.phone}
+                  onChange={handleChange}
+                  required
+                  placeholder="e.g., +254712345678"
+                />
+              </div>
+
+              <div className="form-group">
+                <label>WhatsApp Number (Optional)</label>
+                <input
+                  type="tel"
+                  name="whatsapp"
+                  value={formData.whatsapp}
+                  onChange={handleChange}
+                  placeholder="e.g., +254712345678"
+                />
+              </div>
+
+              <div className="form-group">
+                <label>Campus (Optional)</label>
+                <input
+                  type="text"
+                  name="campus"
+                  value={formData.campus}
+                  onChange={handleChange}
+                  placeholder="e.g., Main Campus, Parklands"
+                />
+              </div>
+            </>
+          )}
 
           <button type="submit" className="submit-button" disabled={loading}>
             {loading ? 'Please wait...' : (isLogin ? 'Login' : 'Register')}
