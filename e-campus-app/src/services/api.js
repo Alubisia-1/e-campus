@@ -1,6 +1,14 @@
 // API Base URL - uses environment variable or defaults to localhost
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
+// Debug logging - shows what API URL is being used
+console.log('🔍 API Configuration:', {
+  VITE_API_URL: import.meta.env.VITE_API_URL,
+  API_BASE_URL: API_BASE_URL,
+  MODE: import.meta.env.MODE,
+  ALL_ENV_VARS: import.meta.env
+});
+
 // Generic API request function
 async function apiRequest(endpoint, options = {}) {
   const url = `${API_BASE_URL}${endpoint}`;
