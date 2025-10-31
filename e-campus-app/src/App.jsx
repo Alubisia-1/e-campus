@@ -906,6 +906,11 @@ function App() {
         tags: postFormData.tags || []
       }
 
+      // Debug logging
+      console.log('🔍 Product Data being sent:', productData)
+      console.log('🔍 Form Data state:', postFormData)
+      console.log('🔍 Auth Token:', authToken ? 'Present' : 'Missing')
+
       const createResponse = await api.createProduct(productData, authToken)
 
       if (createResponse.status === 'success') {

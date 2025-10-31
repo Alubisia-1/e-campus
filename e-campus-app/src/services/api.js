@@ -54,13 +54,17 @@ export const api = {
     return apiRequest(`/products/search?${searchParams}`);
   },
 
-  createProduct: (productData, token) => apiRequest('/products', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${token}`,
-    },
-    body: JSON.stringify(productData),
-  }),
+  createProduct: (productData, token) => {
+    console.log('🔍 API createProduct called with:', productData);
+    console.log('🔍 Stringified body:', JSON.stringify(productData));
+    return apiRequest('/products', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+      body: JSON.stringify(productData),
+    });
+  },
 
   deleteProduct: (productId, token, data) => apiRequest(`/products/${productId}`, {
     method: 'DELETE',
