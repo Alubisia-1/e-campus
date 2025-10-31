@@ -143,12 +143,10 @@ const ContactReveal = ({ productId, sellerId }) => {
 
           {/* Best Practices */}
           <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
-            <p className="text-xs text-yellow-800 font-medium mb-1">📌 Contact Tips:</p>
+            <p className="text-xs text-yellow-800 font-medium mb-1">📌 Important Notes:</p>
             <ul className="text-xs text-yellow-700 space-y-1 ml-4 list-disc">
-              <li>Be respectful and professional</li>
-              <li>Mention the item you're interested in</li>
-              <li>Arrange to meet in safe, public places</li>
-              <li>Inspect items before payment</li>
+              <li>Be respectful and professional when contacting sellers</li>
+              <li>All transactions happen outside the app - no in-app purchases</li>
             </ul>
           </div>
         </div>
