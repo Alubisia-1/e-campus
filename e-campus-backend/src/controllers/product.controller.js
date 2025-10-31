@@ -165,7 +165,8 @@ exports.createProduct = async (req, res) => {
       condition,
       images,
       location,
-      tags
+      tags,
+      contact
     } = req.body;
 
     // Validate images array (1-3 URLs)
@@ -186,6 +187,7 @@ exports.createProduct = async (req, res) => {
       images,
       location,
       tags: tags || [],
+      contact,
       seller: req.user.id
     };
 
@@ -501,9 +503,9 @@ exports.revealContact = async (req, res) => {
   try {
     const { id } = req.params;
 
-    // Find product and populate seller info with all contact fields
+    // Find product and populate seller info
     const product = await Product.findById(id)
-      .populate('seller', 'username name email phone whatsapp campus');
+      .populate('seller', 'username name campus');
 
     if (!product) {
       return res.status(404).json({
@@ -516,14 +518,14 @@ exports.revealContact = async (req, res) => {
     product.contactReveals += 1;
     await product.save();
 
-    // Return seller contact information (use name if available, otherwise username)
+    // Return seller contact information from the product listing
     const contactData = {
       name: product.seller.name || product.seller.username,
       username: product.seller.username,
-      email: product.seller.email,
-      phone: product.seller.phone,
-      whatsapp: product.seller.whatsapp,
-      campus: product.seller.campus
+      email: product.contact.email,
+      phone: product.contact.phone,
+      whatsapp: product.contact.phone, // Use same phone for WhatsApp
+      campus: product.location.campus || product.seller.campus
     };
 
     res.status(200).json({

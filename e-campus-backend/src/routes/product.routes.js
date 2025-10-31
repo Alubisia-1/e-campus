@@ -64,6 +64,16 @@ const createProductValidation = [
     .optional()
     .isArray()
     .withMessage('Tags must be an array'),
+  // Contact information
+  body('contact.phone')
+    .notEmpty()
+    .withMessage('Contact phone number is required')
+    .trim(),
+  body('contact.email')
+    .optional()
+    .trim()
+    .isEmail()
+    .withMessage('Invalid email format'),
   // Anonymous seller fields (required if not authenticated)
   body('anonymousSeller.deviceId')
     .optional()

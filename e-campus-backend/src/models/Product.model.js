@@ -56,6 +56,22 @@ const productSchema = new mongoose.Schema({
       trim: true
     }
   },
+  contact: {
+    phone: {
+      type: String,
+      trim: true,
+      required: [true, 'Please provide contact phone number']
+    },
+    email: {
+      type: String,
+      trim: true,
+      lowercase: true,
+      match: [
+        /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/,
+        'Please provide a valid email'
+      ]
+    }
+  },
   views: {
     type: Number,
     default: 0
