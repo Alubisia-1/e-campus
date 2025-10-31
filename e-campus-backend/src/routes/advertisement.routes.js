@@ -1,12 +1,21 @@
 const express = require('express');
 const router = express.Router();
+const { protect, authorize } = require('../middleware/auth.middleware');
 const { apiLimiter } = require('../middleware/rateLimiter');
 const {
   getActiveAds,
   getAdById,
   trackImpression,
   trackClick,
-  getAdStats
+  getAdStats,
+  // Admin routes
+  getAllAdsAdmin,
+  createAd,
+  updateAd,
+  deleteAd,
+  toggleAdStatus,
+  markAdPaid,
+  getRevenue
 } = require('../controllers/advertisement.controller');
 
 /**
@@ -46,5 +55,58 @@ router.get('/:id/click', apiLimiter, trackClick);
  * @access  Public
  */
 router.get('/:id/stats', apiLimiter, getAdStats);
+
+// ============================================
+// ADMIN ROUTES (Protected)
+// ============================================
+
+/**
+ * @route   GET /api/ads/admin/all
+ * @desc    Get all advertisements (including inactive) - Admin only
+ * @access  Private/Admin
+ */
+router.get('/admin/all', protect, authorize('admin'), getAllAdsAdmin);
+
+/**
+ * @route   GET /api/ads/admin/revenue
+ * @desc    Get revenue statistics - Admin only
+ * @access  Private/Admin
+ */
+router.get('/admin/revenue', protect, authorize('admin'), getRevenue);
+
+/**
+ * @route   POST /api/ads
+ * @desc    Create new advertisement - Admin only
+ * @access  Private/Admin
+ */
+router.post('/', protect, authorize('admin'), createAd);
+
+/**
+ * @route   PUT /api/ads/:id
+ * @desc    Update advertisement - Admin only
+ * @access  Private/Admin
+ */
+router.put('/:id', protect, authorize('admin'), updateAd);
+
+/**
+ * @route   DELETE /api/ads/:id
+ * @desc    Delete advertisement - Admin only
+ * @access  Private/Admin
+ */
+router.delete('/:id', protect, authorize('admin'), deleteAd);
+
+/**
+ * @route   PUT /api/ads/:id/toggle
+ * @desc    Toggle advertisement active status - Admin only
+ * @access  Private/Admin
+ */
+router.put('/:id/toggle', protect, authorize('admin'), toggleAdStatus);
+
+/**
+ * @route   PUT /api/ads/:id/mark-paid
+ * @desc    Mark advertisement as paid - Admin only
+ * @access  Private/Admin
+ */
+router.put('/:id/mark-paid', protect, authorize('admin'), markAdPaid);
 
 module.exports = router;

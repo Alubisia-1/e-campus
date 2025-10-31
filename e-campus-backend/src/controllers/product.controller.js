@@ -63,10 +63,11 @@ exports.getAllProducts = async (req, res) => {
     const total = await Product.countDocuments(filter);
 
     // Get products (DO NOT populate seller contact info for privacy)
+    // Sort by sponsored status first (sponsored products appear at top), then by creation date
     const products = await Product.find(filter)
       .populate('seller', 'username campus')
       .populate('category', 'name slug')
-      .sort({ createdAt: -1 })
+      .sort({ 'sponsored.isSponsored': -1, createdAt: -1 })
       .skip(skip)
       .limit(parseInt(limit))
       .lean();
@@ -548,6 +549,90 @@ exports.revealContact = async (req, res) => {
     res.status(500).json({
       status: 'error',
       message: 'Failed to reveal contact information',
+      error: error.message
+    });
+  }
+};
+
+/**
+ * @desc    Mark product as sponsored - Admin only
+ * @route   PUT /api/products/:id/sponsor
+ * @access  Private/Admin
+ */
+exports.sponsorProduct = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { startDate, endDate, amount, period } = req.body;
+
+    const product = await Product.findById(id);
+
+    if (!product) {
+      return res.status(404).json({
+        status: 'error',
+        message: 'Product not found'
+      });
+    }
+
+    product.sponsored = {
+      isSponsored: true,
+      startDate: startDate || new Date(),
+      endDate: endDate || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // Default 1 week
+      pricing: {
+        amount: amount || 500,
+        currency: 'KSH',
+        period: period || 'week'
+      },
+      paymentStatus: 'pending'
+    };
+
+    await product.save();
+
+    res.status(200).json({
+      status: 'success',
+      message: 'Product marked as sponsored',
+      data: { product }
+    });
+  } catch (error) {
+    console.error('Sponsor product error:', error);
+    res.status(500).json({
+      status: 'error',
+      message: 'Failed to sponsor product',
+      error: error.message
+    });
+  }
+};
+
+/**
+ * @desc    Remove sponsored status from product - Admin only
+ * @route   PUT /api/products/:id/unsponsor
+ * @access  Private/Admin
+ */
+exports.unsponsorProduct = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const product = await Product.findById(id);
+
+    if (!product) {
+      return res.status(404).json({
+        status: 'error',
+        message: 'Product not found'
+      });
+    }
+
+    product.sponsored.isSponsored = false;
+    await product.save();
+
+    res.status(200).json({
+      status: 'success',
+      message: 'Sponsored status removed',
+      data: { product }
+    });
+  } catch (error) {
+    console.error('Unsponsor product error:', error);
+    res.status(500).json({
+      status: 'error',
+      message: 'Failed to unsponsor product',
       error: error.message
     });
   }

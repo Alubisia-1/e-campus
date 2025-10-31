@@ -76,6 +76,60 @@ const advertisementSchema = new mongoose.Schema(
       default: 0,
       min: 0,
       max: 10
+    },
+    pricing: {
+      amount: {
+        type: Number,
+        required: [true, 'Pricing amount is required'],
+        min: 0
+      },
+      currency: {
+        type: String,
+        default: 'KSH',
+        enum: ['KSH', 'USD', 'EUR']
+      },
+      period: {
+        type: String,
+        enum: ['day', 'week', 'month', 'year'],
+        default: 'month'
+      }
+    },
+    paymentStatus: {
+      type: String,
+      enum: ['pending', 'paid', 'expired', 'refunded'],
+      default: 'pending'
+    },
+    paymentDate: {
+      type: Date
+    },
+    paymentMethod: {
+      type: String,
+      enum: ['mpesa', 'bank', 'cash', 'other'],
+      trim: true
+    },
+    paymentReference: {
+      type: String,
+      trim: true
+    },
+    advertiser: {
+      name: {
+        type: String,
+        trim: true
+      },
+      email: {
+        type: String,
+        trim: true,
+        lowercase: true
+      },
+      phone: {
+        type: String,
+        trim: true
+      }
+    },
+    notes: {
+      type: String,
+      trim: true,
+      maxlength: [1000, 'Notes cannot exceed 1000 characters']
     }
   },
   {
@@ -120,6 +174,44 @@ advertisementSchema.statics.getActiveAds = async function(type = null, position 
   return await this.find(query)
     .sort({ priority: -1, createdAt: -1 })
     .select('-__v');
+};
+
+// Static method to calculate total revenue
+advertisementSchema.statics.getTotalRevenue = async function(startDate = null, endDate = null) {
+  const query = { paymentStatus: 'paid' };
+
+  if (startDate || endDate) {
+    query.paymentDate = {};
+    if (startDate) query.paymentDate.$gte = new Date(startDate);
+    if (endDate) query.paymentDate.$lte = new Date(endDate);
+  }
+
+  const result = await this.aggregate([
+    { $match: query },
+    {
+      $group: {
+        _id: '$pricing.currency',
+        total: { $sum: '$pricing.amount' },
+        count: { $sum: 1 }
+      }
+    }
+  ]);
+
+  return result;
+};
+
+// Method to check if ad is expired
+advertisementSchema.methods.isExpired = function() {
+  return new Date() > this.endDate;
+};
+
+// Method to mark as paid
+advertisementSchema.methods.markAsPaid = async function(paymentMethod, paymentReference) {
+  this.paymentStatus = 'paid';
+  this.paymentDate = new Date();
+  this.paymentMethod = paymentMethod;
+  this.paymentReference = paymentReference;
+  return await this.save();
 };
 
 // Ensure virtuals are included in JSON

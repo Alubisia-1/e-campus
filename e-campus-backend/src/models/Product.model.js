@@ -92,6 +92,39 @@ const productSchema = new mongoose.Schema({
     type: Boolean,
     default: true
   },
+  sponsored: {
+    isSponsored: {
+      type: Boolean,
+      default: false,
+      index: true
+    },
+    startDate: {
+      type: Date
+    },
+    endDate: {
+      type: Date
+    },
+    pricing: {
+      amount: {
+        type: Number,
+        min: 0
+      },
+      currency: {
+        type: String,
+        default: 'KSH'
+      },
+      period: {
+        type: String,
+        enum: ['day', 'week', 'month'],
+        default: 'week'
+      }
+    },
+    paymentStatus: {
+      type: String,
+      enum: ['pending', 'paid', 'expired'],
+      default: 'pending'
+    }
+  },
   createdAt: {
     type: Date,
     default: Date.now

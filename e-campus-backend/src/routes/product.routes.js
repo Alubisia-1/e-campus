@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { body } = require('express-validator');
-const { protect, optionalAuth } = require('../middleware/auth.middleware');
+const { protect, optionalAuth, authorize } = require('../middleware/auth.middleware');
 const { createProductLimiter, searchLimiter } = require('../middleware/rateLimiter');
 const {
   getAllProducts,
@@ -11,7 +11,9 @@ const {
   deleteProduct,
   searchProducts,
   getMyListings,
-  revealContact
+  revealContact,
+  sponsorProduct,
+  unsponsorProduct
 } = require('../controllers/product.controller');
 
 // Validation rules for creating product
@@ -143,6 +145,10 @@ router.get('/user/my-listings', protect, getMyListings);
 router.post('/', createProductLimiter, protect, createProductValidation, createProduct);
 router.put('/:id', protect, updateProductValidation, updateProduct);
 router.delete('/:id', protect, deleteProduct);
+
+// Admin routes for sponsored products
+router.put('/:id/sponsor', protect, authorize('admin'), sponsorProduct);
+router.put('/:id/unsponsor', protect, authorize('admin'), unsponsorProduct);
 
 // Public routes with :id parameter (must come after specific routes)
 router.get('/:id', getProductById);
