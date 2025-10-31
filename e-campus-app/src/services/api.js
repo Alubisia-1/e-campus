@@ -107,7 +107,7 @@ export const api = {
     });
   },
 
-  // Advertisements
+  // Advertisements (Public)
   getAds: (params = {}) => {
     const searchParams = new URLSearchParams(params);
     return apiRequest(`/ads?${searchParams}`);
@@ -117,6 +117,79 @@ export const api = {
 
   trackAdImpression: (id) => apiRequest(`/ads/${id}/impression`, {
     method: 'POST',
+  }),
+
+  // Advertisements (Admin)
+  getAllAdsAdmin: (token, params = {}) => {
+    const searchParams = new URLSearchParams(params);
+    return apiRequest(`/ads/admin/all?${searchParams}`, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+  },
+
+  createAd: (adData, token) => apiRequest('/ads', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+    },
+    body: JSON.stringify(adData),
+  }),
+
+  updateAd: (id, adData, token) => apiRequest(`/ads/${id}`, {
+    method: 'PUT',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+    },
+    body: JSON.stringify(adData),
+  }),
+
+  deleteAd: (id, token) => apiRequest(`/ads/${id}`, {
+    method: 'DELETE',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+    },
+  }),
+
+  toggleAdStatus: (id, token) => apiRequest(`/ads/${id}/toggle`, {
+    method: 'PUT',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+    },
+  }),
+
+  markAdPaid: (id, paymentData, token) => apiRequest(`/ads/${id}/mark-paid`, {
+    method: 'PUT',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+    },
+    body: JSON.stringify(paymentData),
+  }),
+
+  getRevenue: (token, params = {}) => {
+    const searchParams = new URLSearchParams(params);
+    return apiRequest(`/ads/admin/revenue?${searchParams}`, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+  },
+
+  // Sponsored Products (Admin)
+  sponsorProduct: (id, sponsorData, token) => apiRequest(`/products/${id}/sponsor`, {
+    method: 'PUT',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+    },
+    body: JSON.stringify(sponsorData),
+  }),
+
+  unsponsorProduct: (id, token) => apiRequest(`/products/${id}/unsponsor`, {
+    method: 'PUT',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+    },
   }),
 
   // Auth
