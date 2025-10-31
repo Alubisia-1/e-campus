@@ -26,6 +26,9 @@ const advertisementRoutes = require('./src/routes/advertisement.routes');
 // Initialize Express app
 const app = express();
 
+// Trust proxy - Required for rate limiting behind proxies (Render, Heroku, etc.)
+app.set('trust proxy', 1);
+
 // Security middleware - Helmet with CSP
 app.use(
   helmet({
@@ -53,6 +56,7 @@ const allowedOrigins = [
   'http://localhost:5174',
   'http://localhost:5173',
   'https://e-campus-nine.vercel.app',
+  'https://www.e-soko.store',
   process.env.FRONTEND_URL
 ].filter(Boolean); // Remove undefined values
 
