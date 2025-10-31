@@ -501,9 +501,9 @@ exports.revealContact = async (req, res) => {
   try {
     const { id } = req.params;
 
-    // Find product and populate seller info
+    // Find product and populate seller info with all contact fields
     const product = await Product.findById(id)
-      .populate('seller', 'username phone whatsapp campus');
+      .populate('seller', 'username name email phone whatsapp campus');
 
     if (!product) {
       return res.status(404).json({
@@ -516,9 +516,11 @@ exports.revealContact = async (req, res) => {
     product.contactReveals += 1;
     await product.save();
 
-    // Return seller contact information
+    // Return seller contact information (use name if available, otherwise username)
     const contactData = {
+      name: product.seller.name || product.seller.username,
       username: product.seller.username,
+      email: product.seller.email,
       phone: product.seller.phone,
       whatsapp: product.seller.whatsapp,
       campus: product.seller.campus
