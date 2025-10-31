@@ -878,6 +878,11 @@ function App() {
       return
     }
 
+    if (!postFormData.contact.phone || postFormData.contact.phone.trim().length === 0) {
+      showToast('Please provide a contact phone number', 'error')
+      return
+    }
+
     setIsSubmittingPost(true)
 
     try {
@@ -933,7 +938,11 @@ function App() {
           campus: postFormData.location.campus || '',
           building: postFormData.location.building || ''
         },
-        tags: postFormData.tags || []
+        tags: postFormData.tags || [],
+        contact: {
+          phone: postFormData.contact.phone,
+          email: postFormData.contact.email || ''
+        }
       }
 
       const createResponse = await api.createProduct(productData, authToken)
