@@ -468,7 +468,7 @@ function App() {
       title: 'Campus Hoodie',
       price: 4500,
       images: ['👕', '🧥', '👔'],
-      description: 'Premium quality E-Campus branded hoodie. Available in multiple sizes.',
+      description: 'Premium quality E-Soko branded hoodie. Available in multiple sizes.',
       badge: 'Official',
       sizes: ['S', 'M', 'L', 'XL'],
       contactEmail: 'store@yourdomain.edu',
@@ -476,7 +476,7 @@ function App() {
     },
     {
       id: 102,
-      title: 'E-Campus Backpack',
+      title: 'E-Soko Backpack',
       price: 6000,
       images: ['🎒', '🧳', '💼'],
       description: 'Durable backpack with laptop compartment. Perfect for daily campus use.',
@@ -501,7 +501,7 @@ function App() {
       title: 'Water Bottle',
       price: 2400,
       images: ['💧', '🚰', '♻️'],
-      description: 'Eco-friendly stainless steel water bottle with E-Campus logo.',
+      description: 'Eco-friendly stainless steel water bottle with E-Soko logo.',
       badge: 'Official',
       capacity: '750ml',
       contactEmail: 'store@yourdomain.edu',
@@ -650,7 +650,7 @@ function App() {
     {
       id: 'sidebar-ad-1',
       type: 'promotion',
-      title: 'E-Campus Merch',
+      title: 'E-Soko Merch',
       description: 'Exclusive campus merchandise. Show your school pride!',
       cta: 'Shop Now →',
       icon: '🛍️',
@@ -1103,23 +1103,6 @@ function App() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Announcement Bar */}
-      <div className="bg-gradient-orange py-2">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center text-white text-sm">
-            <span className="font-medium">
-              🎉 NEW: Check out our Official Store for exclusive E-Campus merchandise!
-            </span>
-            <button
-              onClick={handleShopNowClick}
-              className="ml-2 underline font-bold hover:text-orange-100 transition-colors cursor-pointer"
-            >
-              Shop Now
-            </button>
-          </div>
-        </div>
-      </div>
-
       {/* Sticky Navigation Bar */}
       <nav className="sticky top-0 z-50 bg-white shadow-md">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -1127,7 +1110,7 @@ function App() {
             {/* Logo */}
             <div className="flex items-center gap-2">
               <ShoppingBag className="text-blue-600" size={28} />
-              <span className="text-xl font-bold text-gray-900">E-Campus</span>
+              <span className="text-xl font-bold text-gray-900">E-Soko</span>
               {/* API Connection Status */}
               {!loading && (
                 <div className={`ml-2 w-2 h-2 rounded-full ${apiConnected ? 'bg-green-500' : 'bg-red-500'}`}
@@ -1563,7 +1546,7 @@ function App() {
                   <Store className="text-orange-600" size={32} />
                   <div>
                     <div className="flex items-center gap-2 mb-1">
-                      <h2 className="text-2xl font-bold text-gray-900">Official E-Campus Store</h2>
+                      <h2 className="text-2xl font-bold text-gray-900">Official E-Soko Store</h2>
                       <span className="bg-orange-500 text-white text-xs px-2 py-1 rounded-full font-semibold">
                         OFFICIAL
                       </span>
@@ -1888,31 +1871,6 @@ function App() {
             {/* Sticky Sidebar - Desktop Only */}
             <aside className="hidden lg:block lg:col-span-1">
               <div className="sticky top-20 space-y-6">
-                {/* Official Store Promotion Card */}
-                <div className="bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl overflow-hidden shadow-lg">
-                  <div className="p-6 text-white">
-                    <div className="flex items-center gap-2 mb-3">
-                      <ShoppingBag size={24} />
-                      <span className="bg-white text-orange-600 text-xs px-2 py-1 rounded-full font-bold">
-                        OFFICIAL STORE
-                      </span>
-                    </div>
-                    <h3 className="text-2xl font-bold mb-2">E-Campus Merch</h3>
-                    <p className="text-orange-50 mb-4 text-sm">
-                      Get exclusive campus merchandise and accessories. Show your school pride!
-                    </p>
-                    <button
-                      onClick={handleShopNowClick}
-                      className="w-full bg-white text-orange-600 py-3 rounded-lg font-semibold hover:bg-orange-50 transition-colors mb-3"
-                    >
-                      Shop Now →
-                    </button>
-                  </div>
-                  <div className="bg-orange-700 bg-opacity-50 px-6 py-3 text-center text-white text-sm font-semibold">
-                    ✨ Limited Edition Items Available
-                  </div>
-                </div>
-
                 {/* Dynamic Sidebar Ads */}
                 <AdDisplay position="sidebar" fallbackToAdSense={true} />
 
@@ -1942,7 +1900,7 @@ function App() {
                   </span>
                 </div>
                 <h1 className="text-4xl md:text-5xl font-bold mb-4">
-                  E-Campus Official Store
+                  E-Soko Official Store
                 </h1>
                 <p className="text-xl text-blue-100">
                   Premium quality merchandise for students. Show your campus pride with our exclusive collection!
@@ -2181,18 +2139,18 @@ function App() {
           <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
             {/* Header */}
             <div className="mb-8 text-center">
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">About E-Campus</h1>
-              <p className="text-gray-600">Your trusted campus marketplace</p>
+              <h1 className="text-3xl font-bold text-gray-900 mb-2">About E-Soko</h1>
+              <p className="text-gray-600">Your trusted marketplace</p>
             </div>
 
             {/* Introduction */}
             <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
               <h2 className="text-2xl font-semibold text-gray-900 mb-4">What We Are</h2>
               <p className="text-gray-700 leading-relaxed mb-4">
-                E-Campus is a <strong>free advertisement platform</strong> designed to connect campus community members for buying and selling items. We provide a space where students can post and browse listings for textbooks, electronics, furniture, and more.
+                E-Soko is a <strong>free advertisement platform</strong> designed to connect campus community members for buying and selling items. We provide a space where students can post and browse listings for textbooks, electronics, furniture, and more.
               </p>
               <p className="text-gray-700 leading-relaxed">
-                <strong>Important:</strong> E-Campus is purely an advertisement website. We do not process payments, facilitate transactions, or handle any in-app purchases. All transactions occur directly between buyers and sellers.
+                <strong>Important:</strong> E-Soko is purely an advertisement website. We do not process payments, facilitate transactions, or handle any in-app purchases. All transactions occur directly between buyers and sellers.
               </p>
             </div>
 
@@ -2208,7 +2166,7 @@ function App() {
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="font-bold mt-1">•</span>
-                  <span><strong>No Liability:</strong> E-Campus is not responsible for any fraudulent activities, scams, or disputes between buyers and sellers.</span>
+                  <span><strong>No Liability:</strong> E-Soko is not responsible for any fraudulent activities, scams, or disputes between buyers and sellers.</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="font-bold mt-1">•</span>
@@ -2904,7 +2862,7 @@ function App() {
                     value={officialStoreFormData.title}
                     onChange={(e) => setOfficialStoreFormData({ ...officialStoreFormData, title: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="E-Campus Hoodie"
+                    placeholder="E-Soko Hoodie"
                     required
                   />
                 </div>
@@ -3039,10 +2997,10 @@ function App() {
             <div>
               <div className="flex items-center gap-2 mb-4">
                 <ShoppingBag className="text-blue-400" size={32} />
-                <span className="text-xl font-bold text-white">E-Campus</span>
+                <span className="text-xl font-bold text-white">E-Soko</span>
               </div>
               <p className="text-gray-400 text-sm">
-                Your trusted campus marketplace. Buy and sell with fellow students safely and easily.
+                Your trusted marketplace. Buy and sell with fellow students safely and easily.
               </p>
             </div>
 
@@ -3118,7 +3076,7 @@ function App() {
           {/* Bottom Border with Copyright */}
           <div className="border-t border-gray-700 mt-8 pt-8 text-center">
             <p className="text-gray-400 text-sm">
-              © {new Date().getFullYear()} E-Campus. All rights reserved.
+              © {new Date().getFullYear()} E-Soko. All rights reserved.
             </p>
           </div>
         </div>
