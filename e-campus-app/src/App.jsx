@@ -7,7 +7,6 @@ import AuthModal from './components/AuthModal'
 import Toast from './components/Toast'
 import AdManager from './components/AdManager'
 import SponsoredBadge from './components/SponsoredBadge'
-import AdDisplay from './components/AdDisplay'
 
 function App() {
   // State management
@@ -1407,14 +1406,9 @@ function App() {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {activeTab === 'marketplace' && (
           <>
-            {/* Banner Ad */}
-            <div className="mb-8">
-              <AdDisplay position="banner" fallbackToAdSense={true} />
-            </div>
-
-            <div className="grid lg:grid-cols-4 gap-8">
+            <div>
               {/* Main Content Column */}
-              <div className="lg:col-span-3">
+              <div>
               {/* Search Results */}
               {showSearchResults && (
                 <section className="mb-12">
@@ -1868,23 +1862,6 @@ function App() {
             </section>
             </div>
 
-            {/* Sticky Sidebar - Desktop Only */}
-            <aside className="hidden lg:block lg:col-span-1">
-              <div className="sticky top-20 space-y-6">
-                {/* Dynamic Sidebar Ads */}
-                <AdDisplay position="sidebar" fallbackToAdSense={true} />
-
-                {/* Additional Sidebar Ad Slot */}
-                <div className="mt-6">
-                  <AdDisplay position="sidebar" fallbackToAdSense={true} />
-                </div>
-              </div>
-            </aside>
-          </div>
-
-          {/* Footer Ad */}
-          <div className="mt-12">
-            <AdDisplay position="footer" fallbackToAdSense={true} />
           </div>
           </>
         )}
