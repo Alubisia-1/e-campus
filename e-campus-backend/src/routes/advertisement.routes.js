@@ -43,11 +43,11 @@ router.get('/:id', apiLimiter, getAdById);
 router.post('/:id/impression', apiLimiter, trackImpression);
 
 /**
- * @route   GET /api/ads/:id/click
- * @desc    Track advertisement click and redirect to ad link
+ * @route   POST /api/ads/:id/click
+ * @desc    Track advertisement click
  * @access  Public
  */
-router.get('/:id/click', apiLimiter, trackClick);
+router.post('/:id/click', apiLimiter, trackClick);
 
 /**
  * @route   GET /api/ads/:id/stats
