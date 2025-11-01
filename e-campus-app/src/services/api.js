@@ -192,6 +192,25 @@ export const api = {
     },
   }),
 
+  // Public Ad Viewing (for users)
+  getActiveAds: (position = '') => {
+    const searchParams = new URLSearchParams({
+      status: 'active',
+      ...(position && { position })
+    });
+    return apiRequest(`/ads?${searchParams}`);
+  },
+
+  // Track ad impression
+  trackAdImpression: (adId) => apiRequest(`/ads/${adId}/impression`, {
+    method: 'POST',
+  }),
+
+  // Track ad click
+  trackAdClick: (adId) => apiRequest(`/ads/${adId}/click`, {
+    method: 'POST',
+  }),
+
   // Auth
   login: (credentials) => apiRequest('/auth/login', {
     method: 'POST',

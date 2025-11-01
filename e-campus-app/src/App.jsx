@@ -5,6 +5,9 @@ import ContactReveal from './components/ContactReveal'
 import LocalContactReveal from './components/LocalContactReveal'
 import AuthModal from './components/AuthModal'
 import Toast from './components/Toast'
+import AdManager from './components/AdManager'
+import SponsoredBadge from './components/SponsoredBadge'
+import AdDisplay from './components/AdDisplay'
 
 function App() {
   // State management
@@ -1183,6 +1186,19 @@ function App() {
                 About Us
               </button>
 
+              {isAdmin && (
+                <button
+                  onClick={() => handleTabSwitch('ad-manager')}
+                  className={`font-medium transition-colors duration-200 ${
+                    activeTab === 'ad-manager'
+                      ? 'text-blue-600'
+                      : 'text-gray-700 hover:text-blue-600'
+                  }`}
+                >
+                  Ad Manager
+                </button>
+              )}
+
               <button
                 onClick={handlePostItem}
                 className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors font-medium"
@@ -1310,6 +1326,22 @@ function App() {
                         About Us
                       </button>
 
+                      {isAdmin && (
+                        <button
+                          onClick={() => {
+                            handleTabSwitch('ad-manager')
+                            setMobileMenuOpen(false)
+                          }}
+                          className={`text-left font-medium py-3 px-4 rounded-lg transition-colors duration-200 ${
+                            activeTab === 'ad-manager'
+                              ? 'bg-blue-50 text-blue-600'
+                              : 'text-gray-700 hover:bg-gray-50'
+                          }`}
+                        >
+                          Ad Manager
+                        </button>
+                      )}
+
                       <div className="border-t my-4"></div>
 
                       <button
@@ -1391,9 +1423,15 @@ function App() {
       {/* Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {activeTab === 'marketplace' && (
-          <div className="grid lg:grid-cols-4 gap-8">
-            {/* Main Content Column */}
-            <div className="lg:col-span-3">
+          <>
+            {/* Banner Ad */}
+            <div className="mb-8">
+              <AdDisplay position="banner" fallbackToAdSense={true} />
+            </div>
+
+            <div className="grid lg:grid-cols-4 gap-8">
+              {/* Main Content Column */}
+              <div className="lg:col-span-3">
               {/* Search Results */}
               {showSearchResults && (
                 <section className="mb-12">
@@ -1433,7 +1471,10 @@ function App() {
                             className="w-full h-48 object-cover"
                           />
                           <div className="p-4">
-                            <h3 className="font-semibold text-gray-900 mb-2 line-clamp-2">{item.title}</h3>
+                            <div className="flex items-start justify-between gap-2 mb-2">
+                              <h3 className="font-semibold text-gray-900 line-clamp-2 flex-1">{item.title}</h3>
+                              {item.sponsored?.isSponsored && <SponsoredBadge size="small" variant="default" />}
+                            </div>
                             <p className="text-2xl font-bold text-blue-600 mb-2">KES {item.price}</p>
                             <p className="text-sm text-gray-600 mb-2 line-clamp-2">{item.description}</p>
                             <div className="flex items-center justify-between text-sm text-gray-500">
@@ -1788,9 +1829,16 @@ function App() {
                             {/* Product Info */}
                             <div className="p-4">
                               <div className="flex items-start justify-between mb-2">
-                                <h3 className="font-semibold text-gray-900 text-lg flex-1">
-                                  {item.title}
-                                </h3>
+                                <div className="flex-1">
+                                  <h3 className="font-semibold text-gray-900 text-lg">
+                                    {item.title}
+                                  </h3>
+                                  {item.sponsored?.isSponsored && (
+                                    <div className="mt-1">
+                                      <SponsoredBadge size="small" variant="default" />
+                                    </div>
+                                  )}
+                                </div>
                                 <span className="text-blue-600 font-bold text-xl ml-2">
                                   KES {item.price.toLocaleString()}
                                 </span>
@@ -1865,36 +1913,22 @@ function App() {
                   </div>
                 </div>
 
-                {/* Campus Gym Ad */}
-                <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl p-6 text-white shadow-lg">
-                  <span className="bg-white bg-opacity-20 text-white text-xs px-2 py-1 rounded-full font-semibold inline-block mb-3">
-                    ADVERTISEMENT
-                  </span>
-                  <h3 className="text-xl font-bold mb-2">Campus Gym</h3>
-                  <p className="text-purple-50 text-sm mb-4">
-                    Get fit with our state-of-the-art facilities. Student discount: 30% off!
-                  </p>
-                  <button className="w-full bg-white text-purple-600 py-2 rounded-lg font-semibold hover:bg-purple-50 transition-colors text-sm">
-                    Learn More
-                  </button>
-                </div>
+                {/* Dynamic Sidebar Ads */}
+                <AdDisplay position="sidebar" fallbackToAdSense={true} />
 
-                {/* Study Lounge Ad */}
-                <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-xl p-6 text-white shadow-lg">
-                  <span className="bg-white bg-opacity-20 text-white text-xs px-2 py-1 rounded-full font-semibold inline-block mb-3">
-                    ADVERTISEMENT
-                  </span>
-                  <h3 className="text-xl font-bold mb-2">Study Lounge</h3>
-                  <p className="text-green-50 text-sm mb-4">
-                    Quiet study spaces available 24/7. Reserve your spot today!
-                  </p>
-                  <button className="w-full bg-white text-green-600 py-2 rounded-lg font-semibold hover:bg-green-50 transition-colors text-sm">
-                    Book Now
-                  </button>
+                {/* Additional Sidebar Ad Slot */}
+                <div className="mt-6">
+                  <AdDisplay position="sidebar" fallbackToAdSense={true} />
                 </div>
               </div>
             </aside>
           </div>
+
+          {/* Footer Ad */}
+          <div className="mt-12">
+            <AdDisplay position="footer" fallbackToAdSense={true} />
+          </div>
+          </>
         )}
         {activeTab === 'official-store' && (
           <div>
@@ -2245,6 +2279,11 @@ function App() {
               </div>
             </div>
           </div>
+        )}
+
+        {/* Ad Manager Tab */}
+        {activeTab === 'ad-manager' && (
+          <AdManager authToken={authToken} />
         )}
       </main>
 
