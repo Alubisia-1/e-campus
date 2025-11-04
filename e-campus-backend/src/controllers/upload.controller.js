@@ -27,91 +27,101 @@ exports.uploadProductImages = async (req, res) => {
     // Use userId if authenticated, otherwise use deviceId from body or generate random ID
     const userId = req.user ? req.user.id : (req.body.deviceId || `anon_${Date.now()}`);
     const timestamp = Date.now();
-    const uploadedImages = [];
 
-    // Process each image
-    for (let i = 0; i < req.files.length; i++) {
-      const file = req.files[i];
+    // Process all images in parallel for faster upload
+    try {
+      const uploadedImages = await Promise.all(
+        req.files.map(async (file, i) => {
+          // Validate image dimensions
+          await validateImageDimensions(file.buffer, {
+            minWidth: 100,
+            minHeight: 100,
+            maxWidth: 4000,
+            maxHeight: 4000
+          });
 
+          // Optimize image
+          const optimizedBuffer = await optimizeImage(file.buffer, {
+            maxWidth: 1200,
+            maxHeight: 1200,
+            quality: 80,
+            format: 'webp'
+          });
+
+          // Generate unique filename
+          const filename = `${userId}_${timestamp}_${i}`;
+
+          // Upload to Cloudinary
+          const result = await new Promise((resolve, reject) => {
+            const uploadStream = cloudinary.uploader.upload_stream(
+              {
+                folder: 'ecampus/products',
+                public_id: filename,
+                resource_type: 'auto',
+                format: 'webp',
+                transformation: [
+                  { quality: 'auto:good' },
+                  { fetch_format: 'auto' }
+                ]
+              },
+              (error, result) => {
+                if (error) reject(error);
+                else resolve(result);
+              }
+            );
+
+            uploadStream.end(optimizedBuffer);
+          });
+
+          return {
+            url: result.secure_url,
+            publicId: result.public_id,
+            width: result.width,
+            height: result.height,
+            format: result.format,
+            size: result.bytes
+          };
+        })
+      );
+
+      res.status(200).json({
+        status: 'success',
+        message: `${uploadedImages.length} image(s) uploaded successfully`,
+        data: {
+          images: uploadedImages
+        }
+      });
+
+    } catch (imageError) {
+      console.error('Error processing images:', imageError);
+
+      // Clean up any successfully uploaded images before the error
+      // Note: Since we use Promise.all, if one fails, none complete, but let's be safe
       try {
-        // Validate image dimensions
-        await validateImageDimensions(file.buffer, {
-          minWidth: 100,
-          minHeight: 100,
-          maxWidth: 4000,
-          maxHeight: 4000
+        const allUploads = await cloudinary.api.resources({
+          type: 'upload',
+          prefix: `ecampus/products/${userId}_${timestamp}`,
+          max_results: 10
         });
 
-        // Optimize image
-        const optimizedBuffer = await optimizeImage(file.buffer, {
-          maxWidth: 1200,
-          maxHeight: 1200,
-          quality: 80,
-          format: 'webp'
-        });
-
-        // Generate unique filename
-        const filename = `${userId}_${timestamp}_${i}`;
-
-        // Upload to Cloudinary
-        const result = await new Promise((resolve, reject) => {
-          const uploadStream = cloudinary.uploader.upload_stream(
-            {
-              folder: 'ecampus/products',
-              public_id: filename,
-              resource_type: 'auto',
-              format: 'webp',
-              transformation: [
-                { quality: 'auto:good' },
-                { fetch_format: 'auto' }
-              ]
-            },
-            (error, result) => {
-              if (error) reject(error);
-              else resolve(result);
-            }
-          );
-
-          uploadStream.end(optimizedBuffer);
-        });
-
-        uploadedImages.push({
-          url: result.secure_url,
-          publicId: result.public_id,
-          width: result.width,
-          height: result.height,
-          format: result.format,
-          size: result.bytes
-        });
-
-      } catch (imageError) {
-        console.error(`Error processing image ${i}:`, imageError);
-
-        // Clean up already uploaded images on error
-        if (uploadedImages.length > 0) {
+        if (allUploads.resources && allUploads.resources.length > 0) {
           await Promise.all(
-            uploadedImages.map(img =>
-              cloudinary.uploader.destroy(img.publicId).catch(err =>
+            allUploads.resources.map(img =>
+              cloudinary.uploader.destroy(img.public_id).catch(err =>
                 console.error('Cleanup error:', err)
               )
             )
           );
         }
-
-        return res.status(400).json({
-          status: 'error',
-          message: `Error processing image ${i + 1}: ${imageError.message}`
-        });
+      } catch (cleanupError) {
+        console.error('Error during cleanup:', cleanupError);
       }
+
+      return res.status(400).json({
+        status: 'error',
+        message: `Error processing images: ${imageError.message}`
+      });
     }
-
-    res.status(200).json({
-      status: 'success',
-      message: `${uploadedImages.length} image(s) uploaded successfully`,
-      data: {
-        images: uploadedImages
-      }
-    });
 
   } catch (error) {
     console.error('Upload error:', error);

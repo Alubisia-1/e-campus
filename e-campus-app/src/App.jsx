@@ -54,16 +54,6 @@ function App() {
   const [isAdmin, setIsAdmin] = useState(false)
   const [showAdminLogin, setShowAdminLogin] = useState(false)
   const [adminPassword, setAdminPassword] = useState('')
-  const [showOfficialStoreModal, setShowOfficialStoreModal] = useState(false)
-  const [officialStoreFormData, setOfficialStoreFormData] = useState({
-    title: '',
-    description: '',
-    price: '',
-    image: '',
-    link: '',
-    contactEmail: '',
-    contactPhone: ''
-  })
 
   // Post item modal state
   const [showPostModal, setShowPostModal] = useState(false)
@@ -79,6 +69,7 @@ function App() {
     contact: { phone: '', email: '' }
   })
   const [isSubmittingPost, setIsSubmittingPost] = useState(false)
+  const [uploadProgress, setUploadProgress] = useState('')
   const [selectedImages, setSelectedImages] = useState([])
   const [imagePreviewUrls, setImagePreviewUrls] = useState([])
 
@@ -161,75 +152,6 @@ function App() {
     alert('Logged out successfully')
   }
 
-  // Handle official store item addition (Admin only)
-  const handleAddOfficialStoreItem = () => {
-    if (!isAdmin) {
-      alert('Only admins can add official store items')
-      return
-    }
-    setShowOfficialStoreModal(true)
-  }
-
-  const handleOfficialStoreSubmit = (e) => {
-    e.preventDefault()
-
-    // Get existing official store items
-    const existingItems = JSON.parse(localStorage.getItem('officialStoreItems') || '[]')
-
-    // Create new official store item
-    const newItem = {
-      id: `official_${Date.now()}`,
-      ...officialStoreFormData,
-      addedBy: 'admin',
-      createdAt: new Date().toISOString()
-    }
-
-    // Save to localStorage
-    const updatedItems = [...existingItems, newItem]
-    localStorage.setItem('officialStoreItems', JSON.stringify(updatedItems))
-
-    // Reset form and close modal
-    setOfficialStoreFormData({
-      title: '',
-      description: '',
-      price: '',
-      image: '',
-      link: '',
-      contactEmail: '',
-      contactPhone: ''
-    })
-    setShowOfficialStoreModal(false)
-
-    alert('Official store item added successfully!')
-  }
-
-  // Handle official store item deletion (Admin only)
-  const handleDeleteOfficialStoreItem = (itemId) => {
-    if (!isAdmin) {
-      alert('Only admins can delete official store items')
-      return
-    }
-
-    // Check if it's a static item (cannot be deleted)
-    const isStaticItem = storeItemsStatic.some(item => item.id === itemId)
-    if (isStaticItem) {
-      alert('Cannot delete default official store items. Only custom items can be deleted.')
-      return
-    }
-
-    if (confirm('Are you sure you want to delete this official store item?')) {
-      const existingItems = JSON.parse(localStorage.getItem('officialStoreItems') || '[]')
-      const updatedItems = existingItems.filter(item => item.id !== itemId)
-      localStorage.setItem('officialStoreItems', JSON.stringify(updatedItems))
-      alert('Official store item deleted successfully!')
-
-      // Close modal if the deleted item is currently selected
-      if (selectedProduct && selectedProduct.id === itemId) {
-        setSelectedProduct(null)
-      }
-    }
-  }
-
   // Secret admin access via keyboard shortcut (Ctrl+Shift+A)
   useEffect(() => {
     const handleAdminShortcut = (e) => {
@@ -303,9 +225,9 @@ function App() {
       } catch (error) {
         console.error('Failed to connect to backend or fetch data:', error)
         setApiConnected(false)
-        // Fall back to static data if API fails
-        setCategories(staticCategories)
-        setProducts(staticProducts)
+        // Show empty state - no fallback data
+        setCategories([])
+        setProducts([])
       } finally {
         setLoading(false)
         setDataLoading(false)
@@ -315,250 +237,7 @@ function App() {
     initializeApp()
   }, [])
 
-  // Static fallback data - Categories
-  const staticCategories = [
-    { _id: 1, name: 'Textbooks', icon: '📚', productCount: 45 },
-    { _id: 2, name: 'Electronics', icon: '💻', productCount: 32 },
-    { _id: 3, name: 'Furniture', icon: '🪑', productCount: 28 },
-    { _id: 4, name: 'Fashion', icon: '👕', productCount: 56 }
-  ]
-
-  // Static fallback data - Marketplace Items (with proper category structure)
-  const staticProducts = [
-    {
-      _id: 'static_1',
-      id: 1,
-      title: 'Calculus Textbook - 10th Edition',
-      price: 6750,
-      category: { _id: 1, name: 'Textbooks', icon: '📚' },
-      seller: {
-        _id: 'seller_1',
-        name: 'Sarah M.',
-        phone: '+1234567890',
-        email: 'sarah.m@campus.edu',
-        whatsapp: '+1234567890'
-      },
-      images: [
-        { url: '📚', publicId: 'static_1_0', _id: 'img_static_1_0' },
-        { url: '📖', publicId: 'static_1_1', _id: 'img_static_1_1' },
-        { url: '📕', publicId: 'static_1_2', _id: 'img_static_1_2' }
-      ],
-      condition: 'Like New',
-      description: 'Barely used calculus textbook. Only used for one semester. No highlighting or writing inside.'
-    },
-    {
-      _id: 'static_2',
-      id: 2,
-      title: 'MacBook Pro 2020 - 13 inch',
-      price: 134850,
-      category: { _id: 2, name: 'Electronics', icon: '💻' },
-      seller: {
-        _id: 'seller_2',
-        name: 'John D.',
-        phone: '+1234567891',
-        email: 'john.d@campus.edu',
-        whatsapp: '+1234567891'
-      },
-      images: [
-        { url: '💻', publicId: 'static_2_0', _id: 'img_static_2_0' },
-        { url: '⌨️', publicId: 'static_2_1', _id: 'img_static_2_1' },
-        { url: '🖥️', publicId: 'static_2_2', _id: 'img_static_2_2' }
-      ],
-      condition: 'Good',
-      description: 'MacBook Pro 13" 2020 model. 8GB RAM, 256GB SSD. Works perfectly, minor scratches on body.'
-    },
-    {
-      _id: 'static_3',
-      id: 3,
-      title: 'Mini Fridge - Compact',
-      price: 11250,
-      category: { _id: 3, name: 'Furniture', icon: '🪑' },
-      seller: {
-        _id: 'seller_3',
-        name: 'Mike R.',
-        phone: '+1234567892',
-        email: 'mike.r@campus.edu',
-        whatsapp: '+1234567892'
-      },
-      images: [
-        { url: '🧊', publicId: 'static_3_0', _id: 'img_static_3_0' },
-        { url: '❄️', publicId: 'static_3_1', _id: 'img_static_3_1' },
-        { url: '🔌', publicId: 'static_3_2', _id: 'img_static_3_2' }
-      ],
-      condition: 'Excellent',
-      description: 'Perfect for dorm room. Energy efficient, barely used. Moving out sale!'
-    },
-    {
-      _id: 'static_4',
-      id: 4,
-      title: 'Nike Sneakers - Size 10',
-      price: 9000,
-      category: { _id: 4, name: 'Fashion', icon: '👕' },
-      seller: {
-        _id: 'seller_4',
-        name: 'Emma L.',
-        phone: '+1234567893',
-        email: 'emma.l@campus.edu',
-        whatsapp: '+1234567893'
-      },
-      images: [
-        { url: '👟', publicId: 'static_4_0', _id: 'img_static_4_0' },
-        { url: '👞', publicId: 'static_4_1', _id: 'img_static_4_1' },
-        { url: '🏃', publicId: 'static_4_2', _id: 'img_static_4_2' }
-      ],
-      condition: 'Like New',
-      description: 'Nike running shoes, size 10. Worn only twice. Original box included.'
-    },
-    {
-      _id: 'static_5',
-      id: 5,
-      title: 'Study Desk - Wooden',
-      price: 7500,
-      category: { _id: 3, name: 'Furniture', icon: '🪑' },
-      seller: {
-        _id: 'seller_5',
-        name: 'Alex P.',
-        phone: '+1234567894',
-        email: 'alex.p@campus.edu',
-        whatsapp: '+1234567894'
-      },
-      images: [
-        { url: '🪑', publicId: 'static_5_0', _id: 'img_static_5_0' },
-        { url: '📝', publicId: 'static_5_1', _id: 'img_static_5_1' },
-        { url: '🖊️', publicId: 'static_5_2', _id: 'img_static_5_2' }
-      ],
-      condition: 'Good',
-      description: 'Solid wooden study desk with drawer. Perfect for studying. Disassembles for easy transport.'
-    },
-    {
-      _id: 'static_6',
-      id: 6,
-      title: 'iPhone 12 - 128GB Blue',
-      price: 67500,
-      category: { _id: 2, name: 'Electronics', icon: '💻' },
-      seller: {
-        _id: 'seller_6',
-        name: 'Lisa K.',
-        phone: '+1234567895',
-        email: 'lisa.k@campus.edu',
-        whatsapp: '+1234567895'
-      },
-      images: [
-        { url: '📱', publicId: 'static_6_0', _id: 'img_static_6_0' },
-        { url: '📲', publicId: 'static_6_1', _id: 'img_static_6_1' },
-        { url: '☎️', publicId: 'static_6_2', _id: 'img_static_6_2' }
-      ],
-      condition: 'Excellent',
-      description: 'iPhone 12 in blue, 128GB. Battery health 95%. Includes charger and case.'
-    }
-  ]
-
-  // Get official store items (static + localStorage)
-  const getOfficialStoreItems = () => {
-    const localItems = JSON.parse(localStorage.getItem('officialStoreItems') || '[]')
-    const staticItems = storeItemsStatic
-    return [...localItems, ...staticItems]
-  }
-
-  // Sample Data - Official Store Items (Static)
-  const storeItemsStatic = [
-    {
-      id: 101,
-      title: 'Campus Hoodie',
-      price: 4500,
-      images: ['👕', '🧥', '👔'],
-      description: 'Premium quality E-Soko branded hoodie. Available in multiple sizes.',
-      badge: 'Official',
-      sizes: ['S', 'M', 'L', 'XL'],
-      contactEmail: 'store@yourdomain.edu',
-      contactPhone: '+1234567890'
-    },
-    {
-      id: 102,
-      title: 'E-Soko Backpack',
-      price: 6000,
-      images: ['🎒', '🧳', '💼'],
-      description: 'Durable backpack with laptop compartment. Perfect for daily campus use.',
-      badge: 'Official',
-      features: ['Laptop sleeve', 'Water resistant', 'Multiple pockets'],
-      contactEmail: 'store@yourdomain.edu',
-      contactPhone: '+1234567890'
-    },
-    {
-      id: 103,
-      title: 'Study Bundle Pack',
-      price: 3750,
-      images: ['📚', '✏️', '📓'],
-      description: 'Complete study essentials: notebooks, pens, highlighters, and sticky notes.',
-      badge: 'Official',
-      includes: ['3 Notebooks', '5 Pens', '3 Highlighters', 'Sticky notes'],
-      contactEmail: 'store@yourdomain.edu',
-      contactPhone: '+1234567890'
-    },
-    {
-      id: 104,
-      title: 'Water Bottle',
-      price: 2400,
-      images: ['💧', '🚰', '♻️'],
-      description: 'Eco-friendly stainless steel water bottle with E-Soko logo.',
-      badge: 'Official',
-      capacity: '750ml',
-      contactEmail: 'store@yourdomain.edu',
-      contactPhone: '+1234567890'
-    }
-  ]
-
-  // Sample Data - Native Ads (Expandable array for multiple ads)
-  const nativeAds = [
-    {
-      id: 'native-ad-1',
-      type: 'sponsored',
-      title: 'Get 20% Off Your First Order',
-      description: 'Use code WELCOME20 at checkout. Valid for all official store items.',
-      cta: 'Shop Now',
-      image: '🎁'
-    },
-    {
-      id: 'native-ad-2',
-      type: 'sponsored',
-      title: 'Student Discount Program',
-      description: 'Sign up for our student rewards program and earn points on every purchase.',
-      cta: 'Learn More',
-      image: '🎓'
-    },
-    {
-      id: 'native-ad-3',
-      type: 'sponsored',
-      title: 'Free Shipping This Week',
-      description: 'All orders over KES 2,500 ship free. Limited time offer!',
-      cta: 'Start Shopping',
-      image: '🚚'
-    },
-    {
-      id: 'native-ad-4',
-      type: 'sponsored',
-      title: 'Campus Book Exchange',
-      description: 'Trade your old textbooks for new ones. Save up to 50% on course materials!',
-      cta: 'Exchange Now',
-      image: '📚'
-    },
-    {
-      id: 'native-ad-5',
-      type: 'sponsored',
-      title: 'Tech Repair Services',
-      description: 'Professional laptop & phone repairs. Student prices, same-day service.',
-      cta: 'Get Quote',
-      image: '🔧'
-    },
-    {
-      id: 'native-ad-6',
-      type: 'sponsored',
-      title: 'Premium Tutoring',
-      description: 'Struggling with coursework? Connect with top-rated student tutors.',
-      cta: 'Find Tutor',
-      image: '👨‍🏫'
-    }
-  ]
+  // No more static data - clean professional site
 
   const handleShopNowClick = () => {
     setActiveTab('official-store')
@@ -886,32 +565,11 @@ function App() {
     }
 
     setIsSubmittingPost(true)
+    setUploadProgress('Preparing upload...')
 
     try {
-      // If admin, add to official store instead of marketplace
-      if (isAdmin) {
-        const newOfficialItem = {
-          id: `official_${Date.now()}`,
-          title: postFormData.title,
-          description: postFormData.description,
-          price: `KSH ${parseFloat(postFormData.price).toLocaleString()}`,
-          image: selectedImages[0]?.url || '📦',
-          link: '',
-          addedBy: 'admin',
-          createdAt: new Date().toISOString()
-        }
-
-        const existingOfficialItems = JSON.parse(localStorage.getItem('officialStoreItems') || '[]')
-        const updatedOfficialItems = [newOfficialItem, ...existingOfficialItems]
-        localStorage.setItem('officialStoreItems', JSON.stringify(updatedOfficialItems))
-
-        alert('Product added to Official Store successfully!')
-        handleClosePostModal()
-        setActiveTab('official-store')
-        return
-      }
-
       // Step 1: Upload images to Cloudinary via backend
+      setUploadProgress(`Uploading ${selectedImages.length} image(s)...`)
       const formData = new FormData()
       for (let i = 0; i < selectedImages.length; i++) {
         if (selectedImages[i].file) {
@@ -926,6 +584,7 @@ function App() {
       }
 
       // Step 2: Create product with uploaded image URLs
+      setUploadProgress('Creating listing...')
       const productData = {
         title: postFormData.title,
         description: postFormData.description,
@@ -951,6 +610,7 @@ function App() {
 
       if (createResponse.status === 'success') {
         // Refresh products list
+        setUploadProgress('Refreshing listings...')
         const productsResponse = await api.getProducts()
         if (productsResponse.status === 'success') {
           setProducts(productsResponse.data.products)
@@ -965,11 +625,57 @@ function App() {
       showToast(`Failed to create product listing: ${error.message || 'Please try again.'}`, 'error')
     } finally {
       setIsSubmittingPost(false)
+      setUploadProgress('')
     }
   }
 
+  // Compress image before upload (reduces file size for faster mobile uploads)
+  const compressImage = async (file, maxWidth = 1200, quality = 0.8) => {
+    return new Promise((resolve) => {
+      const reader = new FileReader()
+      reader.onload = (e) => {
+        const img = new Image()
+        img.onload = () => {
+          // Create canvas for compression
+          const canvas = document.createElement('canvas')
+          let width = img.width
+          let height = img.height
+
+          // Calculate new dimensions (maintain aspect ratio)
+          if (width > maxWidth) {
+            height = (height * maxWidth) / width
+            width = maxWidth
+          }
+
+          canvas.width = width
+          canvas.height = height
+
+          // Draw and compress
+          const ctx = canvas.getContext('2d')
+          ctx.drawImage(img, 0, 0, width, height)
+
+          // Convert to blob with compression
+          canvas.toBlob(
+            (blob) => {
+              // Create a new file from the compressed blob
+              const compressedFile = new File([blob], file.name, {
+                type: 'image/jpeg',
+                lastModified: Date.now()
+              })
+              resolve(compressedFile)
+            },
+            'image/jpeg',
+            quality
+          )
+        }
+        img.src = e.target.result
+      }
+      reader.readAsDataURL(file)
+    })
+  }
+
   // Image upload functionality
-  const handleImageUpload = (e) => {
+  const handleImageUpload = async (e) => {
     const files = Array.from(e.target.files)
 
     // Validate file count
@@ -997,21 +703,32 @@ function App() {
 
     if (validFiles.length === 0) return
 
-    // Create preview URLs and convert to base64
+    // Show compression message for large files
+    const hasLargeFiles = validFiles.some(f => f.size > 1024 * 1024) // > 1MB
+    if (hasLargeFiles) {
+      showToast('Compressing images for faster upload...', 'info')
+    }
+
+    // Compress images before processing
+    const compressedFiles = await Promise.all(
+      validFiles.map(file => compressImage(file))
+    )
+
+    // Create preview URLs and store compressed files
     const newImageUrls = []
     const newImages = []
 
-    validFiles.forEach((file, index) => {
+    compressedFiles.forEach((file, index) => {
       // Create preview URL
       const previewUrl = URL.createObjectURL(file)
       newImageUrls.push(previewUrl)
 
-      // Convert to base64 for preview and store file object for upload
+      // Convert to base64 for preview and store compressed file object for upload
       const reader = new FileReader()
       reader.onload = (e) => {
         const imageData = {
           url: e.target.result,
-          file: file, // Store the actual file object for API upload
+          file: file, // Store the compressed file object for API upload
           name: file.name,
           size: file.size,
           type: file.type
@@ -1019,9 +736,12 @@ function App() {
         newImages.push(imageData)
 
         // Update state when all files are processed
-        if (newImages.length === validFiles.length) {
+        if (newImages.length === compressedFiles.length) {
           setSelectedImages(prev => [...prev, ...newImages])
           setImagePreviewUrls(prev => [...prev, ...newImageUrls])
+          if (hasLargeFiles) {
+            showToast('Images compressed successfully!', 'success')
+          }
         }
       }
       reader.readAsDataURL(file)
@@ -1532,80 +1252,41 @@ function App() {
                 </div>
               </section>
 
-            {/* Featured Official Store Section */}
-            <section className="mb-12 bg-gradient-to-r from-orange-50 via-orange-100 to-yellow-50 rounded-xl border-2 border-orange-200 p-6 md:p-8">
-              {/* Header */}
-              <div className="flex items-center justify-between mb-6">
-                <div className="flex items-center gap-3">
-                  <Store className="text-orange-600" size={32} />
-                  <div>
-                    <div className="flex items-center gap-2 mb-1">
-                      <h2 className="text-2xl font-bold text-gray-900">Official E-Soko Store</h2>
-                      <span className="bg-orange-500 text-white text-xs px-2 py-1 rounded-full font-semibold">
-                        OFFICIAL
-                      </span>
-                    </div>
-                    <p className="text-gray-600">Exclusive campus merchandise and essentials</p>
-                  </div>
+            {/* Featured Official Store Banner - Professional */}
+            <section className="mb-12 bg-gradient-to-r from-orange-500 via-orange-600 to-red-600 rounded-xl shadow-xl overflow-hidden">
+              <div className="relative p-8 md:p-10">
+                {/* Background Pattern */}
+                <div className="absolute inset-0 opacity-10">
+                  <div className="absolute inset-0" style={{
+                    backgroundImage: 'radial-gradient(circle at 20px 20px, white 1px, transparent 0)',
+                    backgroundSize: '40px 40px'
+                  }}></div>
                 </div>
-                <button
-                  onClick={handleShopNowClick}
-                  className="hidden md:flex items-center gap-2 bg-orange-500 hover:bg-orange-600 text-white px-6 py-2 rounded-lg font-semibold transition-colors"
-                >
-                  View All →
-                </button>
-              </div>
 
-              {/* Product Grid */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-                {getOfficialStoreItems().map((item) => (
-                  <div
-                    key={item.id}
-                    className="bg-white rounded-lg overflow-hidden border-2 border-orange-200 hover:shadow-xl hover:border-orange-400 transition-all duration-300 cursor-pointer"
-                  >
-                    {/* Image Area with Badge */}
-                    <div className="relative bg-gradient-to-br from-blue-500 to-blue-600 h-32 flex items-center justify-center">
-                      {item.image?.startsWith('data:') || item.image?.startsWith('http') ? (
-                        <img
-                          src={item.image}
-                          alt={item.title}
-                          className="w-full h-full object-cover"
-                          onError={(e) => {
-                            e.target.style.display = 'none'
-                            e.target.nextSibling.style.display = 'flex'
-                          }}
-                        />
-                      ) : (
-                        <span className="text-6xl">{item.images?.[0] || item.image || '📦'}</span>
-                      )}
-                      <span className="absolute top-2 right-2 bg-orange-500 text-white text-xs px-2 py-1 rounded-full font-semibold">
-                        {item.badge || 'OFFICIAL'}
-                      </span>
-                    </div>
-
-                    {/* Product Info */}
-                    <div className="p-3">
-                      <h3 className="font-semibold text-gray-900 text-sm mb-1 line-clamp-2">
-                        {item.title}
-                      </h3>
-                      <p className="text-orange-600 font-bold text-lg mb-2">
-                        {typeof item.price === 'number' ? `KES ${item.price.toLocaleString()}` : item.price}
+                {/* Content */}
+                <div className="relative flex flex-col md:flex-row items-center justify-between gap-6 text-white">
+                  <div className="flex items-center gap-4 flex-1">
+                    <Store className="text-white" size={48} className="hidden md:block" />
+                    <div className="text-center md:text-left">
+                      <div className="flex items-center justify-center md:justify-start gap-2 mb-2">
+                        <h2 className="text-2xl md:text-3xl font-bold">Official E-Soko Store</h2>
+                        <span className="bg-white bg-opacity-20 backdrop-blur-sm text-white text-xs px-3 py-1 rounded-full font-bold">
+                          OFFICIAL
+                        </span>
+                      </div>
+                      <p className="text-white text-opacity-95 text-base md:text-lg">
+                        Premium campus merchandise and verified products - Coming Soon!
                       </p>
-                      <button className="w-full bg-blue-600 hover:bg-blue-700 text-white text-sm py-2 rounded-lg font-semibold transition-colors">
-                        View
-                      </button>
                     </div>
                   </div>
-                ))}
+                  <button
+                    onClick={handleShopNowClick}
+                    className="bg-white text-orange-600 px-8 py-3 rounded-lg font-bold hover:bg-opacity-90 transition-all shadow-lg whitespace-nowrap"
+                  >
+                    Learn More →
+                  </button>
+                </div>
               </div>
-
-              {/* Mobile View All Button */}
-              <button
-                onClick={handleShopNowClick}
-                className="md:hidden w-full bg-orange-500 hover:bg-orange-600 text-white px-6 py-3 rounded-lg font-semibold transition-colors"
-              >
-                View All →
-              </button>
             </section>
 
             {/* Recent Listings Section */}
@@ -1866,113 +1547,121 @@ function App() {
           </>
         )}
         {activeTab === 'official-store' && (
-          <div>
-            {/* Hero Banner */}
-            <section className="bg-gradient-to-r from-blue-600 to-blue-700 rounded-xl p-8 md:p-12 mb-12 text-white text-center">
-              <div className="max-w-3xl mx-auto">
-                <div className="flex items-center justify-center gap-2 mb-4">
-                  <Store size={40} />
-                  <span className="bg-orange-500 text-white text-sm px-3 py-1 rounded-full font-bold">
-                    OFFICIAL
-                  </span>
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            {/* Professional Banner - Coming Soon */}
+            <section className="bg-gradient-to-br from-orange-500 via-orange-600 to-red-600 rounded-2xl shadow-2xl overflow-hidden mb-12">
+              <div className="relative">
+                {/* Background Pattern */}
+                <div className="absolute inset-0 opacity-10">
+                  <div className="absolute inset-0" style={{
+                    backgroundImage: 'radial-gradient(circle at 20px 20px, white 1px, transparent 0)',
+                    backgroundSize: '40px 40px'
+                  }}></div>
                 </div>
-                <h1 className="text-4xl md:text-5xl font-bold mb-4">
-                  E-Soko Official Store
-                </h1>
-                <p className="text-xl text-blue-100">
-                  Premium quality merchandise for students. Show your campus pride with our exclusive collection!
-                </p>
-              </div>
-            </section>
 
-            {/* Store Products Grid */}
-            <section>
-              <div className="flex justify-between items-center mb-6">
-                <h2 className="text-2xl font-semibold text-gray-900">Our Products</h2>
-                {isAdmin && (
-                  <button
-                    onClick={handleAddOfficialStoreItem}
-                    className="flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors font-medium text-sm"
-                  >
-                    <Plus size={18} />
-                    Add Product
-                  </button>
-                )}
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {getOfficialStoreItems().map((item) => (
-                  <div
-                    key={item.id}
-                    onClick={() => setSelectedProduct(item)}
-                    className="bg-white rounded-lg overflow-hidden border border-gray-200 hover:shadow-lg transition-shadow duration-300 cursor-pointer"
-                  >
-                    {/* Image Area */}
-                    <div className="relative bg-gradient-to-br from-blue-500 to-blue-600 h-64 flex items-center justify-center">
-                      {item.image?.startsWith('data:') || item.image?.startsWith('http') ? (
-                        <img
-                          src={item.image}
-                          alt={item.title}
-                          className="w-full h-full object-cover"
-                          onError={(e) => {
-                            e.target.style.display = 'none'
-                            e.target.nextSibling.style.display = 'flex'
-                          }}
-                        />
-                      ) : (
-                        <span className="text-8xl">{item.images?.[0] || item.image || '📦'}</span>
-                      )}
-                      <div style={{ display: 'none' }} className="w-full h-full flex items-center justify-center">
-                        <span className="text-8xl">{item.images?.[0] || item.image || '📦'}</span>
-                      </div>
+                {/* Content */}
+                <div className="relative px-8 py-16 md:px-16 md:py-24 text-center text-white">
+                  {/* Badge */}
+                  <div className="flex justify-center mb-6">
+                    <span className="inline-flex items-center gap-2 bg-white bg-opacity-20 backdrop-blur-sm border-2 border-white border-opacity-40 text-white text-sm font-bold px-6 py-2 rounded-full">
+                      <Store size={18} />
+                      OFFICIAL PARTNER
+                    </span>
+                  </div>
 
-                      {/* Official Badge */}
-                      <span className="absolute top-3 left-3 bg-orange-500 text-white text-xs px-3 py-1 rounded-full font-bold">
-                        {item.badge || 'OFFICIAL'}
-                      </span>
+                  {/* Heading */}
+                  <h1 className="text-4xl md:text-6xl font-bold mb-6 drop-shadow-lg">
+                    E-Soko Official Store
+                  </h1>
 
-                      {/* +X More Badge */}
-                      {item.images?.length > 1 && (
-                        <span className="absolute top-3 right-3 bg-black bg-opacity-60 text-white text-xs px-2 py-1 rounded-full font-semibold">
-                          +{item.images.length - 1} more
-                        </span>
-                      )}
+                  {/* Description */}
+                  <p className="text-xl md:text-2xl text-white text-opacity-95 mb-8 max-w-3xl mx-auto leading-relaxed">
+                    Premium quality merchandise and exclusive campus gear. Coming soon to serve you better!
+                  </p>
 
-                      {/* Delete Button (Admin only, for custom items) */}
-                      {isAdmin && !storeItemsStatic.some(staticItem => staticItem.id === item.id) && (
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            handleDeleteOfficialStoreItem(item.id)
-                          }}
-                          className="absolute bottom-3 right-3 bg-red-500 hover:bg-red-600 text-white p-2 rounded-full shadow-lg transition-colors"
-                          title="Delete product"
-                        >
-                          <Trash2 size={18} />
-                        </button>
-                      )}
+                  {/* Features Grid */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto mt-12">
+                    <div className="bg-white bg-opacity-10 backdrop-blur-sm rounded-xl p-6 border border-white border-opacity-20">
+                      <div className="text-4xl mb-3">✓</div>
+                      <h3 className="font-bold text-lg mb-2">Verified Quality</h3>
+                      <p className="text-sm text-white text-opacity-90">100% authentic products with warranty</p>
                     </div>
+                    <div className="bg-white bg-opacity-10 backdrop-blur-sm rounded-xl p-6 border border-white border-opacity-20">
+                      <div className="text-4xl mb-3">🚚</div>
+                      <h3 className="font-bold text-lg mb-2">Fast Delivery</h3>
+                      <p className="text-sm text-white text-opacity-90">Quick campus delivery available</p>
+                    </div>
+                    <div className="bg-white bg-opacity-10 backdrop-blur-sm rounded-xl p-6 border border-white border-opacity-20">
+                      <div className="text-4xl mb-3">💳</div>
+                      <h3 className="font-bold text-lg mb-2">Secure Payment</h3>
+                      <p className="text-sm text-white text-opacity-90">Safe and easy payment options</p>
+                    </div>
+                  </div>
 
-                    {/* Product Info */}
-                    <div className="p-5">
-                      <div className="flex items-start justify-between mb-3">
-                        <h3 className="font-semibold text-gray-900 text-xl flex-1">
-                          {item.title}
-                        </h3>
-                        <span className="text-orange-600 font-bold text-2xl ml-2">
-                          {typeof item.price === 'number' ? `KES ${item.price.toLocaleString()}` : item.price}
-                        </span>
-                      </div>
-
-                      <p className="text-gray-600 text-sm mb-4 line-clamp-2">
-                        {item.description}
-                      </p>
-
-                      <button className="w-full bg-orange-500 hover:bg-orange-600 text-white py-3 rounded-lg font-semibold transition-colors">
-                        View Details
+                  {/* Call to Action */}
+                  <div className="mt-12">
+                    <p className="text-lg text-white text-opacity-90 mb-4">
+                      Want to feature your products here?
+                    </p>
+                    <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                      <a
+                        href="mailto:partner@e-soko.com"
+                        className="inline-flex items-center gap-2 bg-white text-orange-600 px-8 py-4 rounded-lg hover:bg-opacity-90 transition-all font-bold text-lg shadow-lg hover:shadow-xl"
+                      >
+                        <Mail size={20} />
+                        Partner With Us
+                      </a>
+                      <button
+                        onClick={() => setActiveTab('marketplace')}
+                        className="inline-flex items-center gap-2 bg-white bg-opacity-20 backdrop-blur-sm border-2 border-white text-white px-8 py-4 rounded-lg hover:bg-opacity-30 transition-all font-bold text-lg"
+                      >
+                        <ShoppingBag size={20} />
+                        Browse Marketplace
                       </button>
                     </div>
                   </div>
-                ))}
+                </div>
+              </div>
+            </section>
+
+            {/* Info Section */}
+            <section className="max-w-4xl mx-auto">
+              <div className="bg-white rounded-xl shadow-lg p-8 md:p-12">
+                <h2 className="text-3xl font-bold text-gray-900 mb-6 text-center">
+                  About Our Official Store
+                </h2>
+                <div className="space-y-4 text-gray-600 leading-relaxed">
+                  <p className="text-lg">
+                    The E-Soko Official Store is your trusted source for premium campus merchandise,
+                    verified products, and exclusive deals from our partner brands.
+                  </p>
+                  <p className="text-lg">
+                    We're currently setting up our catalog to bring you the best selection of:
+                  </p>
+                  <ul className="grid grid-cols-1 md:grid-cols-2 gap-3 my-6">
+                    <li className="flex items-center gap-3">
+                      <span className="text-2xl">📚</span>
+                      <span className="font-medium">Textbooks & Study Materials</span>
+                    </li>
+                    <li className="flex items-center gap-3">
+                      <span className="text-2xl">💻</span>
+                      <span className="font-medium">Electronics & Gadgets</span>
+                    </li>
+                    <li className="flex items-center gap-3">
+                      <span className="text-2xl">👕</span>
+                      <span className="font-medium">Campus Apparel & Gear</span>
+                    </li>
+                    <li className="flex items-center gap-3">
+                      <span className="text-2xl">🎒</span>
+                      <span className="font-medium">Accessories & Supplies</span>
+                    </li>
+                  </ul>
+                  <div className="bg-orange-50 border-l-4 border-orange-500 p-6 rounded-r-lg mt-8">
+                    <p className="text-orange-900 font-medium">
+                      <strong>Stay tuned!</strong> We're launching soon with exclusive deals and verified products just for you.
+                    </p>
+                  </div>
+                </div>
               </div>
             </section>
           </div>
@@ -2497,19 +2186,7 @@ function App() {
                   </div>
                 )}
 
-                {/* Delete Button - Admin only for official store custom items */}
-                {isAdmin && (selectedProduct.contactEmail || selectedProduct.contactPhone) &&
-                 !storeItemsStatic.some(staticItem => staticItem.id === selectedProduct.id) && (
-                  <div className="border-t pt-6">
-                    <button
-                      onClick={() => handleDeleteOfficialStoreItem(selectedProduct.id)}
-                      className="w-full bg-red-600 hover:bg-red-700 text-white py-3 rounded-lg font-semibold transition-colors flex items-center justify-center gap-2"
-                    >
-                      <Trash2 size={20} />
-                      Delete Official Store Product
-                    </button>
-                  </div>
-                )}
+                {/* Delete button removed - Official store items managed separately */}
               </div>
             </div>
           </div>
@@ -2743,10 +2420,15 @@ function App() {
                   </button>
                   <button
                     type="submit"
-                    className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 font-medium disabled:opacity-50"
+                    className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                     disabled={isSubmittingPost}
                   >
-                    {isSubmittingPost ? 'Posting...' : 'Post Item'}
+                    {isSubmittingPost ? (
+                      <span className="flex items-center justify-center gap-2">
+                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                        {uploadProgress || 'Posting...'}
+                      </span>
+                    ) : 'Post Item'}
                   </button>
                 </div>
               </form>

@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clear E-Soko Storage</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+        h1 {
+            color: #333;
+            margin: 0 0 10px 0;
+        }
+        p {
+            color: #666;
+            line-height: 1.6;
+        }
+        button {
+            background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 20px;
+            transition: transform 0.2s;
+        }
+        button:hover {
+            transform: translateY(-2px);
+        }
+        .success {
+            background: #10b981;
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+            display: none;
+        }
+        .list {
+            background: #f3f4f6;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+        }
+        .list-item {
+            padding: 5px 0;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>🧹 E-Soko Storage Cleanup</h1>
+        <p>This will clear all old mock data from your browser's localStorage.</p>
+
+        <div class="list">
+            <div class="list-item">✓ Official Store Items</div>
+            <div class="list-item">✓ Native Ads</div>
+            <div class="list-item">✓ Cached Products</div>
+            <div class="list-item">✓ Old Mock Data</div>
+        </div>
+
+        <p><strong>Note:</strong> Your login session and real user data will be preserved.</p>
+
+        <button onclick="clearStorage()">Clear Mock Data</button>
+
+        <div class="success" id="success">
+            <strong>✓ Success!</strong> Mock data cleared.
+            <br><br>
+            <a href="/" style="color: white; text-decoration: underline;">Return to E-Soko</a>
+        </div>
+    </div>
+
+    <script>
+        function clearStorage() {
+            // Items to remove
+            const itemsToRemove = [
+                'officialStoreItems',
+                'nativeAds',
+                'products',
+                'items',
+                'mockData'
+            ];
+
+            let removed = 0;
+            itemsToRemove.forEach(item => {
+                if (localStorage.getItem(item)) {
+                    localStorage.removeItem(item);
+                    removed++;
+                }
+            });
+
+            // Show success message
+            document.getElementById('success').style.display = 'block';
+
+            console.log(`✓ Cleared ${removed} mock data items from localStorage`);
+            console.log('✓ Ready for production!');
+
+            // Redirect after 3 seconds
+            setTimeout(() => {
+                window.location.href = '/';
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
