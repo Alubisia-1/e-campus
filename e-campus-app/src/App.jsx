@@ -54,6 +54,8 @@ function App() {
   const [isAdmin, setIsAdmin] = useState(false)
   const [showAdminLogin, setShowAdminLogin] = useState(false)
   const [adminPassword, setAdminPassword] = useState('')
+  const [logoTapCount, setLogoTapCount] = useState(0)
+  const [tapTimer, setTapTimer] = useState(null)
 
   // Post item modal state
   const [showPostModal, setShowPostModal] = useState(false)
@@ -116,15 +118,17 @@ function App() {
   // Handle admin login
   const handleAdminLogin = (e) => {
     e.preventDefault()
-    // Simple password check (in production, use proper authentication)
-    if (adminPassword === 'admin123') {
+    // Check against environment variable password
+    const correctPassword = import.meta.env.VITE_ADMIN_PASSWORD || 'admin123'
+
+    if (adminPassword === correctPassword) {
       setIsAdmin(true)
       localStorage.setItem('isAdmin', 'true')
       setShowAdminLogin(false)
       setAdminPassword('')
-      alert('Admin access granted!')
+      showToast('Admin access granted!', 'success')
     } else {
-      alert('Incorrect password!')
+      showToast('Incorrect password! Access denied.', 'error')
       setAdminPassword('')
     }
   }
@@ -135,6 +139,40 @@ function App() {
     localStorage.removeItem('isAdmin')
     setActiveTab('marketplace')
     alert('Admin logged out')
+  }
+
+  // Hidden admin access via logo taps (tap logo 7 times within 3 seconds)
+  const handleLogoTap = () => {
+    // Clear existing timer
+    if (tapTimer) {
+      clearTimeout(tapTimer)
+    }
+
+    const newCount = logoTapCount + 1
+
+    // Reset counter after 3 seconds of no taps
+    const newTimer = setTimeout(() => {
+      setLogoTapCount(0)
+    }, 3000)
+
+    setTapTimer(newTimer)
+    setLogoTapCount(newCount)
+
+    // If 7 taps reached, open admin login
+    if (newCount === 7) {
+      setLogoTapCount(0)
+      clearTimeout(newTimer)
+      if (!isAdmin) {
+        setShowAdminLogin(true)
+        showToast('Admin portal unlocked! 🔓', 'info')
+      } else {
+        showToast('Already logged in as admin', 'info')
+      }
+    }
+    // Give feedback at 4 taps (halfway)
+    else if (newCount === 4) {
+      showToast('Keep tapping... 👆', 'info')
+    }
   }
 
   // Authentication handler
@@ -826,8 +864,12 @@ function App() {
       <nav className="sticky top-0 z-50 bg-white shadow-md">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
-            {/* Logo */}
-            <div className="flex items-center gap-2">
+            {/* Logo - Tap 7 times for admin access */}
+            <div
+              className="flex items-center gap-2 cursor-pointer select-none"
+              onClick={handleLogoTap}
+              title="E-Soko"
+            >
               <ShoppingBag className="text-blue-600" size={28} />
               <span className="text-xl font-bold text-gray-900">E-Soko</span>
               {/* API Connection Status */}
@@ -2474,8 +2516,11 @@ function App() {
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder="Enter admin password"
                   required
+                  autoComplete="current-password"
                 />
-                <p className="text-xs text-gray-500 mt-2">Default password: admin123</p>
+                <p className="text-xs text-gray-500 mt-2">
+                  🔒 Secure admin access - Contact administrator if you've forgotten your password
+                </p>
               </div>
 
               <button
