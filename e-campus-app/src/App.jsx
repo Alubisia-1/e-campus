@@ -462,6 +462,58 @@ function App() {
     }
   ]
 
+  // Native Ads (Expandable array for multiple ads)
+  const nativeAds = [
+    {
+      id: 'native-ad-1',
+      type: 'sponsored',
+      title: 'Get 20% Off Your First Order',
+      description: 'Use code WELCOME20 at checkout. Valid for all official store items.',
+      cta: 'Shop Now',
+      image: '🎁'
+    },
+    {
+      id: 'native-ad-2',
+      type: 'sponsored',
+      title: 'Student Discount Program',
+      description: 'Sign up for our student rewards program and earn points on every purchase.',
+      cta: 'Learn More',
+      image: '🎓'
+    },
+    {
+      id: 'native-ad-3',
+      type: 'sponsored',
+      title: 'Free Shipping This Week',
+      description: 'All orders over KES 2,500 ship free. Limited time offer!',
+      cta: 'Start Shopping',
+      image: '🚚'
+    },
+    {
+      id: 'native-ad-4',
+      type: 'sponsored',
+      title: 'Campus Book Exchange',
+      description: 'Trade your old textbooks for new ones. Save up to 50% on course materials!',
+      cta: 'Exchange Now',
+      image: '📚'
+    },
+    {
+      id: 'native-ad-5',
+      type: 'sponsored',
+      title: 'Tech Repair Services',
+      description: 'Professional laptop & phone repairs. Student prices, same-day service.',
+      cta: 'Get Quote',
+      image: '🔧'
+    },
+    {
+      id: 'native-ad-6',
+      type: 'sponsored',
+      title: 'Premium Tutoring',
+      description: 'Struggling with coursework? Connect with top-rated student tutors.',
+      cta: 'Find Tutor',
+      image: '👨‍🏫'
+    }
+  ]
+
   // Search functionality
   const handleSearch = (e) => {
     e.preventDefault()
