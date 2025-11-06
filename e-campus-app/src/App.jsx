@@ -22,6 +22,8 @@ function App() {
   // API data state
   const [categories, setCategories] = useState([])
   const [products, setProducts] = useState([])
+  const [officialStoreProducts, setOfficialStoreProducts] = useState([])
+  const [officialStoreLoading, setOfficialStoreLoading] = useState(false)
   const [dataLoading, setDataLoading] = useState(true)
 
   // Search state
@@ -283,6 +285,26 @@ function App() {
 
     initializeApp()
   }, [])
+
+  // Load official store products when tab changes
+  useEffect(() => {
+    const loadOfficialStoreProducts = async () => {
+      if (activeTab === 'official-store') {
+        setOfficialStoreLoading(true)
+        try {
+          const response = await api.getOfficialStoreProducts({ limit: 100 })
+          setOfficialStoreProducts(response.data?.products || [])
+        } catch (error) {
+          console.error('Failed to load official store products:', error)
+          setOfficialStoreProducts([])
+        } finally {
+          setOfficialStoreLoading(false)
+        }
+      }
+    }
+
+    loadOfficialStoreProducts()
+  }, [activeTab])
 
   // No more static data - clean professional site
 
@@ -555,7 +577,9 @@ function App() {
         contact: {
           phone: postFormData.contact.phone,
           email: postFormData.contact.email || ''
-        }
+        },
+        // Set as official store product if admin is posting from official store tab
+        isOfficialStore: isAdmin && activeTab === 'official-store'
       }
 
       const createResponse = await api.createProduct(productData, authToken)
@@ -566,6 +590,14 @@ function App() {
         const productsResponse = await api.getProducts()
         if (productsResponse.status === 'success') {
           setProducts(productsResponse.data.products)
+        }
+
+        // Also refresh official store products if posting from official store
+        if (isAdmin && activeTab === 'official-store') {
+          const officialStoreResponse = await api.getOfficialStoreProducts({ limit: 100 })
+          if (officialStoreResponse.status === 'success') {
+            setOfficialStoreProducts(officialStoreResponse.data.products)
+          }
         }
 
         showToast('Product listing created successfully!', 'success')
@@ -1535,122 +1567,155 @@ function App() {
         )}
         {activeTab === 'official-store' && (
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-            {/* Professional Banner - Coming Soon */}
-            <section className="bg-gradient-to-br from-orange-500 via-orange-600 to-red-600 rounded-2xl shadow-2xl overflow-hidden mb-12">
-              <div className="relative">
-                {/* Background Pattern */}
-                <div className="absolute inset-0 opacity-10">
-                  <div className="absolute inset-0" style={{
-                    backgroundImage: 'radial-gradient(circle at 20px 20px, white 1px, transparent 0)',
-                    backgroundSize: '40px 40px'
-                  }}></div>
+            {/* Header with Admin Controls */}
+            <div className="mb-8">
+              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                <div>
+                  <div className="flex items-center gap-3 mb-2">
+                    <Store className="text-orange-600" size={32} />
+                    <h1 className="text-3xl font-bold text-gray-900">E-Soko Official Store</h1>
+                  </div>
+                  <p className="text-gray-600">
+                    Premium quality merchandise and exclusive campus gear
+                  </p>
                 </div>
 
-                {/* Content */}
-                <div className="relative px-8 py-16 md:px-16 md:py-24 text-center text-white">
-                  {/* Badge */}
-                  <div className="flex justify-center mb-6">
-                    <span className="inline-flex items-center gap-2 bg-white bg-opacity-20 backdrop-blur-sm border-2 border-white border-opacity-40 text-white text-sm font-bold px-6 py-2 rounded-full">
-                      <Store size={18} />
-                      OFFICIAL PARTNER
-                    </span>
-                  </div>
+                {/* Admin-only Add Product Button */}
+                {isAdmin && (
+                  <button
+                    onClick={handlePostItem}
+                    className="inline-flex items-center gap-2 bg-orange-600 text-white px-6 py-3 rounded-lg hover:bg-orange-700 transition-colors font-semibold shadow-lg hover:shadow-xl"
+                  >
+                    <Plus size={20} />
+                    Add Product
+                  </button>
+                )}
+              </div>
 
-                  {/* Heading */}
-                  <h1 className="text-4xl md:text-6xl font-bold mb-6 drop-shadow-lg">
-                    E-Soko Official Store
-                  </h1>
-
-                  {/* Description */}
-                  <p className="text-xl md:text-2xl text-white text-opacity-95 mb-8 max-w-3xl mx-auto leading-relaxed">
-                    Premium quality merchandise and exclusive campus gear. Coming soon to serve you better!
-                  </p>
-
-                  {/* Features Grid */}
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto mt-12">
-                    <div className="bg-white bg-opacity-10 backdrop-blur-sm rounded-xl p-6 border border-white border-opacity-20">
-                      <div className="text-4xl mb-3">✓</div>
-                      <h3 className="font-bold text-lg mb-2">Verified Quality</h3>
-                      <p className="text-sm text-white text-opacity-90">100% authentic products with warranty</p>
-                    </div>
-                    <div className="bg-white bg-opacity-10 backdrop-blur-sm rounded-xl p-6 border border-white border-opacity-20">
-                      <div className="text-4xl mb-3">🚚</div>
-                      <h3 className="font-bold text-lg mb-2">Fast Delivery</h3>
-                      <p className="text-sm text-white text-opacity-90">Quick campus delivery available</p>
-                    </div>
-                    <div className="bg-white bg-opacity-10 backdrop-blur-sm rounded-xl p-6 border border-white border-opacity-20">
-                      <div className="text-4xl mb-3">💳</div>
-                      <h3 className="font-bold text-lg mb-2">Secure Payment</h3>
-                      <p className="text-sm text-white text-opacity-90">Safe and easy payment options</p>
+              {/* Features Banner */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
+                <div className="bg-gradient-to-br from-orange-50 to-orange-100 rounded-lg p-4 border border-orange-200">
+                  <div className="flex items-center gap-3">
+                    <div className="text-2xl">✓</div>
+                    <div>
+                      <h3 className="font-bold text-gray-900">Verified Quality</h3>
+                      <p className="text-sm text-gray-600">100% authentic products</p>
                     </div>
                   </div>
-
-                  {/* Call to Action */}
-                  <div className="mt-12">
-                    <p className="text-lg text-white text-opacity-90 mb-4">
-                      Want to feature your products here?
-                    </p>
-                    <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                      <a
-                        href="mailto:partner@e-soko.com"
-                        className="inline-flex items-center gap-2 bg-white text-orange-600 px-8 py-4 rounded-lg hover:bg-opacity-90 transition-all font-bold text-lg shadow-lg hover:shadow-xl"
-                      >
-                        <Mail size={20} />
-                        Partner With Us
-                      </a>
-                      <button
-                        onClick={() => setActiveTab('marketplace')}
-                        className="inline-flex items-center gap-2 bg-white bg-opacity-20 backdrop-blur-sm border-2 border-white text-white px-8 py-4 rounded-lg hover:bg-opacity-30 transition-all font-bold text-lg"
-                      >
-                        <ShoppingBag size={20} />
-                        Browse Marketplace
-                      </button>
+                </div>
+                <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg p-4 border border-blue-200">
+                  <div className="flex items-center gap-3">
+                    <div className="text-2xl">🚚</div>
+                    <div>
+                      <h3 className="font-bold text-gray-900">Fast Delivery</h3>
+                      <p className="text-sm text-gray-600">Quick campus delivery</p>
+                    </div>
+                  </div>
+                </div>
+                <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-lg p-4 border border-green-200">
+                  <div className="flex items-center gap-3">
+                    <div className="text-2xl">💳</div>
+                    <div>
+                      <h3 className="font-bold text-gray-900">Secure Payment</h3>
+                      <p className="text-sm text-gray-600">Safe payment options</p>
                     </div>
                   </div>
                 </div>
               </div>
-            </section>
+            </div>
 
-            {/* Info Section */}
-            <section className="max-w-4xl mx-auto">
-              <div className="bg-white rounded-xl shadow-lg p-8 md:p-12">
-                <h2 className="text-3xl font-bold text-gray-900 mb-6 text-center">
-                  About Our Official Store
-                </h2>
-                <div className="space-y-4 text-gray-600 leading-relaxed">
-                  <p className="text-lg">
-                    The E-Soko Official Store is your trusted source for premium campus merchandise,
-                    verified products, and exclusive deals from our partner brands.
-                  </p>
-                  <p className="text-lg">
-                    We're currently setting up our catalog to bring you the best selection of:
-                  </p>
-                  <ul className="grid grid-cols-1 md:grid-cols-2 gap-3 my-6">
-                    <li className="flex items-center gap-3">
-                      <span className="text-2xl">📚</span>
-                      <span className="font-medium">Textbooks & Study Materials</span>
-                    </li>
-                    <li className="flex items-center gap-3">
-                      <span className="text-2xl">💻</span>
-                      <span className="font-medium">Electronics & Gadgets</span>
-                    </li>
-                    <li className="flex items-center gap-3">
-                      <span className="text-2xl">👕</span>
-                      <span className="font-medium">Campus Apparel & Gear</span>
-                    </li>
-                    <li className="flex items-center gap-3">
-                      <span className="text-2xl">🎒</span>
-                      <span className="font-medium">Accessories & Supplies</span>
-                    </li>
-                  </ul>
-                  <div className="bg-orange-50 border-l-4 border-orange-500 p-6 rounded-r-lg mt-8">
-                    <p className="text-orange-900 font-medium">
-                      <strong>Stay tuned!</strong> We're launching soon with exclusive deals and verified products just for you.
-                    </p>
-                  </div>
-                </div>
+            {/* Loading State */}
+            {officialStoreLoading && (
+              <div className="text-center py-16">
+                <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-orange-600 border-t-transparent"></div>
+                <p className="mt-4 text-gray-600">Loading official store products...</p>
               </div>
-            </section>
+            )}
+
+            {/* Products Grid */}
+            {!officialStoreLoading && officialStoreProducts.length > 0 && (
+              <section>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                  {officialStoreProducts.map((product) => (
+                    <div
+                      key={product._id}
+                      className="bg-white rounded-xl shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden cursor-pointer border border-gray-100 hover:border-orange-300"
+                      onClick={() => handleProductClick(product)}
+                    >
+                      {/* Official Store Badge */}
+                      <div className="relative">
+                        <img
+                          src={product.images?.[0]?.url || '/placeholder.jpg'}
+                          alt={product.title}
+                          className="w-full h-48 object-cover"
+                          loading="lazy"
+                        />
+                        <span className="absolute top-2 right-2 bg-orange-600 text-white text-xs font-bold px-3 py-1 rounded-full flex items-center gap-1">
+                          <Store size={12} />
+                          Official
+                        </span>
+                      </div>
+
+                      <div className="p-4">
+                        <h3 className="font-bold text-gray-900 mb-1 line-clamp-2 text-lg">
+                          {product.title}
+                        </h3>
+                        <p className="text-gray-600 text-sm mb-3 line-clamp-2">
+                          {product.description}
+                        </p>
+
+                        <div className="flex items-center justify-between mb-3">
+                          <span className="text-2xl font-bold text-orange-600">
+                            KSh {product.price?.toLocaleString()}
+                          </span>
+                          <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full font-medium">
+                            {product.condition}
+                          </span>
+                        </div>
+
+                        {product.category && (
+                          <div className="flex items-center gap-2 text-sm text-gray-500">
+                            <Tag size={14} />
+                            <span>{product.category.name}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            )}
+
+            {/* Empty State */}
+            {!officialStoreLoading && officialStoreProducts.length === 0 && (
+              <section className="text-center py-16 bg-gradient-to-br from-orange-50 to-red-50 rounded-2xl border-2 border-dashed border-orange-200">
+                <div className="text-6xl mb-4">🏪</div>
+                <h3 className="text-2xl font-bold text-gray-900 mb-2">
+                  Official Store Coming Soon
+                </h3>
+                <p className="text-gray-600 mb-6 max-w-md mx-auto">
+                  We're curating premium products for you. Check back soon for exclusive deals!
+                </p>
+                {isAdmin && (
+                  <button
+                    onClick={handlePostItem}
+                    className="inline-flex items-center gap-2 bg-orange-600 text-white px-6 py-3 rounded-lg hover:bg-orange-700 transition-colors font-semibold"
+                  >
+                    <Plus size={20} />
+                    Add First Product
+                  </button>
+                )}
+                {!isAdmin && (
+                  <button
+                    onClick={() => setActiveTab('marketplace')}
+                    className="inline-flex items-center gap-2 bg-orange-600 text-white px-6 py-3 rounded-lg hover:bg-orange-700 transition-colors font-semibold"
+                  >
+                    <ShoppingBag size={20} />
+                    Browse Marketplace
+                  </button>
+                )}
+              </section>
+            )}
           </div>
         )}
 

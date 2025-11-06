@@ -92,6 +92,11 @@ const productSchema = new mongoose.Schema({
     type: Boolean,
     default: true
   },
+  isOfficialStore: {
+    type: Boolean,
+    default: false,
+    index: true
+  },
   sponsored: {
     isSponsored: {
       type: Boolean,
@@ -145,5 +150,6 @@ productSchema.index({ status: 1, createdAt: -1 }); // Recent available products
 productSchema.index({ 'sponsored.isSponsored': 1, createdAt: -1 }); // Sponsored products
 productSchema.index({ price: 1, status: 1 }); // Price-based queries
 productSchema.index({ createdAt: -1 }); // Sorting by date
+productSchema.index({ isOfficialStore: 1, status: 1, createdAt: -1 }); // Official store products
 
 module.exports = mongoose.model('Product', productSchema);

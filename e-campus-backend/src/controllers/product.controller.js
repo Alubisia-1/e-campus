@@ -19,7 +19,8 @@ exports.getAllProducts = async (req, res) => {
       maxPrice,
       search,
       condition,
-      status = 'available'
+      status = 'available',
+      isOfficialStore
     } = req.query;
 
     // Build filter object
@@ -28,6 +29,13 @@ exports.getAllProducts = async (req, res) => {
     // Filter by status
     if (status) {
       filter.status = status;
+    }
+
+    // Filter by official store
+    if (isOfficialStore === 'true') {
+      filter.isOfficialStore = true;
+    } else if (isOfficialStore === 'false') {
+      filter.isOfficialStore = { $ne: true };
     }
 
     // Filter by category
@@ -167,7 +175,8 @@ exports.createProduct = async (req, res) => {
       images,
       location,
       tags,
-      contact
+      contact,
+      isOfficialStore
     } = req.body;
 
     // Validate images array (1-3 URLs)
@@ -189,7 +198,9 @@ exports.createProduct = async (req, res) => {
       location,
       tags: tags || [],
       contact,
-      seller: req.user.id
+      seller: req.user.id,
+      // Set official store status (only if explicitly set to true)
+      isOfficialStore: isOfficialStore === true
     };
 
     // Create product

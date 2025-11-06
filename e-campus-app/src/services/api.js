@@ -51,6 +51,11 @@ export const api = {
     return apiRequest(`/products?${searchParams}`);
   },
 
+  getOfficialStoreProducts: (params = {}) => {
+    const searchParams = new URLSearchParams({ ...params, isOfficialStore: 'true' });
+    return apiRequest(`/products?${searchParams}`);
+  },
+
   getProductById: (id) => apiRequest(`/products/${id}`),
 
   searchProducts: (query, params = {}) => {
