@@ -137,9 +137,13 @@ const productSchema = new mongoose.Schema({
   timestamps: true
 });
 
-// Index for search functionality
-productSchema.index({ title: 'text', description: 'text', tags: 'text' });
-productSchema.index({ category: 1, status: 1 });
-productSchema.index({ seller: 1 });
+// Indexes for performance optimization
+productSchema.index({ title: 'text', description: 'text', tags: 'text' }); // Full-text search
+productSchema.index({ category: 1, status: 1 }); // Category filtering
+productSchema.index({ seller: 1 }); // User's listings
+productSchema.index({ status: 1, createdAt: -1 }); // Recent available products
+productSchema.index({ 'sponsored.isSponsored': 1, createdAt: -1 }); // Sponsored products
+productSchema.index({ price: 1, status: 1 }); // Price-based queries
+productSchema.index({ createdAt: -1 }); // Sorting by date
 
 module.exports = mongoose.model('Product', productSchema);

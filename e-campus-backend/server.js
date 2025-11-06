@@ -29,7 +29,7 @@ const app = express();
 // Trust proxy - Required for rate limiting behind proxies (Render, Heroku, etc.)
 app.set('trust proxy', 1);
 
-// Security middleware - Helmet with CSP
+// Security middleware - Enhanced Helmet with strict CSP
 app.use(
   helmet({
     contentSecurityPolicy: {
@@ -37,18 +37,44 @@ app.use(
         defaultSrc: ["'self'"],
         styleSrc: ["'self'", "'unsafe-inline'"],
         scriptSrc: ["'self'"],
-        imgSrc: ["'self'", 'data:', 'https://res.cloudinary.com'],
+        imgSrc: ["'self'", 'data:', 'https:', 'https://res.cloudinary.com'],
         connectSrc: ["'self'"],
         fontSrc: ["'self'"],
         objectSrc: ["'none'"],
         mediaSrc: ["'self'"],
-        frameSrc: ["'none'"]
+        frameSrc: ["'none'"],
+        baseUri: ["'self'"],
+        formAction: ["'self'"],
+        frameAncestors: ["'none'"]
       }
     },
     crossOriginEmbedderPolicy: false,
-    crossOriginResourcePolicy: { policy: 'cross-origin' }
+    crossOriginResourcePolicy: { policy: 'cross-origin' },
+    hsts: {
+      maxAge: 31536000, // 1 year
+      includeSubDomains: true,
+      preload: true
+    },
+    noSniff: true,
+    xssFilter: true,
+    hidePoweredBy: true
   })
 );
+
+// Additional security headers
+app.use((req, res, next) => {
+  // Prevent clickjacking
+  res.setHeader('X-Frame-Options', 'DENY');
+  // Prevent MIME type sniffing
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  // Enable XSS protection
+  res.setHeader('X-XSS-Protection', '1; mode=block');
+  // Referrer policy
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+  // Permissions policy
+  res.setHeader('Permissions-Policy', 'geolocation=(), microphone=(), camera=()');
+  next();
+});
 
 // CORS configuration
 const allowedOrigins = [
@@ -79,6 +105,23 @@ app.use(cors({
 // Body parser middleware (with size limits)
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// Cache control for API responses
+app.use((req, res, next) => {
+  // Cache categories for 1 hour (they don't change often)
+  if (req.path.includes('/categories')) {
+    res.setHeader('Cache-Control', 'public, max-age=3600');
+  }
+  // Cache product listings for 5 minutes
+  else if (req.path.includes('/products') && req.method === 'GET') {
+    res.setHeader('Cache-Control', 'public, max-age=300');
+  }
+  // No cache for authenticated/mutation requests
+  else if (req.method !== 'GET' || req.headers.authorization) {
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+  }
+  next();
+});
 
 // Data sanitization against NoSQL injection
 // TODO: Fix compatibility with Express 5.x
