@@ -166,7 +166,8 @@ app.get('/', (req, res) => {
       users: '/api/users',
       products: '/api/products',
       categories: '/api/categories',
-      ads: '/api/ads'
+      ads: '/api/ads',
+      admin: '/api/admin'
     }
   });
 });
