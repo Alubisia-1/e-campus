@@ -83,6 +83,7 @@ const allowedOrigins = [
   'http://localhost:5173',
   'https://e-campus-nine.vercel.app',
   'https://www.e-soko.store',
+  'https://e-soko.store',
   process.env.FRONTEND_URL
 ].filter(Boolean); // Remove undefined values
 
@@ -94,6 +95,7 @@ app.use(cors({
     if (allowedOrigins.indexOf(origin) !== -1 || process.env.NODE_ENV === 'development') {
       callback(null, true);
     } else {
+      console.log(`CORS blocked origin: ${origin}`);
       callback(new Error('Not allowed by CORS'));
     }
   },
