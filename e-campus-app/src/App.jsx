@@ -2562,9 +2562,11 @@ function App() {
               <h3 className="text-white font-semibold mb-4">Connect</h3>
               <div className="flex gap-4">
                 <a
-                  href="#"
+                  href="https://www.instagram.com/e_sokostore/"
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="bg-gray-700 hover:bg-gray-600 p-2 rounded-lg transition-colors"
-                  aria-label="Instagram"
+                  aria-label="Follow us on Instagram"
                 >
                   <Instagram size={20} className="text-gray-300" />
                 </a>
