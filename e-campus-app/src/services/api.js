@@ -228,6 +228,18 @@ export const api = {
     },
   }),
 
+  // Admin authentication
+  adminLogin: (password) => apiRequest('/admin/login', {
+    method: 'POST',
+    body: JSON.stringify({ password }),
+  }),
+
+  verifyAdmin: (token) => apiRequest('/admin/verify', {
+    headers: {
+      'Authorization': `Bearer ${token}`,
+    },
+  }),
+
   // Health check
   healthCheck: () => fetch(`${API_BASE_URL.replace('/api', '')}/health`).then(res => res.json()),
 };

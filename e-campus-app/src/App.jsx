@@ -116,19 +116,27 @@ function App() {
   }, [])
 
   // Handle admin login
-  const handleAdminLogin = (e) => {
+  const handleAdminLogin = async (e) => {
     e.preventDefault()
-    // Check against environment variable password
-    const correctPassword = import.meta.env.VITE_ADMIN_PASSWORD || 'admin123'
 
-    if (adminPassword === correctPassword) {
-      setIsAdmin(true)
-      localStorage.setItem('isAdmin', 'true')
-      setShowAdminLogin(false)
-      setAdminPassword('')
-      showToast('Admin access granted!', 'success')
-    } else {
-      showToast('Incorrect password! Access denied.', 'error')
+    try {
+      // Authenticate with backend
+      const response = await api.adminLogin(adminPassword)
+
+      if (response.status === 'success' && response.data.token) {
+        setIsAdmin(true)
+        localStorage.setItem('isAdmin', 'true')
+        localStorage.setItem('adminToken', response.data.token)
+        setShowAdminLogin(false)
+        setAdminPassword('')
+        showToast('Admin access granted!', 'success')
+      } else {
+        showToast('Admin authentication failed', 'error')
+        setAdminPassword('')
+      }
+    } catch (error) {
+      console.error('Admin login error:', error)
+      showToast(error.message || 'Incorrect password! Access denied.', 'error')
       setAdminPassword('')
     }
   }
@@ -137,6 +145,7 @@ function App() {
   const handleAdminLogout = () => {
     setIsAdmin(false)
     localStorage.removeItem('isAdmin')
+    localStorage.removeItem('adminToken')
     setActiveTab('marketplace')
     alert('Admin logged out')
   }
