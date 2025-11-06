@@ -361,158 +361,11 @@ function App() {
     return myListings
   }
 
-  // Sidebar promotional ads for mobile injection (Expandable array for multiple ads)
-  const sidebarAds = [
-    {
-      id: 'sidebar-ad-1',
-      type: 'promotion',
-      title: 'E-Soko Merch',
-      description: 'Exclusive campus merchandise. Show your school pride!',
-      cta: 'Shop Now →',
-      icon: '🛍️',
-      gradient: 'from-orange-400 to-orange-500',
-      textColor: 'text-white',
-      ctaClass: 'bg-white text-orange-600 hover:bg-orange-50',
-      badge: 'OFFICIAL',
-      onClick: handleShopNowClick
-    },
-    {
-      id: 'sidebar-ad-2',
-      type: 'advertisement',
-      title: 'Campus Gym',
-      description: 'Get fit with our facilities. Student discount: 30% off!',
-      cta: 'Learn More',
-      icon: '💪',
-      gradient: 'from-purple-400 to-purple-500',
-      textColor: 'text-white',
-      ctaClass: 'bg-white text-purple-600 hover:bg-purple-50',
-      badge: 'AD'
-    },
-    {
-      id: 'sidebar-ad-3',
-      type: 'advertisement',
-      title: 'Study Lounge',
-      description: 'Quiet study spaces available 24/7. Reserve your spot today!',
-      cta: 'Book Now',
-      icon: '📚',
-      gradient: 'from-green-400 to-green-500',
-      textColor: 'text-white',
-      ctaClass: 'bg-white text-green-600 hover:bg-green-50',
-      badge: 'AD'
-    },
-    {
-      id: 'sidebar-ad-4',
-      type: 'advertisement',
-      title: 'Campus Events',
-      description: 'Don\'t miss out! Check upcoming events, concerts & activities.',
-      cta: 'View Events',
-      icon: '🎉',
-      gradient: 'from-pink-400 to-pink-500',
-      textColor: 'text-white',
-      ctaClass: 'bg-white text-pink-600 hover:bg-pink-50',
-      badge: 'AD'
-    },
-    {
-      id: 'sidebar-ad-5',
-      type: 'advertisement',
-      title: 'Career Services',
-      description: 'Resume building, interview prep & job placements for students.',
-      cta: 'Get Started',
-      icon: '💼',
-      gradient: 'from-blue-400 to-blue-500',
-      textColor: 'text-white',
-      ctaClass: 'bg-white text-blue-600 hover:bg-blue-50',
-      badge: 'AD'
-    },
-    {
-      id: 'sidebar-ad-6',
-      type: 'advertisement',
-      title: 'Food Delivery',
-      description: 'Hungry? Get your favorite campus meals delivered to your dorm!',
-      cta: 'Order Now',
-      icon: '🍕',
-      gradient: 'from-red-400 to-red-500',
-      textColor: 'text-white',
-      ctaClass: 'bg-white text-red-600 hover:bg-red-50',
-      badge: 'AD'
-    },
-    {
-      id: 'sidebar-ad-7',
-      type: 'advertisement',
-      title: 'Ride Share',
-      description: 'Going home for the weekend? Find students heading your way!',
-      cta: 'Find Rides',
-      icon: '🚗',
-      gradient: 'from-teal-400 to-teal-500',
-      textColor: 'text-white',
-      ctaClass: 'bg-white text-teal-600 hover:bg-teal-50',
-      badge: 'AD'
-    },
-    {
-      id: 'sidebar-ad-8',
-      type: 'advertisement',
-      title: 'Mental Wellness',
-      description: 'Free counseling & support services. Your wellbeing matters!',
-      cta: 'Learn More',
-      icon: '🧘',
-      gradient: 'from-indigo-400 to-indigo-500',
-      textColor: 'text-white',
-      ctaClass: 'bg-white text-indigo-600 hover:bg-indigo-50',
-      badge: 'AD'
-    }
-  ]
+  // Sidebar promotional ads for mobile injection (Empty - ready for dynamic ads from backend)
+  const sidebarAds = []
 
-  // Native Ads (Expandable array for multiple ads)
-  const nativeAds = [
-    {
-      id: 'native-ad-1',
-      type: 'sponsored',
-      title: 'Get 20% Off Your First Order',
-      description: 'Use code WELCOME20 at checkout. Valid for all official store items.',
-      cta: 'Shop Now',
-      image: '🎁'
-    },
-    {
-      id: 'native-ad-2',
-      type: 'sponsored',
-      title: 'Student Discount Program',
-      description: 'Sign up for our student rewards program and earn points on every purchase.',
-      cta: 'Learn More',
-      image: '🎓'
-    },
-    {
-      id: 'native-ad-3',
-      type: 'sponsored',
-      title: 'Free Shipping This Week',
-      description: 'All orders over KES 2,500 ship free. Limited time offer!',
-      cta: 'Start Shopping',
-      image: '🚚'
-    },
-    {
-      id: 'native-ad-4',
-      type: 'sponsored',
-      title: 'Campus Book Exchange',
-      description: 'Trade your old textbooks for new ones. Save up to 50% on course materials!',
-      cta: 'Exchange Now',
-      image: '📚'
-    },
-    {
-      id: 'native-ad-5',
-      type: 'sponsored',
-      title: 'Tech Repair Services',
-      description: 'Professional laptop & phone repairs. Student prices, same-day service.',
-      cta: 'Get Quote',
-      image: '🔧'
-    },
-    {
-      id: 'native-ad-6',
-      type: 'sponsored',
-      title: 'Premium Tutoring',
-      description: 'Struggling with coursework? Connect with top-rated student tutors.',
-      cta: 'Find Tutor',
-      image: '👨‍🏫'
-    }
-  ]
+  // Native Ads (Empty - ready for dynamic ads from backend)
+  const nativeAds = []
 
   // Search functionality
   const handleSearch = (e) => {
@@ -1446,6 +1299,37 @@ function App() {
                     </button>
                   </div>
                 </div>
+              ) : getMappedProducts().length === 0 ? (
+                <div className="text-center py-16 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl border-2 border-dashed border-blue-200">
+                  <div className="text-7xl mb-6">🛍️</div>
+                  <h3 className="text-2xl font-bold text-gray-900 mb-3">
+                    Welcome to E-Soko Marketplace!
+                  </h3>
+                  <p className="text-gray-600 mb-6 max-w-md mx-auto text-lg">
+                    No items listed yet. Be the first to share what you're selling with the campus community!
+                  </p>
+                  <button
+                    onClick={handlePostItem}
+                    className="inline-flex items-center gap-2 px-8 py-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-semibold text-lg shadow-lg hover:shadow-xl"
+                  >
+                    <Plus size={20} />
+                    List Your First Item
+                  </button>
+                  <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-4 max-w-2xl mx-auto">
+                    <div className="bg-white rounded-lg p-4 shadow-sm">
+                      <div className="text-3xl mb-2">📸</div>
+                      <p className="text-sm font-medium text-gray-700">Upload Photos</p>
+                    </div>
+                    <div className="bg-white rounded-lg p-4 shadow-sm">
+                      <div className="text-3xl mb-2">💰</div>
+                      <p className="text-sm font-medium text-gray-700">Set Your Price</p>
+                    </div>
+                    <div className="bg-white rounded-lg p-4 shadow-sm">
+                      <div className="text-3xl mb-2">🤝</div>
+                      <p className="text-sm font-medium text-gray-700">Connect with Buyers</p>
+                    </div>
+                  </div>
+                </div>
               ) : (
                 <>
                   {/* Listings Grid with Integrated Ads */}
@@ -1454,19 +1338,19 @@ function App() {
                       // Smart Native Ad Rotation Algorithm
                       // Shows ads starting from firstAdPosition, then every nativeAdFrequency products
                       // Rotates through all available native ads using modulo
-                      const shouldShowNativeAd = index >= AD_CONFIG.firstAdPosition &&
+                      const shouldShowNativeAd = nativeAds.length > 0 && index >= AD_CONFIG.firstAdPosition &&
                                                    (index - AD_CONFIG.firstAdPosition) % AD_CONFIG.nativeAdFrequency === 0
                       const nativeAdRotationIndex = Math.floor((index - AD_CONFIG.firstAdPosition) / AD_CONFIG.nativeAdFrequency)
-                      const nativeAdToShow = nativeAdRotationIndex % nativeAds.length
-                      const showNativeAd = shouldShowNativeAd && nativeAdRotationIndex < AD_CONFIG.maxAdsPerPage
+                      const nativeAdToShow = nativeAds.length > 0 ? nativeAdRotationIndex % nativeAds.length : 0
+                      const showNativeAd = shouldShowNativeAd && nativeAdRotationIndex < AD_CONFIG.maxAdsPerPage && nativeAds.length > 0
 
                       // Smart Sidebar Ad Rotation Algorithm for Mobile
                       // Shows ads at strategic intervals, rotating through all available sidebar ads
-                      const shouldShowSidebarAd = index >= AD_CONFIG.firstAdPosition &&
+                      const shouldShowSidebarAd = sidebarAds.length > 0 && index >= AD_CONFIG.firstAdPosition &&
                                                     (index - AD_CONFIG.firstAdPosition) % AD_CONFIG.sidebarAdFrequency === 0
                       const sidebarAdRotationIndex = Math.floor((index - AD_CONFIG.firstAdPosition) / AD_CONFIG.sidebarAdFrequency)
-                      const sidebarAdToShow = sidebarAdRotationIndex % sidebarAds.length
-                      const showSidebarAd = shouldShowSidebarAd && sidebarAdRotationIndex < AD_CONFIG.maxAdsPerPage
+                      const sidebarAdToShow = sidebarAds.length > 0 ? sidebarAdRotationIndex % sidebarAds.length : 0
+                      const showSidebarAd = shouldShowSidebarAd && sidebarAdRotationIndex < AD_CONFIG.maxAdsPerPage && sidebarAds.length > 0
 
                       return (
                         <React.Fragment key={`item-${item.id}-${index}`}>
