@@ -123,9 +123,11 @@ exports.getProductById = async (req, res) => {
       });
     }
 
-    // Increment view count
-    product.views += 1;
-    await product.save();
+    // Increment view count asynchronously (don't block response)
+    // Use updateOne to avoid triggering full document validation and middleware
+    Product.updateOne({ _id: id }, { $inc: { views: 1 } }).exec().catch(err => {
+      console.error('Failed to increment view count:', err);
+    });
 
     res.status(200).json({
       status: 'success',

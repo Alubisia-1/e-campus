@@ -9,6 +9,7 @@
   align-items: center;
   justify-content: center;
   z-index: 1000;
+  -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
 }
 
 .auth-modal {
@@ -20,6 +21,8 @@
   position: relative;
   max-height: 90vh;
   overflow-y: auto;
+  transform: translateZ(0); /* Hardware acceleration */
+  -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
 }
 
 .close-button {
@@ -117,4 +120,67 @@
 
 .link-button:hover {
   color: #0056b3;
+}
+
+.info-banner {
+  background-color: #e8f4ff;
+  border-left: 4px solid #007bff;
+  padding: 0.75rem 1rem;
+  border-radius: 4px;
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+}
+
+.info-icon {
+  font-size: 1.2rem;
+  flex-shrink: 0;
+}
+
+.info-banner p {
+  margin: 0;
+  color: #333;
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+.loading-content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.spinner {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+  will-change: transform; /* Hint browser for optimization */
+  transform: translateZ(0); /* Hardware acceleration */
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+/* Optimize form inputs for mobile */
+.form-group input {
+  -webkit-appearance: none; /* Remove default styling on iOS */
+  -moz-appearance: none;
+  appearance: none;
+}
+
+/* Reduce repaints during typing */
+.form-group input:focus {
+  will-change: border-color;
 }

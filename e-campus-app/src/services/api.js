@@ -1,6 +1,16 @@
 // API Base URL - uses environment variable or defaults to localhost
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
+// Timeout helper function
+function fetchWithTimeout(url, options = {}, timeout = 30000) {
+  return Promise.race([
+    fetch(url, options),
+    new Promise((_, reject) =>
+      setTimeout(() => reject(new Error('Request timeout - please check your connection')), timeout)
+    )
+  ]);
+}
+
 // Generic API request function
 async function apiRequest(endpoint, options = {}) {
   const url = `${API_BASE_URL}${endpoint}`;
@@ -14,7 +24,7 @@ async function apiRequest(endpoint, options = {}) {
   };
 
   try {
-    const response = await fetch(url, config);
+    const response = await fetchWithTimeout(url, config, options.timeout || 30000);
     const data = await response.json();
 
     if (!response.ok) {
@@ -99,11 +109,11 @@ export const api = {
       headers['Authorization'] = `Bearer ${token}`;
     }
     // Don't set Content-Type for FormData - browser sets it automatically with boundary
-    return fetch(`${API_BASE_URL}/upload/product-images`, {
+    return fetchWithTimeout(`${API_BASE_URL}/upload/product-images`, {
       method: 'POST',
       headers: headers,
       body: formData, // FormData object
-    }).then(async (res) => {
+    }, 60000).then(async (res) => {
       const data = await res.json();
       if (!res.ok) {
         throw new Error(data.message || `HTTP error! status: ${res.status}`);
@@ -246,7 +256,7 @@ export const api = {
   }),
 
   // Health check
-  healthCheck: () => fetch(`${API_BASE_URL.replace('/api', '')}/health`).then(res => res.json()),
+  healthCheck: () => fetchWithTimeout(`${API_BASE_URL.replace('/api', '')}/health`, {}, 10000).then(res => res.json()),
 };
 
 export default api;

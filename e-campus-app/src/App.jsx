@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback, useRef } from 'react'
 import { Store, ShoppingBag, Menu, X, Plus, Search, Book, Laptop, Sofa, Shirt, ChevronDown, ChevronLeft, ChevronRight, MessageCircle, Phone, Mail, Instagram, Facebook, Twitter, Upload, DollarSign, Trash2, LogOut, User } from 'lucide-react'
 import { api } from './services/api'
 import ContactReveal from './components/ContactReveal'
@@ -34,6 +34,9 @@ function App() {
 
   // Category filtering state
   const [selectedCategory, setSelectedCategory] = useState(null)
+
+  // Debounce timer ref for search
+  const searchTimeoutRef = useRef(null)
 
   // Device ID for ownership tracking
   const [deviceId, setDeviceId] = useState(null)
@@ -251,16 +254,25 @@ function App() {
   useEffect(() => {
     const initializeApp = async () => {
       try {
-        // Test connection
-        const healthResponse = await api.healthCheck()
-        console.log('Backend connection successful:', healthResponse)
-        setApiConnected(true)
-
-        // Fetch data if connected
-        const [categoriesResponse, productsResponse] = await Promise.all([
+        // Load data immediately without waiting for health check
+        // Run health check in parallel but don't block on it
+        const dataPromise = Promise.all([
           api.getCategories(),
           api.getProducts()
         ])
+
+        const healthPromise = api.healthCheck().then(
+          (response) => {
+            console.log('Backend connection successful:', response)
+            setApiConnected(true)
+          }
+        ).catch((err) => {
+          console.warn('Health check failed, but attempting to load data:', err)
+          // Don't set apiConnected to false yet - let data requests determine connectivity
+        })
+
+        // Wait for data to load (health check runs in background)
+        const [categoriesResponse, productsResponse] = await dataPromise
 
         console.log('Categories loaded:', categoriesResponse)
         console.log('Products loaded:', productsResponse)
@@ -270,6 +282,10 @@ function App() {
         // Use only API products (no more localStorage)
         const apiProducts = productsResponse.data?.products || []
         setProducts(apiProducts)
+        setApiConnected(true)
+
+        // Wait for health check to complete (if it hasn't already)
+        await healthPromise
 
       } catch (error) {
         console.error('Failed to connect to backend or fetch data:', error)
@@ -401,43 +417,65 @@ function App() {
   // Search functionality
   const handleSearch = (e) => {
     e.preventDefault()
-    if (!searchQuery.trim()) return
+    // Clear any pending debounced searches
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current)
+    }
+    // Immediately perform search on form submit
+    performSearch(searchQuery)
+  }
+
+  const handleSearchInputChange = (e) => {
+    const value = e.target.value
+    setSearchQuery(value)
+
+    // Clear existing timeout
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current)
+    }
+
+    if (!value.trim()) {
+      setShowSearchResults(false)
+      setSearchResults([])
+      return
+    }
+
+    // Debounce search: only search after user stops typing for 500ms
+    searchTimeoutRef.current = setTimeout(() => {
+      performSearch(value)
+    }, 500)
+  }
+
+  // Separate search logic for both manual and auto search
+  const performSearch = (query) => {
+    if (!query?.trim()) return
 
     setIsSearching(true)
     setShowSearchResults(true)
 
-    // Search through all products (backend + localStorage)
-    const query = searchQuery.toLowerCase().trim()
+    const searchTerm = query.toLowerCase().trim()
 
     const results = products.filter(product => {
       // Search in title
-      if (product.title?.toLowerCase().includes(query)) return true
+      if (product.title?.toLowerCase().includes(searchTerm)) return true
 
       // Search in description
-      if (product.description?.toLowerCase().includes(query)) return true
+      if (product.description?.toLowerCase().includes(searchTerm)) return true
 
       // Search in category name
-      if (product.category?.name?.toLowerCase().includes(query)) return true
+      if (product.category?.name?.toLowerCase().includes(searchTerm)) return true
 
       // Search in condition
-      if (product.condition?.toLowerCase().includes(query)) return true
+      if (product.condition?.toLowerCase().includes(searchTerm)) return true
 
       // Search in price (convert to string)
-      if (product.price?.toString().includes(query)) return true
+      if (product.price?.toString().includes(searchTerm)) return true
 
       return false
     })
 
     setSearchResults(results)
     setIsSearching(false)
-  }
-
-  const handleSearchInputChange = (e) => {
-    setSearchQuery(e.target.value)
-    if (!e.target.value.trim()) {
-      setShowSearchResults(false)
-      setSearchResults([])
-    }
   }
 
   // Post item functionality
@@ -1154,6 +1192,7 @@ function App() {
                             src={item.images?.[0]?.url || 'https://via.placeholder.com/300x200'}
                             alt={item.title}
                             className="w-full h-48 object-cover"
+                            loading="lazy"
                           />
                           <div className="p-4">
                             <div className="flex items-start justify-between gap-2 mb-2">
@@ -1313,8 +1352,24 @@ function App() {
                 </div>
               </div>
 
-              {/* Empty State for Category with No Items */}
-              {selectedCategory && getFilteredProducts().length === 0 ? (
+              {/* Loading skeleton for products */}
+              {dataLoading ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {Array.from({ length: 6 }).map((_, index) => (
+                    <div key={`product-skeleton-${index}`} className="bg-white rounded-lg shadow-md overflow-hidden animate-pulse">
+                      <div className="bg-gray-200 h-48 w-full"></div>
+                      <div className="p-4">
+                        <div className="bg-gray-200 h-6 rounded mb-2"></div>
+                        <div className="bg-gray-200 h-4 rounded w-3/4 mb-3"></div>
+                        <div className="flex justify-between items-center">
+                          <div className="bg-gray-200 h-6 rounded w-20"></div>
+                          <div className="bg-gray-200 h-8 rounded w-24"></div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : selectedCategory && getFilteredProducts().length === 0 ? (
                 <div className="text-center py-12 bg-gray-50 rounded-lg">
                   <div className="text-6xl mb-4">
                     {categories.find(cat => cat._id === selectedCategory)?.icon || '📦'}
@@ -1484,6 +1539,7 @@ function App() {
                                   src={item.images[0]}
                                   alt={item.title}
                                   className="w-full h-full object-cover"
+                                  loading="lazy"
                                   onError={(e) => {
                                     e.target.style.display = 'none'
                                     e.target.nextSibling.style.display = 'flex'
@@ -1782,6 +1838,7 @@ function App() {
                           src={item.images[0].url}
                           alt={item.title}
                           className="w-full h-full object-cover"
+                          loading="lazy"
                         />
                       ) : (
                         <span className="text-7xl">{item.images[0]?.url || '📦'}</span>
@@ -2001,6 +2058,7 @@ function App() {
                         src={currentImage}
                         alt={`${selectedProduct.title} - Image ${currentImageIndex + 1}`}
                         className="w-full h-full object-contain"
+                        loading="lazy"
                         onError={(e) => {
                           e.target.style.display = 'none'
                           e.target.nextSibling.style.display = 'flex'
@@ -2077,6 +2135,7 @@ function App() {
                           src={image}
                           alt={`Thumbnail ${index + 1}`}
                           className="w-full h-full object-cover"
+                          loading="lazy"
                           onError={(e) => {
                             e.target.style.display = 'none'
                             e.target.nextSibling.style.display = 'flex'
@@ -2423,6 +2482,7 @@ function App() {
                             src={url}
                             alt={`Preview ${index + 1}`}
                             className="w-full h-24 object-cover rounded-lg border"
+                            loading="lazy"
                           />
                           <button
                             type="button"

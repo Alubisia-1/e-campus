@@ -24,11 +24,23 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, initialMode 
   const handleSubmit = async (e) => {
     e.preventDefault()
     setError('')
+
+    // Basic client-side validation
+    if (formData.username.length < 3) {
+      setError('Username must be at least 3 characters')
+      return
+    }
+
+    if (formData.password.length < 6) {
+      setError('Password must be at least 6 characters')
+      return
+    }
+
     setLoading(true)
 
     try {
       const credentials = {
-        username: formData.username,
+        username: formData.username.trim(),
         password: formData.password
       }
 
@@ -118,7 +130,12 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, initialMode 
           </div>
 
           <button type="submit" className="submit-button" disabled={loading}>
-            {loading ? 'Please wait...' : (isLogin ? 'Login' : 'Register')}
+            {loading ? (
+              <span className="loading-content">
+                <span className="spinner"></span>
+                Please wait...
+              </span>
+            ) : (isLogin ? 'Login' : 'Register')}
           </button>
         </form>
 

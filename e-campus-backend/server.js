@@ -4,6 +4,7 @@ const cors = require('cors');
 const helmet = require('helmet');
 const mongoSanitize = require('express-mongo-sanitize');
 const xss = require('xss-clean');
+const compression = require('compression');
 
 // Load environment variables
 dotenv.config();
@@ -108,6 +109,20 @@ app.use(cors({
 // Body parser middleware (with size limits)
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// Compression middleware - compress all responses
+app.use(compression({
+  level: 6, // Balanced compression level (0-9)
+  threshold: 1024, // Only compress responses larger than 1KB
+  filter: (req, res) => {
+    // Don't compress responses with this request header
+    if (req.headers['x-no-compression']) {
+      return false;
+    }
+    // Use compression for all other responses
+    return compression.filter(req, res);
+  }
+}));
 
 // Cache control for API responses
 app.use((req, res, next) => {
