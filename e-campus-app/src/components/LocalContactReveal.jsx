@@ -8,7 +8,6 @@ const LocalContactReveal = ({ product }) => {
   const contactInfo = {
     phone: product.seller?.phone || product.contact?.phone,
     email: product.seller?.email || product.contact?.email,
-    whatsapp: product.seller?.whatsapp || product.contact?.whatsapp,
     campus: product.seller?.campus || product.location?.campus,
     name: product.seller?.name
   }
@@ -54,24 +53,13 @@ const LocalContactReveal = ({ product }) => {
                   <Phone size={20} className="text-blue-600" />
                 </div>
                 <div className="flex-1">
-                  <p className="text-xs text-gray-500">Phone / WhatsApp</p>
+                  <p className="text-xs text-gray-500">Phone</p>
                   <a
                     href={`tel:${contactInfo.phone}`}
                     className="text-blue-600 font-semibold hover:underline block"
                   >
                     {contactInfo.phone}
                   </a>
-                  {contactInfo.whatsapp && (
-                    <a
-                      href={`https://wa.me/${contactInfo.whatsapp.replace(/[^0-9]/g, '')}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-green-600 text-sm hover:underline inline-flex items-center gap-1 mt-1"
-                    >
-                      <MessageCircle size={14} />
-                      Chat on WhatsApp
-                    </a>
-                  )}
                 </div>
               </div>
             )}

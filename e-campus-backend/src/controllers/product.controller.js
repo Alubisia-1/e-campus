@@ -570,7 +570,6 @@ exports.revealContact = async (req, res) => {
       username: product.seller.username,
       email: product.contact.email,
       phone: product.contact.phone,
-      whatsapp: product.contact.phone, // Use same phone for WhatsApp
       campus: product.location.campus || product.seller.campus
     };
 

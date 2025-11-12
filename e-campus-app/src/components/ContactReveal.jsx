@@ -91,24 +91,13 @@ const ContactReveal = ({ productId, sellerId }) => {
                   <Phone size={20} className="text-blue-600" />
                 </div>
                 <div className="flex-1">
-                  <p className="text-xs text-gray-500">Phone / WhatsApp</p>
+                  <p className="text-xs text-gray-500">Phone</p>
                   <a
                     href={`tel:${contactInfo.phone}`}
                     className="text-blue-600 font-semibold hover:underline block"
                   >
                     {contactInfo.phone}
                   </a>
-                  {contactInfo.whatsapp && (
-                    <a
-                      href={`https://wa.me/${contactInfo.whatsapp.replace(/[^0-9]/g, '')}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-green-600 text-sm hover:underline inline-flex items-center gap-1 mt-1"
-                    >
-                      <MessageCircle size={14} />
-                      Chat on WhatsApp
-                    </a>
-                  )}
                 </div>
               </div>
             )}

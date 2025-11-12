@@ -623,19 +623,14 @@ function App() {
       const createResponse = await api.createProduct(productData, authToken)
 
       if (createResponse.status === 'success') {
-        // Refresh products list
-        setUploadProgress('Refreshing listings...')
-        const productsResponse = await api.getProducts()
-        if (productsResponse.status === 'success') {
-          setProducts(productsResponse.data.products)
-        }
+        // Add the newly created product to the list immediately
+        const newProduct = createResponse.data.product
 
-        // Also refresh official store products if posting from official store
+        // Add to appropriate list based on whether it's an official store product
         if (isAdmin && activeTab === 'official-store') {
-          const officialStoreResponse = await api.getOfficialStoreProducts({ limit: 100 })
-          if (officialStoreResponse.status === 'success') {
-            setOfficialStoreProducts(officialStoreResponse.data.products)
-          }
+          setOfficialStoreProducts(prev => [newProduct, ...prev])
+        } else {
+          setProducts(prev => [newProduct, ...prev])
         }
 
         showToast('Product listing created successfully!', 'success')
@@ -2456,7 +2451,7 @@ function App() {
                         Email (Optional)
                       </label>
                       <input
-                        type="email"
+                        type="text"
                         value={postFormData.contact.email}
                         onChange={(e) => handlePostFormChange('contact.email', e.target.value)}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
