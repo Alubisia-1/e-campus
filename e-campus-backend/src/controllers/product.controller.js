@@ -3,6 +3,7 @@ const Category = require('../models/Category.model');
 const User = require('../models/User.model');
 const { validationResult } = require('express-validator');
 const { deleteFromCloudinary } = require('../utils/cloudinaryUpload');
+const { cache, cacheKeys, cacheTTL } = require('../utils/cache');
 
 /**
  * @desc    Get all products with filters and pagination
@@ -22,6 +23,23 @@ exports.getAllProducts = async (req, res) => {
       status = 'available',
       isOfficialStore
     } = req.query;
+
+    // Generate cache key
+    const cacheKey = cacheKeys.products({
+      page,
+      limit,
+      category,
+      search,
+      status,
+      isOfficialStore
+    });
+
+    // Check cache first
+    const cachedData = cache.get(cacheKey);
+    if (cachedData) {
+      res.setHeader('X-Cache', 'HIT');
+      return res.status(200).json(cachedData);
+    }
 
     // Build filter object
     const filter = { isActive: true };
@@ -67,31 +85,38 @@ exports.getAllProducts = async (req, res) => {
     // Calculate pagination
     const skip = (parseInt(page) - 1) * parseInt(limit);
 
-    // Get total count for pagination
-    const total = await Product.countDocuments(filter);
+    // Use aggregation to get count and products in one query (more efficient)
+    const [countResult, products] = await Promise.all([
+      Product.countDocuments(filter),
+      Product.find(filter)
+        .populate('seller', 'username campus') // Only select needed fields
+        .populate('category', 'name slug')     // Only select needed fields
+        .sort({ 'sponsored.isSponsored': -1, createdAt: -1 })
+        .skip(skip)
+        .limit(parseInt(limit))
+        .lean() // Convert to plain JS objects (faster)
+    ]);
 
-    // Get products (DO NOT populate seller contact info for privacy)
-    // Sort by sponsored status first (sponsored products appear at top), then by creation date
-    const products = await Product.find(filter)
-      .populate('seller', 'username campus')
-      .populate('category', 'name slug')
-      .sort({ 'sponsored.isSponsored': -1, createdAt: -1 })
-      .skip(skip)
-      .limit(parseInt(limit))
-      .lean();
-
-    res.status(200).json({
+    const responseData = {
       status: 'success',
       data: {
         products,
         pagination: {
-          total,
-          page: parseInt(page),
-          pages: Math.ceil(total / parseInt(limit)),
-          limit: parseInt(limit)
+          total: countResult,
+          currentPage: parseInt(page),
+          totalPages: Math.ceil(countResult / parseInt(limit)),
+          limit: parseInt(limit),
+          hasNextPage: parseInt(page) < Math.ceil(countResult / parseInt(limit)),
+          hasPrevPage: parseInt(page) > 1
         }
       }
-    });
+    };
+
+    // Cache the response for 2 minutes
+    cache.set(cacheKey, responseData, cacheTTL.products);
+    res.setHeader('X-Cache', 'MISS');
+
+    res.status(200).json(responseData);
   } catch (error) {
     console.error('Get products error:', error);
     res.status(500).json({
@@ -212,6 +237,13 @@ exports.createProduct = async (req, res) => {
     await User.findByIdAndUpdate(req.user.id, {
       $push: { listings: product._id }
     });
+
+    // Invalidate product caches
+    cache.delPattern('products:*');
+    cache.delPattern('official:*');
+    if (category) {
+      cache.del(cacheKeys.category(category));
+    }
 
     // Populate product data
     await product.populate('seller', 'username phone whatsapp campus');

@@ -1,35 +1,15 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { ExternalLink } from 'lucide-react'
-import api from '../services/api'
+import { useActiveAds } from '../hooks/useApi'
+import { api } from '../services/api'
 
 export default function AdDisplay({ position = 'sidebar', fallbackToAdSense = true }) {
-  const [ads, setAds] = useState([])
   const [currentAdIndex, setCurrentAdIndex] = useState(0)
-  const [loading, setLoading] = useState(true)
   const [impressionTracked, setImpressionTracked] = useState(false)
 
-  // Fetch active ads for this position
-  useEffect(() => {
-    fetchAds()
-  }, [position])
-
-  const fetchAds = async () => {
-    setLoading(true)
-    try {
-      const response = await api.getActiveAds(position)
-      const activeAds = response.data.ads || []
-      setAds(activeAds)
-
-      // Reset index when ads change
-      setCurrentAdIndex(0)
-      setImpressionTracked(false)
-    } catch (err) {
-      console.error('Error fetching ads:', err)
-      setAds([])
-    } finally {
-      setLoading(false)
-    }
-  }
+  // Use React Query hook for ads with proper caching
+  const { data, isLoading: loading } = useActiveAds(position)
+  const ads = useMemo(() => data?.data?.ads || [], [data])
 
   // Rotate ads every 30 seconds if multiple ads available
   useEffect(() => {

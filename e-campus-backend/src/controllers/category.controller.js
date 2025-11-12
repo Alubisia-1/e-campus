@@ -1,5 +1,6 @@
 const Category = require('../models/Category.model');
 const asyncHandler = require('../middleware/asyncHandler');
+const { cache, cacheKeys, cacheTTL } = require('../utils/cache');
 
 /**
  * @desc    Get all categories
@@ -7,15 +8,32 @@ const asyncHandler = require('../middleware/asyncHandler');
  * @access  Public
  */
 exports.getAllCategories = asyncHandler(async (req, res) => {
+  // Check cache first (categories rarely change)
+  const cacheKey = cacheKeys.categories();
+  const cachedData = cache.get(cacheKey);
+
+  if (cachedData) {
+    res.setHeader('X-Cache', 'HIT');
+    return res.status(200).json(cachedData);
+  }
+
+  // Fetch from database
   const categories = await Category.find({ isActive: true })
     .select('name slug description icon color productCount')
-    .sort('name');
+    .sort('name')
+    .lean(); // Use lean() for better performance
 
-  res.status(200).json({
+  const responseData = {
     status: 'success',
     count: categories.length,
     data: categories
-  });
+  };
+
+  // Cache for 30 minutes (categories rarely change)
+  cache.set(cacheKey, responseData, cacheTTL.categories);
+  res.setHeader('X-Cache', 'MISS');
+
+  res.status(200).json(responseData);
 });
 
 /**
