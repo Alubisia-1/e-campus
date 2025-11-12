@@ -72,7 +72,7 @@ const createProductValidation = [
     .withMessage('Contact phone number is required')
     .trim(),
   body('contact.email')
-    .optional()
+    .optional({ checkFalsy: true })
     .trim()
     .isEmail()
     .withMessage('Invalid email format'),
@@ -84,7 +84,7 @@ const createProductValidation = [
     .optional()
     .trim(),
   body('anonymousSeller.email')
-    .optional()
+    .optional({ checkFalsy: true })
     .trim()
     .isEmail()
     .withMessage('Invalid email format'),

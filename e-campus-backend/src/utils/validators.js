@@ -5,17 +5,31 @@ const { body, validationResult } = require('express-validator');
  */
 
 // Email validation with sanitization
-const emailValidator = () =>
-  body('email')
-    .trim()
-    .notEmpty()
-    .withMessage('Email is required')
-    .isEmail()
-    .withMessage('Please provide a valid email address')
-    .normalizeEmail()
-    .toLowerCase()
-    .isLength({ max: 100 })
-    .withMessage('Email must not exceed 100 characters');
+const emailValidator = (required = true) => {
+  const validator = body('email')
+    .trim();
+
+  if (required) {
+    return validator
+      .notEmpty()
+      .withMessage('Email is required')
+      .isEmail()
+      .withMessage('Please provide a valid email address')
+      .normalizeEmail()
+      .toLowerCase()
+      .isLength({ max: 100 })
+      .withMessage('Email must not exceed 100 characters');
+  } else {
+    return validator
+      .optional({ checkFalsy: true })
+      .isEmail()
+      .withMessage('Please provide a valid email address')
+      .normalizeEmail()
+      .toLowerCase()
+      .isLength({ max: 100 })
+      .withMessage('Email must not exceed 100 characters');
+  }
+};
 
 // Password validation (minimum 6 characters)
 const passwordValidator = (field = 'password') =>
