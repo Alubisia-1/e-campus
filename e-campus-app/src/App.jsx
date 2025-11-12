@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react'
-import { Store, ShoppingBag, Menu, X, Plus, Search, Book, Laptop, Sofa, Shirt, ChevronDown, ChevronLeft, ChevronRight, MessageCircle, Phone, Mail, Instagram, Facebook, Twitter, Upload, DollarSign, Trash2, LogOut, User } from 'lucide-react'
+import { Store, ShoppingBag, Menu, X, Plus, Search, Book, Laptop, Sofa, Shirt, ChevronDown, ChevronLeft, ChevronRight, MessageCircle, Phone, Mail, Instagram, Facebook, Twitter, Upload, Trash2, LogOut, User, Tag } from 'lucide-react'
 import { api } from './services/api'
 import ContactReveal from './components/ContactReveal'
 import LocalContactReveal from './components/LocalContactReveal'
@@ -362,6 +362,7 @@ function App() {
         // Update state (removes from display immediately)
         setProducts(prevProducts => prevProducts.filter(p => p._id !== productId))
         setMyListings(prevListings => prevListings.filter(p => p._id !== productId))
+        setOfficialStoreProducts(prevProducts => prevProducts.filter(p => p._id !== productId))
 
         showToast('Listing deleted successfully!', 'success')
       }
@@ -1725,10 +1726,24 @@ function App() {
                         </div>
 
                         {product.category && (
-                          <div className="flex items-center gap-2 text-sm text-gray-500">
+                          <div className="flex items-center gap-2 text-sm text-gray-500 mb-3">
                             <Tag size={14} />
                             <span>{product.category.name}</span>
                           </div>
+                        )}
+
+                        {isAdmin && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              handleDeleteItem(product._id)
+                            }}
+                            className="w-full bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded-lg transition-colors text-sm font-semibold flex items-center justify-center gap-2"
+                            title="Admin: Delete this item"
+                          >
+                            <Trash2 size={16} />
+                            Delete
+                          </button>
                         )}
                       </div>
                     </div>
@@ -2292,7 +2307,22 @@ function App() {
                   </div>
                 )}
 
-                {/* Delete button removed - Official store items managed separately */}
+                {/* Admin Delete Button */}
+                {isAdmin && selectedProduct._id && (
+                  <div className="border-t pt-6">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        handleDeleteItem(selectedProduct._id)
+                        setSelectedProduct(null)
+                      }}
+                      className="w-full bg-red-600 hover:bg-red-700 text-white py-3 px-4 rounded-lg font-semibold transition-colors flex items-center justify-center gap-2"
+                    >
+                      <Trash2 size={20} />
+                      Admin: Delete This Item
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -2359,19 +2389,16 @@ function App() {
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Price * (KES)
                     </label>
-                    <div className="relative">
-                      <DollarSign size={20} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                      <input
-                        type="number"
-                        value={postFormData.price}
-                        onChange={(e) => handlePostFormChange('price', e.target.value)}
-                        className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        placeholder="1000"
-                        min="0"
-                        step="0.01"
-                        required
-                      />
-                    </div>
+                    <input
+                      type="number"
+                      value={postFormData.price}
+                      onChange={(e) => handlePostFormChange('price', e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="1000"
+                      min="0"
+                      step="0.01"
+                      required
+                    />
                   </div>
 
                   <div>
