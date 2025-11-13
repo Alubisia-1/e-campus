@@ -7,6 +7,7 @@ import AuthModal from './components/AuthModal'
 import Toast from './components/Toast'
 import AdManager from './components/AdManager'
 import SponsoredBadge from './components/SponsoredBadge'
+import { trackProductView, trackSearch, trackListingCreated, trackListingDeleted, trackCategoryView, trackLogin, trackSignUp } from './utils/analytics'
 
 function App() {
   // State management
@@ -223,6 +224,8 @@ function App() {
   useEffect(() => {
     if (selectedProduct) {
       document.body.style.overflow = 'hidden'
+      // Track product view
+      trackProductView(selectedProduct)
     } else {
       document.body.style.overflow = 'unset'
     }
@@ -364,6 +367,9 @@ function App() {
         setMyListings(prevListings => prevListings.filter(p => p._id !== productId))
         setOfficialStoreProducts(prevProducts => prevProducts.filter(p => p._id !== productId))
 
+        // Track deletion event
+        trackListingDeleted(productId)
+
         showToast('Listing deleted successfully!', 'success')
       }
     } catch (error) {
@@ -455,6 +461,9 @@ function App() {
     setShowSearchResults(true)
 
     const searchTerm = query.toLowerCase().trim()
+
+    // Track search event
+    trackSearch(searchTerm)
 
     const results = products.filter(product => {
       // Search in title
@@ -634,6 +643,9 @@ function App() {
           setProducts(prev => [newProduct, ...prev])
         }
 
+        // Track listing creation
+        trackListingCreated(newProduct)
+
         showToast('Product listing created successfully!', 'success')
         handleClosePostModal()
       }
@@ -780,6 +792,11 @@ function App() {
       setSelectedCategory(null) // Deselect if already selected
     } else {
       setSelectedCategory(categoryId)
+      // Track category view
+      const category = categories.find(cat => cat._id === categoryId || cat.id === categoryId)
+      if (category) {
+        trackCategoryView(category.name)
+      }
       // Scroll to product listings when category is selected
       setTimeout(() => {
         const listingsSection = document.getElementById('product-listings')

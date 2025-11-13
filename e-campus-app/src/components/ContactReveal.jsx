@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Phone, Mail, Eye, EyeOff, AlertCircle, MessageCircle } from 'lucide-react'
 import { api } from '../services/api'
+import { trackContactReveal } from '../utils/analytics'
 
 const ContactReveal = ({ productId, sellerId }) => {
   const [isRevealed, setIsRevealed] = useState(false)
@@ -24,6 +25,8 @@ const ContactReveal = ({ productId, sellerId }) => {
       if (response.status === 'success') {
         setContactInfo(response.data.contact)
         setIsRevealed(true)
+        // Track contact reveal event
+        trackContactReveal(productId, contactInfo?.name || 'Unknown')
       }
     } catch (err) {
       console.error('Error revealing contact:', err)

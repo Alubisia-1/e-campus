@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import '../styles/AuthModal.css'
 import { api } from '../services/api'
+import { trackLogin, trackSignUp } from '../utils/analytics'
 
 export default function AuthModal({ isOpen, onClose, onAuthSuccess, initialMode = 'login', message = '' }) {
   const [isLogin, setIsLogin] = useState(initialMode === 'login')
@@ -52,6 +53,13 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, initialMode 
       // Store token and user data
       localStorage.setItem('authToken', data.data.token)
       localStorage.setItem('user', JSON.stringify(data.data.user))
+
+      // Track analytics event
+      if (isLogin) {
+        trackLogin('email')
+      } else {
+        trackSignUp('email')
+      }
 
       // Call success callback
       onAuthSuccess(data.data.user, data.data.token)
