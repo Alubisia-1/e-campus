@@ -401,6 +401,13 @@ exports.deleteProduct = async (req, res) => {
     // Delete product
     await Product.findByIdAndDelete(id);
 
+    // Invalidate product caches
+    cache.delPattern('products:*');
+    cache.delPattern('official:*');
+    if (product.category) {
+      cache.del(cacheKeys.category(product.category));
+    }
+
     res.status(200).json({
       status: 'success',
       message: 'Product deleted successfully'
