@@ -1,12 +1,14 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react'
-import { Store, ShoppingBag, Menu, X, Plus, Search, Book, Laptop, Sofa, Shirt, ChevronDown, ChevronLeft, ChevronRight, MessageCircle, Phone, Mail, Instagram, Facebook, Twitter, Upload, Trash2, LogOut, User, Tag } from 'lucide-react'
+import { ShoppingBag, Menu, X, Plus, Search, Book, Laptop, Sofa, Shirt, ChevronDown, ChevronLeft, ChevronRight, MessageCircle, Phone, Mail, Instagram, Upload, Trash2, LogOut, User, Tag, Shield, Zap, Users, Star, TrendingUp, Eye } from 'lucide-react'
 import { api } from './services/api'
 import ContactReveal from './components/ContactReveal'
 import LocalContactReveal from './components/LocalContactReveal'
 import AuthModal from './components/AuthModal'
 import Toast from './components/Toast'
 import AdManager from './components/AdManager'
+import AdDisplay from './components/AdDisplay'
 import SponsoredBadge from './components/SponsoredBadge'
+import CampusList from './components/CampusList'
 import { trackProductView, trackSearch, trackListingCreated, trackListingDeleted, trackCategoryView, trackLogin, trackSignUp } from './utils/analytics'
 
 function App() {
@@ -15,6 +17,8 @@ function App() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [selectedProduct, setSelectedProduct] = useState(null)
   const [currentImageIndex, setCurrentImageIndex] = useState(0)
+  const [isImageFullscreen, setIsImageFullscreen] = useState(false)
+  const [imageZoomLevel, setImageZoomLevel] = useState(1)
 
   // API connection state
   const [apiConnected, setApiConnected] = useState(false)
@@ -23,8 +27,6 @@ function App() {
   // API data state
   const [categories, setCategories] = useState([])
   const [products, setProducts] = useState([])
-  const [officialStoreProducts, setOfficialStoreProducts] = useState([])
-  const [officialStoreLoading, setOfficialStoreLoading] = useState(false)
   const [dataLoading, setDataLoading] = useState(true)
 
   // Search state
@@ -35,6 +37,11 @@ function App() {
 
   // Category filtering state
   const [selectedCategory, setSelectedCategory] = useState(null)
+
+  // Campus filtering state
+  const [campuses, setCampuses] = useState([])
+  const [selectedCampus, setSelectedCampus] = useState(null)
+  const [campusesLoading, setCampusesLoading] = useState(true)
 
   // Debounce timer ref for search
   const searchTimeoutRef = useRef(null)
@@ -48,6 +55,7 @@ function App() {
   const [showAuthModal, setShowAuthModal] = useState(false)
   const [authModalMode, setAuthModalMode] = useState('login')
   const [authModalMessage, setAuthModalMessage] = useState('')
+  const [resetToken, setResetToken] = useState(null)
 
   // Toast notification state
   const [toast, setToast] = useState(null)
@@ -84,13 +92,13 @@ function App() {
   // Ad Management Configuration
   const AD_CONFIG = {
     // How often to show native ads (every X products)
-    nativeAdFrequency: 4,
+    nativeAdFrequency: 8,
     // How often to show sidebar ads on mobile (every X products)
-    sidebarAdFrequency: 6,
+    sidebarAdFrequency: 12,
     // Starting position for first ad (to avoid showing ad immediately)
-    firstAdPosition: 3,
+    firstAdPosition: 8,
     // Maximum ads to show (to prevent oversaturation)
-    maxAdsPerPage: 10
+    maxAdsPerPage: 4
   }
 
   // Generate or retrieve device ID and load auth on mount
@@ -105,19 +113,28 @@ function App() {
 
     setDeviceId(storedDeviceId)
 
-    // Check if admin is logged in
-    const adminStatus = localStorage.getItem('isAdmin')
-    if (adminStatus === 'true') {
-      setIsAdmin(true)
-    }
-
     // Load auth token and user from localStorage
     const storedToken = localStorage.getItem('authToken')
     const storedUser = localStorage.getItem('user')
 
     if (storedToken && storedUser) {
+      const parsedUser = JSON.parse(storedUser)
       setAuthToken(storedToken)
-      setUser(JSON.parse(storedUser))
+      setUser(parsedUser)
+      // Set admin status based on user role
+      if (parsedUser.role === 'admin') {
+        setIsAdmin(true)
+      }
+    }
+
+    // Check for password reset token in URL
+    const urlParams = new URLSearchParams(window.location.search)
+    const reset = urlParams.get('reset')
+    if (reset) {
+      setResetToken(reset)
+      setShowAuthModal(true)
+      // Clear the URL parameter without refreshing
+      window.history.replaceState({}, '', window.location.pathname)
     }
   }, [])
 
@@ -131,7 +148,6 @@ function App() {
 
       if (response.status === 'success' && response.data.token) {
         setIsAdmin(true)
-        localStorage.setItem('isAdmin', 'true')
         localStorage.setItem('adminToken', response.data.token)
         setShowAdminLogin(false)
         setAdminPassword('')
@@ -147,10 +163,9 @@ function App() {
     }
   }
 
-  // Handle admin logout
+  // Handle admin logout (for separate admin password login)
   const handleAdminLogout = () => {
     setIsAdmin(false)
-    localStorage.removeItem('isAdmin')
     localStorage.removeItem('adminToken')
     setActiveTab('marketplace')
     alert('Admin logged out')
@@ -173,20 +188,13 @@ function App() {
     setTapTimer(newTimer)
     setLogoTapCount(newCount)
 
-    // If 7 taps reached, open admin login
+    // If 7 taps reached, open admin login (silently)
     if (newCount === 7) {
       setLogoTapCount(0)
       clearTimeout(newTimer)
       if (!isAdmin) {
         setShowAdminLogin(true)
-        showToast('Admin portal unlocked! 🔓', 'info')
-      } else {
-        showToast('Already logged in as admin', 'info')
       }
-    }
-    // Give feedback at 4 taps (halfway)
-    else if (newCount === 4) {
-      showToast('Keep tapping... 👆', 'info')
     }
   }
 
@@ -194,11 +202,16 @@ function App() {
   const handleAuthSuccess = (userData, token) => {
     setUser(userData)
     setAuthToken(token)
+    // Set admin status based on user role
+    if (userData.role === 'admin') {
+      setIsAdmin(true)
+    }
   }
 
   const handleLogout = () => {
     setUser(null)
     setAuthToken(null)
+    setIsAdmin(false)
     localStorage.removeItem('authToken')
     localStorage.removeItem('user')
     setActiveTab('marketplace')
@@ -240,18 +253,27 @@ function App() {
       if (!selectedProduct) return
 
       if (e.key === 'Escape') {
-        setSelectedProduct(null)
-        setCurrentImageIndex(0)
+        if (isImageFullscreen) {
+          setIsImageFullscreen(false)
+          setImageZoomLevel(1)
+        } else {
+          setSelectedProduct(null)
+          setCurrentImageIndex(0)
+          setIsImageFullscreen(false)
+          setImageZoomLevel(1)
+        }
       } else if (e.key === 'ArrowLeft' && currentImageIndex > 0) {
         setCurrentImageIndex(currentImageIndex - 1)
+        setImageZoomLevel(1)
       } else if (e.key === 'ArrowRight' && currentImageIndex < selectedProduct.images.length - 1) {
         setCurrentImageIndex(currentImageIndex + 1)
+        setImageZoomLevel(1)
       }
     }
 
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [selectedProduct, currentImageIndex])
+  }, [selectedProduct, currentImageIndex, isImageFullscreen])
 
   // Test API connection and fetch data on mount
   useEffect(() => {
@@ -261,7 +283,8 @@ function App() {
         // Run health check in parallel but don't block on it
         const dataPromise = Promise.all([
           api.getCategories(),
-          api.getProducts()
+          api.getProducts(),
+          api.getCampuses()
         ])
 
         const healthPromise = api.healthCheck().then(
@@ -275,12 +298,15 @@ function App() {
         })
 
         // Wait for data to load (health check runs in background)
-        const [categoriesResponse, productsResponse] = await dataPromise
+        const [categoriesResponse, productsResponse, campusesResponse] = await dataPromise
 
         console.log('Categories loaded:', categoriesResponse)
         console.log('Products loaded:', productsResponse)
+        console.log('Campuses loaded:', campusesResponse)
 
         setCategories(categoriesResponse.data || [])
+        setCampuses(campusesResponse.data || [])
+        setCampusesLoading(false)
 
         // Use only API products (no more localStorage)
         const apiProducts = productsResponse.data?.products || []
@@ -296,6 +322,8 @@ function App() {
         // Show empty state - no fallback data
         setCategories([])
         setProducts([])
+        setCampuses([])
+        setCampusesLoading(false)
       } finally {
         setLoading(false)
         setDataLoading(false)
@@ -304,34 +332,6 @@ function App() {
 
     initializeApp()
   }, [])
-
-  // Load official store products when tab changes
-  useEffect(() => {
-    const loadOfficialStoreProducts = async () => {
-      if (activeTab === 'official-store') {
-        setOfficialStoreLoading(true)
-        try {
-          const response = await api.getOfficialStoreProducts({ limit: 100 })
-          setOfficialStoreProducts(response.data?.products || [])
-        } catch (error) {
-          console.error('Failed to load official store products:', error)
-          setOfficialStoreProducts([])
-        } finally {
-          setOfficialStoreLoading(false)
-        }
-      }
-    }
-
-    loadOfficialStoreProducts()
-  }, [activeTab])
-
-  // No more static data - clean professional site
-
-  const handleShopNowClick = () => {
-    setActiveTab('official-store')
-    setMobileMenuOpen(false)
-    window.scrollTo({ top: 0, behavior: 'smooth' })
-  }
 
   const handleTabSwitch = (tab) => {
     setActiveTab(tab)
@@ -365,7 +365,6 @@ function App() {
         // Update state (removes from display immediately)
         setProducts(prevProducts => prevProducts.filter(p => p._id !== productId))
         setMyListings(prevListings => prevListings.filter(p => p._id !== productId))
-        setOfficialStoreProducts(prevProducts => prevProducts.filter(p => p._id !== productId))
 
         // Track deletion event
         trackListingDeleted(productId)
@@ -625,9 +624,7 @@ function App() {
         contact: {
           phone: postFormData.contact.phone,
           email: postFormData.contact.email || ''
-        },
-        // Set as official store product if admin is posting from official store tab
-        isOfficialStore: isAdmin && activeTab === 'official-store'
+        }
       }
 
       const createResponse = await api.createProduct(productData, authToken)
@@ -635,13 +632,7 @@ function App() {
       if (createResponse.status === 'success') {
         // Add the newly created product to the list immediately
         const newProduct = createResponse.data.product
-
-        // Add to appropriate list based on whether it's an official store product
-        if (isAdmin && activeTab === 'official-store') {
-          setOfficialStoreProducts(prev => [newProduct, ...prev])
-        } else {
-          setProducts(prev => [newProduct, ...prev])
-        }
+        setProducts(prev => [newProduct, ...prev])
 
         // Track listing creation
         trackListingCreated(newProduct)
@@ -808,13 +799,30 @@ function App() {
     setShowSearchResults(false) // Hide search results when filtering by category
   }
 
+  // Campus filtering functionality
+  const handleCampusSelect = (campusName) => {
+    setSelectedCampus(campusName)
+    setShowSearchResults(false) // Hide search results when filtering by campus
+  }
+
   const getFilteredProducts = () => {
-    if (!selectedCategory) {
-      return products
+    let filtered = products
+
+    // Filter by category
+    if (selectedCategory) {
+      filtered = filtered.filter(product =>
+        product.category?._id === selectedCategory || product.category?.id === selectedCategory
+      )
     }
-    return products.filter(product =>
-      product.category?._id === selectedCategory || product.category?.id === selectedCategory
-    )
+
+    // Filter by campus
+    if (selectedCampus) {
+      filtered = filtered.filter(product =>
+        product.location?.campus?.toLowerCase() === selectedCampus.toLowerCase()
+      )
+    }
+
+    return filtered
   }
 
   // Map API categories to UI format with real product counts
@@ -856,61 +864,55 @@ function App() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Sticky Navigation Bar */}
-      <nav className="sticky top-0 z-50 bg-white shadow-md">
+    <div className="min-h-screen bg-slate-50">
+      {/* Premium Navigation Bar */}
+      <nav className="sticky top-0 z-50 header-premium">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             {/* Logo - Tap 7 times for admin access */}
             <div
-              className="flex items-center gap-2 cursor-pointer select-none"
+              className="flex items-center gap-3 cursor-pointer select-none"
               onClick={handleLogoTap}
               title="E-Soko"
             >
-              <ShoppingBag className="text-blue-600" size={28} />
-              <span className="text-xl font-bold text-gray-900">E-Soko</span>
+              <div className="bg-gradient-to-br from-teal-400 to-teal-600 p-2 rounded-xl shadow-lg">
+                <ShoppingBag className="text-white" size={24} />
+              </div>
+              <div className="flex flex-col">
+                <span className="text-xl font-bold text-white tracking-tight">E-Soko</span>
+                <span className="text-[10px] text-slate-400 font-medium -mt-1 hidden sm:block">Campus Marketplace</span>
+              </div>
               {/* API Connection Status */}
               {!loading && (
-                <div className={`ml-2 w-2 h-2 rounded-full ${apiConnected ? 'bg-green-500' : 'bg-red-500'}`}
+                <div className={`ml-1 w-2 h-2 rounded-full ${apiConnected ? 'bg-emerald-400 animate-pulse' : 'bg-red-400'}`}
                      title={apiConnected ? 'Connected to backend' : 'Backend connection failed'} />
               )}
               {isAdmin && (
-                <span className="ml-3 bg-red-600 text-white text-xs px-2 py-1 rounded-full font-semibold">
-                  ADMIN
+                <span className="ml-2 bg-gradient-to-r from-red-500 to-orange-500 text-white text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">
+                  Admin
                 </span>
               )}
             </div>
 
             {/* Desktop Menu */}
-            <div className="hidden md:flex items-center gap-6">
+            <div className="hidden md:flex items-center gap-1">
               <button
                 onClick={() => handleTabSwitch('marketplace')}
-                className={`font-medium transition-colors duration-200 ${
+                className={`px-4 py-2 rounded-lg font-medium transition-all duration-200 ${
                   activeTab === 'marketplace'
-                    ? 'text-blue-600'
-                    : 'text-gray-700 hover:text-blue-600'
+                    ? 'bg-white/10 text-teal-400'
+                    : 'text-slate-300 hover:text-white hover:bg-white/5'
                 }`}
               >
                 Marketplace
               </button>
 
               <button
-                onClick={() => handleTabSwitch('official-store')}
-                className={`font-medium transition-colors duration-200 ${
-                  activeTab === 'official-store'
-                    ? 'text-blue-600'
-                    : 'text-gray-700 hover:text-blue-600'
-                }`}
-              >
-                Official Store
-              </button>
-
-              <button
                 onClick={() => handleTabSwitch('my-listings')}
-                className={`font-medium transition-colors duration-200 ${
+                className={`px-4 py-2 rounded-lg font-medium transition-all duration-200 ${
                   activeTab === 'my-listings'
-                    ? 'text-blue-600'
-                    : 'text-gray-700 hover:text-blue-600'
+                    ? 'bg-white/10 text-teal-400'
+                    : 'text-slate-300 hover:text-white hover:bg-white/5'
                 }`}
               >
                 My Listings
@@ -918,67 +920,74 @@ function App() {
 
               <button
                 onClick={() => handleTabSwitch('about')}
-                className={`font-medium transition-colors duration-200 ${
+                className={`px-4 py-2 rounded-lg font-medium transition-all duration-200 ${
                   activeTab === 'about'
-                    ? 'text-blue-600'
-                    : 'text-gray-700 hover:text-blue-600'
+                    ? 'bg-white/10 text-teal-400'
+                    : 'text-slate-300 hover:text-white hover:bg-white/5'
                 }`}
               >
-                About Us
+                About
               </button>
 
               {isAdmin && (
                 <button
                   onClick={() => handleTabSwitch('ad-manager')}
-                  className={`font-medium transition-colors duration-200 ${
+                  className={`px-4 py-2 rounded-lg font-medium transition-all duration-200 ${
                     activeTab === 'ad-manager'
-                      ? 'text-blue-600'
-                      : 'text-gray-700 hover:text-blue-600'
+                      ? 'bg-white/10 text-teal-400'
+                      : 'text-slate-300 hover:text-white hover:bg-white/5'
                   }`}
                 >
                   Ad Manager
                 </button>
               )}
 
+              <div className="w-px h-8 bg-slate-600 mx-2"></div>
+
               <button
                 onClick={handlePostItem}
-                className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                className="flex items-center gap-2 btn-cta px-5 py-2.5 text-sm"
               >
-                <Plus size={20} />
-                Post Item
+                <Plus size={18} strokeWidth={2.5} />
+                Sell Now
               </button>
 
               {/* User Menu - Show logout only when logged in */}
               {user && (
-                <div className="flex items-center gap-3">
-                  <span className="text-sm text-gray-700">Hi, <span className="font-semibold">{user.username}</span></span>
+                <div className="flex items-center gap-3 ml-2">
+                  <div className="flex items-center gap-2 bg-white/10 px-3 py-1.5 rounded-lg">
+                    <div className="w-7 h-7 bg-gradient-to-br from-teal-400 to-emerald-500 rounded-full flex items-center justify-center text-white text-xs font-bold">
+                      {user.username?.[0]?.toUpperCase()}
+                    </div>
+                    <span className="text-sm text-white font-medium">{user.username}</span>
+                  </div>
                   <button
                     onClick={handleLogout}
-                    className="flex items-center gap-2 bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors font-medium text-sm"
+                    className="flex items-center gap-1.5 text-slate-400 hover:text-white px-3 py-1.5 rounded-lg hover:bg-white/5 transition-all text-sm"
                   >
-                    <LogOut size={18} />
-                    Logout
+                    <LogOut size={16} />
                   </button>
                 </div>
               )}
 
-              {/* Admin Login/Logout - Only visible when logged in */}
+              {/* Admin Logout */}
               {isAdmin && (
                 <button
                   onClick={handleAdminLogout}
-                  className="flex items-center gap-2 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors font-medium text-sm"
+                  className="flex items-center gap-1.5 bg-red-500/20 text-red-400 hover:bg-red-500/30 px-3 py-1.5 rounded-lg transition-all text-sm font-medium ml-2"
                 >
-                  Admin Logout
+                  <LogOut size={14} />
+                  Exit Admin
                 </button>
               )}
             </div>
 
-            {/* Mobile Hamburger Menu */}
+            {/* Mobile Menu Button */}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="md:hidden text-gray-700 hover:text-blue-600 transition-colors"
+              className="md:hidden text-white hover:text-[#B86B3E] transition-colors p-2"
             >
-              {mobileMenuOpen ? <X size={28} /> : <Menu size={28} />}
+              {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
             </button>
           </div>
 
@@ -987,39 +996,41 @@ function App() {
             <>
               {/* Backdrop */}
               <div
-                className="fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden"
+                className="fixed inset-0 mobile-menu-overlay z-40 md:hidden"
                 onClick={() => setMobileMenuOpen(false)}
               />
 
               {/* Sidebar */}
-              <div className="fixed top-0 right-0 h-full w-64 bg-white shadow-2xl z-50 md:hidden transform transition-transform duration-300 ease-in-out">
+              <div className="fixed top-0 right-0 h-full w-72 mobile-menu-sidebar z-50 md:hidden animate-slideInRight">
                 <div className="flex flex-col h-full">
                   {/* Sidebar Header */}
-                  <div className="flex items-center justify-between p-4 border-b">
-                    <div className="flex items-center gap-2">
-                      <ShoppingBag className="text-blue-600" size={24} />
-                      <span className="font-bold text-gray-900">Menu</span>
+                  <div className="flex items-center justify-between p-4 border-b border-slate-200 bg-slate-50">
+                    <div className="flex items-center gap-3">
+                      <div className="bg-gradient-to-br from-teal-400 to-teal-600 p-2 rounded-xl">
+                        <ShoppingBag className="text-white" size={20} />
+                      </div>
+                      <span className="font-bold text-slate-800">Menu</span>
                     </div>
                     <button
                       onClick={() => setMobileMenuOpen(false)}
-                      className="text-gray-500 hover:text-gray-700"
+                      className="text-slate-400 hover:text-slate-600 p-1 rounded-lg hover:bg-slate-100 transition-colors"
                     >
-                      <X size={24} />
+                      <X size={22} />
                     </button>
                   </div>
 
                   {/* Sidebar Content */}
                   <div className="flex-1 overflow-y-auto py-4">
-                    <div className="flex flex-col gap-2 px-4">
+                    <div className="flex flex-col gap-1 px-3">
                       <button
                         onClick={() => {
                           handleTabSwitch('marketplace')
                           setMobileMenuOpen(false)
                         }}
-                        className={`text-left font-medium py-3 px-4 rounded-lg transition-colors duration-200 ${
+                        className={`text-left font-semibold py-3 px-4 rounded-xl transition-all duration-200 ${
                           activeTab === 'marketplace'
-                            ? 'bg-blue-50 text-blue-600'
-                            : 'text-gray-700 hover:bg-gray-50'
+                            ? 'bg-gradient-to-r from-teal-50 to-emerald-50 text-teal-600 border-l-4 border-teal-500'
+                            : 'text-slate-700 hover:bg-slate-50'
                         }`}
                       >
                         Marketplace
@@ -1027,27 +1038,13 @@ function App() {
 
                       <button
                         onClick={() => {
-                          handleTabSwitch('official-store')
-                          setMobileMenuOpen(false)
-                        }}
-                        className={`text-left font-medium py-3 px-4 rounded-lg transition-colors duration-200 ${
-                          activeTab === 'official-store'
-                            ? 'bg-blue-50 text-blue-600'
-                            : 'text-gray-700 hover:bg-gray-50'
-                        }`}
-                      >
-                        Official Store
-                      </button>
-
-                      <button
-                        onClick={() => {
                           handleTabSwitch('my-listings')
                           setMobileMenuOpen(false)
                         }}
-                        className={`text-left font-medium py-3 px-4 rounded-lg transition-colors duration-200 ${
+                        className={`text-left font-semibold py-3 px-4 rounded-xl transition-all duration-200 ${
                           activeTab === 'my-listings'
-                            ? 'bg-blue-50 text-blue-600'
-                            : 'text-gray-700 hover:bg-gray-50'
+                            ? 'bg-gradient-to-r from-teal-50 to-emerald-50 text-teal-600 border-l-4 border-teal-500'
+                            : 'text-slate-700 hover:bg-slate-50'
                         }`}
                       >
                         My Listings
@@ -1058,13 +1055,13 @@ function App() {
                           handleTabSwitch('about')
                           setMobileMenuOpen(false)
                         }}
-                        className={`text-left font-medium py-3 px-4 rounded-lg transition-colors duration-200 ${
+                        className={`text-left font-semibold py-3 px-4 rounded-xl transition-all duration-200 ${
                           activeTab === 'about'
-                            ? 'bg-blue-50 text-blue-600'
-                            : 'text-gray-700 hover:bg-gray-50'
+                            ? 'bg-gradient-to-r from-teal-50 to-emerald-50 text-teal-600 border-l-4 border-teal-500'
+                            : 'text-slate-700 hover:bg-slate-50'
                         }`}
                       >
-                        About Us
+                        About
                       </button>
 
                       {isAdmin && (
@@ -1073,43 +1070,49 @@ function App() {
                             handleTabSwitch('ad-manager')
                             setMobileMenuOpen(false)
                           }}
-                          className={`text-left font-medium py-3 px-4 rounded-lg transition-colors duration-200 ${
+                          className={`text-left font-semibold py-3 px-4 rounded-xl transition-all duration-200 ${
                             activeTab === 'ad-manager'
-                              ? 'bg-blue-50 text-blue-600'
-                              : 'text-gray-700 hover:bg-gray-50'
+                              ? 'bg-gradient-to-r from-teal-50 to-emerald-50 text-teal-600 border-l-4 border-teal-500'
+                              : 'text-slate-700 hover:bg-slate-50'
                           }`}
                         >
                           Ad Manager
                         </button>
                       )}
 
-                      <div className="border-t my-4"></div>
+                      <div className="border-t border-slate-200 my-4"></div>
 
                       <button
                         onClick={() => {
                           handlePostItem()
                           setMobileMenuOpen(false)
                         }}
-                        className="flex items-center justify-center gap-2 bg-blue-600 text-white px-4 py-3 rounded-lg hover:bg-blue-700 transition-colors font-medium w-full"
+                        className="btn-cta flex items-center justify-center gap-2 w-full py-3.5"
                       >
-                        <Plus size={20} />
-                        Post Item
+                        <Plus size={20} strokeWidth={2.5} />
+                        Sell Now
                       </button>
 
                       {/* Mobile User Menu */}
                       {user && (
                         <>
-                          <div className="border-t my-4"></div>
-                          <div className="flex flex-col gap-2">
-                            <div className="text-sm text-gray-600 px-4 py-2">
-                              Hi, <span className="font-semibold text-gray-900">{user.username}</span>
+                          <div className="border-t border-slate-200 my-4"></div>
+                          <div className="flex flex-col gap-3">
+                            <div className="flex items-center gap-3 px-4 py-2 bg-slate-50 rounded-xl">
+                              <div className="w-10 h-10 bg-gradient-to-br from-teal-400 to-emerald-500 rounded-full flex items-center justify-center text-white font-bold">
+                                {user.username?.[0]?.toUpperCase()}
+                              </div>
+                              <div>
+                                <p className="font-semibold text-slate-800">{user.username}</p>
+                                <p className="text-xs text-slate-500">Logged in</p>
+                              </div>
                             </div>
                             <button
                               onClick={() => {
                                 handleLogout()
                                 setMobileMenuOpen(false)
                               }}
-                              className="flex items-center justify-center gap-2 bg-gray-600 text-white px-4 py-3 rounded-lg hover:bg-gray-700 transition-colors font-medium w-full"
+                              className="flex items-center justify-center gap-2 bg-slate-200 text-slate-700 px-4 py-3 rounded-xl hover:bg-slate-300 transition-colors font-medium w-full"
                             >
                               <LogOut size={18} />
                               Logout
@@ -1126,37 +1129,73 @@ function App() {
         </div>
       </nav>
 
-      {/* Hero Section */}
+      {/* Hero Section - Premium Design */}
       {activeTab === 'marketplace' && (
-        <section className="bg-gradient-blue py-12">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">
-              Your Campus Marketplace
-            </h1>
-            <p className="text-xl text-blue-100 mb-8">
-              Buy and sell with fellow students. Easy. Local. Trusted.
-            </p>
+        <section className="hero-gradient py-16 md:py-20 relative">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+            {/* Main Hero Content */}
+            <div className="text-center mb-10">
+              <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-4 tracking-tight">
+                Your Campus
+                <span className="block gradient-text">Marketplace</span>
+              </h1>
+              <p className="text-lg md:text-xl text-slate-300 mb-8 max-w-2xl mx-auto">
+                Buy and sell with fellow students. Safe, local, and trusted by thousands of students.
+              </p>
 
-            {/* Search Bar */}
-            <form onSubmit={handleSearch} className="flex items-center bg-white rounded-lg shadow-lg overflow-hidden max-w-2xl mx-auto">
-              <div className="pl-4 text-gray-400">
-                <Search size={24} />
+              {/* Trust Badges */}
+              <div className="flex flex-wrap justify-center gap-3 mb-10">
+                <div className="trust-badge">
+                  <Shield size={16} />
+                  <span>Verified Students</span>
+                </div>
+                <div className="trust-badge">
+                  <Zap size={16} />
+                  <span>Instant Connect</span>
+                </div>
+                <div className="trust-badge">
+                  <Users size={16} />
+                  <span>Campus Community</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Premium Search Bar */}
+            <form onSubmit={handleSearch} className="search-premium flex items-center max-w-3xl mx-auto">
+              <div className="pl-5 text-slate-400">
+                <Search size={22} />
               </div>
               <input
                 type="text"
                 value={searchQuery}
                 onChange={handleSearchInputChange}
                 placeholder="Search for textbooks, electronics, furniture..."
-                className="flex-1 px-4 py-3 text-gray-900 placeholder-gray-500 focus:outline-none"
+                className="flex-1 px-4 py-4 text-slate-800 placeholder-slate-400 focus:outline-none bg-transparent text-lg"
               />
               <button
                 type="submit"
-                className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-3 rounded-lg font-medium transition-colors disabled:opacity-50"
+                className="btn-cta m-2 px-8 py-3 text-base disabled:opacity-50"
                 disabled={isSearching || !searchQuery.trim()}
               >
                 {isSearching ? 'Searching...' : 'Search'}
               </button>
             </form>
+
+            {/* Quick Stats */}
+            <div className="flex justify-center gap-8 md:gap-16 mt-10 text-center">
+              <div>
+                <p className="text-3xl md:text-4xl font-bold text-white">{products.length}+</p>
+                <p className="text-slate-400 text-sm">Active Listings</p>
+              </div>
+              <div>
+                <p className="text-3xl md:text-4xl font-bold text-white">{campuses.length}+</p>
+                <p className="text-slate-400 text-sm">Campuses</p>
+              </div>
+              <div>
+                <p className="text-3xl md:text-4xl font-bold text-white">{categories.length}</p>
+                <p className="text-slate-400 text-sm">Categories</p>
+              </div>
+            </div>
           </div>
         </section>
       )}
@@ -1168,55 +1207,63 @@ function App() {
             <div>
               {/* Main Content Column */}
               <div>
-              {/* Search Results */}
+              {/* Search Results - Premium Design */}
               {showSearchResults && (
-                <section className="mb-12">
-                  <div className="flex items-center justify-between mb-6">
-                    <h2 className="text-2xl font-semibold text-gray-900">
-                      Search Results for "{searchQuery}"
-                    </h2>
+                <section className="mb-14">
+                  <div className="flex items-center justify-between mb-8">
+                    <div>
+                      <h2 className="section-title">
+                        Search Results for "{searchQuery}"
+                      </h2>
+                    </div>
                     <button
                       onClick={() => setShowSearchResults(false)}
-                      className="text-gray-500 hover:text-gray-700"
+                      className="text-slate-400 hover:text-slate-600 p-2 rounded-lg hover:bg-slate-100 transition-colors"
                     >
-                      <X size={20} />
+                      <X size={22} />
                     </button>
                   </div>
 
                   {isSearching ? (
-                    <div className="text-center py-8">
-                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-                      <p className="text-gray-500 mt-2">Searching...</p>
+                    <div className="text-center py-16">
+                      <div className="w-12 h-12 border-4 border-teal-200 border-t-teal-500 rounded-full animate-spin mx-auto"></div>
+                      <p className="text-slate-500 mt-4 font-medium">Searching...</p>
                     </div>
                   ) : searchResults.length === 0 ? (
-                    <div className="text-center py-8">
-                      <p className="text-gray-500 text-lg">No items found for "{searchQuery}"</p>
-                      <p className="text-gray-400 text-sm mt-2">Try using different keywords or browse by category</p>
+                    <div className="text-center py-16 bg-slate-50 rounded-2xl">
+                      <div className="w-16 h-16 bg-slate-200 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                        <Search className="text-slate-400" size={32} />
+                      </div>
+                      <p className="text-slate-700 text-lg font-medium">No items found for "{searchQuery}"</p>
+                      <p className="text-slate-500 text-sm mt-2">Try using different keywords or browse by category</p>
                     </div>
                   ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                    <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-5">
                       {searchResults.map((item, index) => (
                         <div
                           key={`search-result-${item._id}-${index}`}
-                          className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
+                          className="product-card cursor-pointer"
                           onClick={() => setSelectedProduct(item)}
                         >
-                          <img
-                            src={item.images?.[0]?.url || 'https://via.placeholder.com/300x200'}
-                            alt={item.title}
-                            className="w-full h-48 object-cover"
-                            loading="lazy"
-                          />
+                          <div className="product-image-container">
+                            <img
+                              src={item.images?.[0]?.url || item.images?.[0] || 'https://via.placeholder.com/300x200'}
+                              alt={item.title}
+                              loading="lazy"
+                            />
+                          </div>
                           <div className="p-4">
-                            <div className="flex items-start justify-between gap-2 mb-2">
-                              <h3 className="font-semibold text-gray-900 line-clamp-2 flex-1">{item.title}</h3>
-                              {item.sponsored?.isSponsored && <SponsoredBadge size="small" variant="default" />}
-                            </div>
-                            <p className="text-2xl font-bold text-blue-600 mb-2">KES {item.price}</p>
-                            <p className="text-sm text-gray-600 mb-2 line-clamp-2">{item.description}</p>
-                            <div className="flex items-center justify-between text-sm text-gray-500">
-                              <span className="bg-gray-100 px-2 py-1 rounded">{item.condition}</span>
-                              <span>{item.category?.name}</span>
+                            <p className="text-lg font-bold text-slate-900 mb-1">KES {item.price?.toLocaleString()}</p>
+                            <h3 className="text-sm text-slate-700 line-clamp-2 mb-2">{item.title}</h3>
+                            <div className="flex items-center gap-2 text-xs text-slate-500">
+                              <span className={`px-2 py-0.5 rounded ${
+                                item.condition === 'Like New' || item.condition === 'Excellent'
+                                  ? 'bg-green-100 text-green-700'
+                                  : 'bg-amber-100 text-amber-700'
+                              }`}>
+                                {item.condition}
+                              </span>
+                              <span>{item.category?.name || item.category}</span>
                             </div>
                           </div>
                         </div>
@@ -1226,14 +1273,16 @@ function App() {
                 </section>
               )}
 
-              {/* Browse by Category */}
-              <section className="mb-12">
-                <div className="flex items-center justify-between mb-6">
-                  <h2 className="text-2xl font-semibold text-gray-900">Browse by Category</h2>
+              {/* Browse by Category - Premium Design */}
+              <section className="mb-14">
+                <div className="flex items-center justify-between mb-8">
+                  <div>
+                    <h2 className="section-title">Browse by Category</h2>
+                  </div>
                   {selectedCategory && (
                     <button
                       onClick={() => setSelectedCategory(null)}
-                      className="text-sm text-blue-600 hover:text-blue-800 font-medium transition-colors"
+                      className="btn-secondary text-sm px-4 py-2"
                     >
                       Clear Filter
                     </button>
@@ -1241,14 +1290,16 @@ function App() {
                 </div>
 
                 {selectedCategory && (
-                  <div className="mb-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
-                    <div className="flex items-center gap-3">
-                      <span className="text-3xl">{categories.find(cat => cat._id === selectedCategory)?.icon || '📦'}</span>
+                  <div className="mb-6 bg-gradient-to-r from-teal-50 to-emerald-50 border border-teal-200 rounded-2xl p-5">
+                    <div className="flex items-center gap-4">
+                      <div className="w-14 h-14 bg-white rounded-xl flex items-center justify-center shadow-sm">
+                        <span className="text-3xl">{categories.find(cat => cat._id === selectedCategory)?.icon || '📦'}</span>
+                      </div>
                       <div className="flex-1">
-                        <p className="text-sm text-blue-800">
-                          <span className="font-semibold">Filtering by:</span> {categories.find(cat => cat._id === selectedCategory)?.name || 'Category'}
+                        <p className="text-teal-800 font-semibold">
+                          Filtering by: {categories.find(cat => cat._id === selectedCategory)?.name || 'Category'}
                         </p>
-                        <p className="text-xs text-blue-600 mt-1">
+                        <p className="text-teal-600 text-sm mt-0.5">
                           Showing {getFilteredProducts().length} {getFilteredProducts().length === 1 ? 'item' : 'items'}
                         </p>
                       </div>
@@ -1258,12 +1309,11 @@ function App() {
 
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   {dataLoading ? (
-                    // Loading skeleton
                     Array.from({ length: 4 }).map((_, index) => (
-                      <div key={`category-skeleton-${index}`} className="bg-white rounded-lg p-6 text-center border border-gray-200 animate-pulse">
-                        <div className="bg-gray-200 rounded-full w-12 h-12 mx-auto mb-3"></div>
-                        <div className="bg-gray-200 h-4 rounded mb-2"></div>
-                        <div className="bg-gray-200 h-3 rounded w-16 mx-auto"></div>
+                      <div key={`category-skeleton-${index}`} className="bg-white rounded-xl p-5 border border-slate-200">
+                        <div className="skeleton rounded-xl w-12 h-12 mx-auto mb-3"></div>
+                        <div className="skeleton h-4 rounded mb-2 w-3/4 mx-auto"></div>
+                        <div className="skeleton h-3 rounded w-1/2 mx-auto"></div>
                       </div>
                     ))
                   ) : (
@@ -1271,113 +1321,123 @@ function App() {
                       <button
                         key={category.id}
                         onClick={() => handleCategoryClick(category.id)}
-                        className={`rounded-lg p-6 text-center hover:shadow-lg transition-all duration-300 border-2 ${
+                        className={`bg-white rounded-lg p-5 text-center border transition-all ${
                           selectedCategory === category.id
-                            ? 'bg-blue-50 border-blue-500 shadow-lg transform scale-105'
-                            : 'bg-white border-gray-200 hover:border-gray-300'
+                            ? 'border-[#3E5C50] shadow-sm'
+                            : 'border-[#D6D1CA] hover:border-[#3E5C50] hover:shadow-sm'
                         }`}
                       >
-                        <div className="flex justify-center mb-3">
-                          <span className="text-4xl">{category.icon}</span>
+                        <div className="w-12 h-12 mx-auto mb-3 bg-[#F5F2ED] rounded-lg flex items-center justify-center">
+                          <span className="text-2xl">{category.icon}</span>
                         </div>
-                        <h3 className={`font-semibold mb-1 ${
-                          selectedCategory === category.id ? 'text-blue-700' : 'text-gray-900'
+                        <h3 className={`font-semibold text-sm mb-1 ${
+                          selectedCategory === category.id ? 'text-[#3E5C50]' : 'text-[#1E1E1E]'
                         }`}>{category.name}</h3>
-                        <p className={`text-sm ${
-                          selectedCategory === category.id ? 'text-blue-600 font-medium' : 'text-gray-500'
-                        }`}>{category.itemCount} items</p>
+                        <p className="text-xs text-[#5A5A5A]">{category.itemCount} items</p>
                       </button>
                     ))
                   )}
                 </div>
               </section>
 
-            {/* Featured Official Store Banner - Professional */}
-            <section className="mb-12 bg-gradient-to-r from-orange-500 via-orange-600 to-red-600 rounded-xl shadow-xl overflow-hidden">
-              <div className="relative p-8 md:p-10">
-                {/* Background Pattern */}
-                <div className="absolute inset-0 opacity-10">
-                  <div className="absolute inset-0" style={{
-                    backgroundImage: 'radial-gradient(circle at 20px 20px, white 1px, transparent 0)',
-                    backgroundSize: '40px 40px'
-                  }}></div>
+            {/* Browse by Campus Section - Premium Design */}
+            <section className="mb-14">
+              <div className="flex items-center justify-between mb-8">
+                <div>
+                  <h2 className="section-title">Browse by Campus</h2>
                 </div>
+                {selectedCampus && (
+                  <button
+                    onClick={() => setSelectedCampus(null)}
+                    className="btn-secondary text-sm px-4 py-2"
+                  >
+                    Clear Campus
+                  </button>
+                )}
+              </div>
 
-                {/* Content */}
-                <div className="relative flex flex-col md:flex-row items-center justify-between gap-6 text-white">
-                  <div className="flex items-center gap-4 flex-1">
-                    <Store className="text-white hidden md:block" size={48} />
-                    <div className="text-center md:text-left">
-                      <div className="flex items-center justify-center md:justify-start gap-2 mb-2">
-                        <h2 className="text-2xl md:text-3xl font-bold">Official E-Soko Store</h2>
-                        <span className="bg-white bg-opacity-20 backdrop-blur-sm text-white text-xs px-3 py-1 rounded-full font-bold">
-                          OFFICIAL
-                        </span>
-                      </div>
-                      <p className="text-white text-opacity-95 text-base md:text-lg">
-                        Premium campus merchandise and verified products - Coming Soon!
+              <CampusList
+                campuses={campuses}
+                selectedCampus={selectedCampus}
+                onCampusSelect={handleCampusSelect}
+                loading={campusesLoading}
+                products={products}
+              />
+
+              {selectedCampus && (
+                <div className="mt-6 bg-gradient-to-r from-emerald-50 to-green-50 border border-emerald-200 rounded-2xl p-5">
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center shadow-sm">
+                      <span className="text-2xl">📍</span>
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-emerald-800 font-semibold">
+                        Filtering by: {selectedCampus}
+                      </p>
+                      <p className="text-emerald-600 text-sm mt-0.5">
+                        Showing {getFilteredProducts().length} {getFilteredProducts().length === 1 ? 'item' : 'items'}
                       </p>
                     </div>
                   </div>
-                  <button
-                    onClick={handleShopNowClick}
-                    className="bg-white text-orange-600 px-8 py-3 rounded-lg font-bold hover:bg-opacity-90 transition-all shadow-lg whitespace-nowrap"
-                  >
-                    Learn More →
-                  </button>
                 </div>
-              </div>
+              )}
             </section>
 
+            {/* Product Listings with Sidebar */}
+            <div className="flex gap-6">
+              {/* Main Content - Scrollable */}
+              <div className="flex-1 min-w-0 max-h-[800px] overflow-y-auto pr-2 scroll-container">
             {/* Recent Listings Section */}
             <section id="product-listings">
               {/* Header with Sort */}
-              <div className="flex items-center justify-between mb-6">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
                 <div>
-                  <div className="flex items-center gap-3">
-                    <h2 className="text-2xl font-semibold text-gray-900">
+                  <div className="flex items-center gap-3 flex-wrap">
+                    <h2 className="section-title">
                       {selectedCategory
                         ? `${categories.find(cat => cat._id === selectedCategory)?.name || 'Category'} Items`
-                        : 'Recent Listings'
+                        : selectedCampus
+                          ? `Items at ${selectedCampus}`
+                          : 'Recent Listings'
                       }
                     </h2>
-                    <span className="bg-blue-100 text-blue-800 text-sm font-medium px-3 py-1 rounded-full">
+                    <span className="bg-gradient-to-r from-teal-500 to-emerald-500 text-white text-sm font-semibold px-4 py-1.5 rounded-full shadow-sm">
                       {getFilteredProducts().length} {getFilteredProducts().length === 1 ? 'item' : 'items'}
                     </span>
                   </div>
-                  {selectedCategory && (
+                  {(selectedCategory || selectedCampus) && (
                     <button
-                      onClick={() => setSelectedCategory(null)}
-                      className="text-sm text-blue-600 hover:text-blue-800 mt-2 flex items-center gap-1 hover:gap-2 transition-all"
+                      onClick={() => {
+                        setSelectedCategory(null)
+                        setSelectedCampus(null)
+                      }}
+                      className="text-sm text-teal-600 hover:text-teal-700 mt-3 flex items-center gap-1 hover:gap-2 transition-all font-medium"
                     >
-                      ← Show all items
+                      ← Clear all filters
                     </button>
                   )}
                 </div>
                 <div className="relative">
-                  <select className="appearance-none bg-white border border-gray-300 rounded-lg px-4 py-2 pr-10 text-sm font-medium text-gray-700 hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer">
+                  <select className="appearance-none bg-white border-2 border-slate-200 rounded-xl px-5 py-2.5 pr-12 text-sm font-medium text-slate-700 hover:border-teal-400 focus:outline-none focus:border-teal-500 cursor-pointer transition-colors shadow-sm">
                     <option>Sort by: Recent</option>
                     <option>Sort by: Price Low to High</option>
                     <option>Sort by: Price High to Low</option>
                     <option>Sort by: Popular</option>
                   </select>
-                  <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none" size={16} />
+                  <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={18} />
                 </div>
               </div>
 
               {/* Loading skeleton for products */}
               {dataLoading ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-5">
                   {Array.from({ length: 6 }).map((_, index) => (
-                    <div key={`product-skeleton-${index}`} className="bg-white rounded-lg shadow-md overflow-hidden animate-pulse">
-                      <div className="bg-gray-200 h-48 w-full"></div>
+                    <div key={`product-skeleton-${index}`} className="bg-white rounded-2xl shadow-sm overflow-hidden animate-pulse">
+                      <div className="bg-gray-200 aspect-[4/3] w-full"></div>
                       <div className="p-4">
-                        <div className="bg-gray-200 h-6 rounded mb-2"></div>
-                        <div className="bg-gray-200 h-4 rounded w-3/4 mb-3"></div>
-                        <div className="flex justify-between items-center">
-                          <div className="bg-gray-200 h-6 rounded w-20"></div>
-                          <div className="bg-gray-200 h-8 rounded w-24"></div>
-                        </div>
+                        <div className="bg-gray-200 h-5 rounded mb-2 w-2/3"></div>
+                        <div className="bg-gray-200 h-4 rounded w-full mb-2"></div>
+                        <div className="bg-gray-200 h-3 rounded w-1/2"></div>
                       </div>
                     </div>
                   ))}
@@ -1409,149 +1469,65 @@ function App() {
                   </div>
                 </div>
               ) : getMappedProducts().length === 0 ? (
-                <div className="text-center py-16 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl border-2 border-dashed border-blue-200">
-                  <div className="text-7xl mb-6">🛍️</div>
-                  <h3 className="text-2xl font-bold text-gray-900 mb-3">
-                    Welcome to E-Soko Marketplace!
+                <div className="text-center py-20 bg-gradient-to-br from-slate-50 via-teal-50/30 to-emerald-50/30 rounded-3xl border-2 border-dashed border-slate-200">
+                  <div className="w-24 h-24 mx-auto mb-6 bg-gradient-to-br from-teal-400 to-emerald-500 rounded-3xl flex items-center justify-center shadow-lg shadow-teal-500/20">
+                    <ShoppingBag className="text-white" size={48} />
+                  </div>
+                  <h3 className="text-3xl font-bold text-slate-800 mb-3">
+                    Welcome to E-Soko!
                   </h3>
-                  <p className="text-gray-600 mb-6 max-w-md mx-auto text-lg">
+                  <p className="text-slate-600 mb-8 max-w-md mx-auto text-lg">
                     No items listed yet. Be the first to share what you're selling with the campus community!
                   </p>
                   <button
                     onClick={handlePostItem}
-                    className="inline-flex items-center gap-2 px-8 py-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-semibold text-lg shadow-lg hover:shadow-xl"
+                    className="btn-cta inline-flex items-center gap-2 px-10 py-4 text-lg shadow-xl shadow-orange-500/20"
                   >
-                    <Plus size={20} />
+                    <Plus size={22} strokeWidth={2.5} />
                     List Your First Item
                   </button>
-                  <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-4 max-w-2xl mx-auto">
-                    <div className="bg-white rounded-lg p-4 shadow-sm">
-                      <div className="text-3xl mb-2">📸</div>
-                      <p className="text-sm font-medium text-gray-700">Upload Photos</p>
+                  <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-5 max-w-2xl mx-auto">
+                    <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 hover:shadow-md transition-shadow">
+                      <div className="w-12 h-12 bg-teal-100 rounded-xl flex items-center justify-center mx-auto mb-3">
+                        <Upload className="text-teal-600" size={24} />
+                      </div>
+                      <p className="font-semibold text-slate-800">Upload Photos</p>
+                      <p className="text-sm text-slate-500 mt-1">Add up to 5 images</p>
                     </div>
-                    <div className="bg-white rounded-lg p-4 shadow-sm">
-                      <div className="text-3xl mb-2">💰</div>
-                      <p className="text-sm font-medium text-gray-700">Set Your Price</p>
+                    <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 hover:shadow-md transition-shadow">
+                      <div className="w-12 h-12 bg-emerald-100 rounded-xl flex items-center justify-center mx-auto mb-3">
+                        <Tag className="text-emerald-600" size={24} />
+                      </div>
+                      <p className="font-semibold text-slate-800">Set Your Price</p>
+                      <p className="text-sm text-slate-500 mt-1">Competitive pricing</p>
                     </div>
-                    <div className="bg-white rounded-lg p-4 shadow-sm">
-                      <div className="text-3xl mb-2">🤝</div>
-                      <p className="text-sm font-medium text-gray-700">Connect with Buyers</p>
+                    <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 hover:shadow-md transition-shadow">
+                      <div className="w-12 h-12 bg-orange-100 rounded-xl flex items-center justify-center mx-auto mb-3">
+                        <Users className="text-orange-600" size={24} />
+                      </div>
+                      <p className="font-semibold text-slate-800">Connect</p>
+                      <p className="text-sm text-slate-500 mt-1">Meet campus buyers</p>
                     </div>
                   </div>
                 </div>
               ) : (
                 <>
-                  {/* Listings Grid with Integrated Ads */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Listings Grid */}
+                  <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-5">
                     {getMappedProducts().map((item, index) => {
-                      // Smart Native Ad Rotation Algorithm
-                      // Shows ads starting from firstAdPosition, then every nativeAdFrequency products
-                      // Rotates through all available native ads using modulo
-                      const shouldShowNativeAd = nativeAds.length > 0 && index >= AD_CONFIG.firstAdPosition &&
-                                                   (index - AD_CONFIG.firstAdPosition) % AD_CONFIG.nativeAdFrequency === 0
-                      const nativeAdRotationIndex = Math.floor((index - AD_CONFIG.firstAdPosition) / AD_CONFIG.nativeAdFrequency)
-                      const nativeAdToShow = nativeAds.length > 0 ? nativeAdRotationIndex % nativeAds.length : 0
-                      const showNativeAd = shouldShowNativeAd && nativeAdRotationIndex < AD_CONFIG.maxAdsPerPage && nativeAds.length > 0
-
-                      // Smart Sidebar Ad Rotation Algorithm for Mobile
-                      // Shows ads at strategic intervals, rotating through all available sidebar ads
-                      const shouldShowSidebarAd = sidebarAds.length > 0 && index >= AD_CONFIG.firstAdPosition &&
-                                                    (index - AD_CONFIG.firstAdPosition) % AD_CONFIG.sidebarAdFrequency === 0
-                      const sidebarAdRotationIndex = Math.floor((index - AD_CONFIG.firstAdPosition) / AD_CONFIG.sidebarAdFrequency)
-                      const sidebarAdToShow = sidebarAds.length > 0 ? sidebarAdRotationIndex % sidebarAds.length : 0
-                      const showSidebarAd = shouldShowSidebarAd && sidebarAdRotationIndex < AD_CONFIG.maxAdsPerPage && sidebarAds.length > 0
-
                       return (
                         <React.Fragment key={`item-${item.id}-${index}`}>
-                          {/* Native Ads - Show on all devices with rotation */}
-                          {showNativeAd && (
-                            <div
-                              key={`native-ad-${nativeAds[nativeAdToShow].id}-${index}`}
-                              className="bg-blue-50 border-2 border-blue-200 rounded-lg p-6 hover:shadow-lg transition-shadow duration-300"
-                            >
-                              <div className="flex items-start gap-4">
-                                <div className="text-5xl">{nativeAds[nativeAdToShow].image}</div>
-                                <div className="flex-1">
-                                  <div className="flex items-center gap-2 mb-2">
-                                    <span className="bg-blue-500 text-white text-xs px-2 py-1 rounded font-semibold">
-                                      SPONSORED
-                                    </span>
-                                  </div>
-                                  <h3 className="font-bold text-gray-900 mb-2">
-                                    {nativeAds[nativeAdToShow].title}
-                                  </h3>
-                                  <p className="text-gray-600 text-sm mb-4">
-                                    {nativeAds[nativeAdToShow].description}
-                                  </p>
-                                  <button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-colors">
-                                    {nativeAds[nativeAdToShow].cta}
-                                  </button>
-                                </div>
-                              </div>
-                            </div>
-                          )}
-
-                          {/* Sidebar Ads - Show only on mobile between products with rotation */}
-                          {showSidebarAd && (
-                            <div
-                              key={`sidebar-ad-${sidebarAds[sidebarAdToShow].id}-${index}`}
-                              className="lg:hidden bg-gradient-to-r rounded-xl p-4 shadow-md hover:shadow-lg transition-all duration-300 cursor-pointer"
-                              onClick={sidebarAds[sidebarAdToShow].onClick}
-                            >
-                              <div className={`bg-gradient-to-r ${sidebarAds[sidebarAdToShow].gradient} rounded-xl p-4`}>
-                                <div className="flex items-start gap-4">
-                                  <div className="text-5xl flex-shrink-0">{sidebarAds[sidebarAdToShow].icon}</div>
-                                  <div className="flex-1 min-w-0">
-                                    <div className="flex items-center gap-2 mb-2 flex-wrap">
-                                      <span className="bg-white bg-opacity-90 text-xs px-2 py-1 rounded-full font-bold"
-                                            style={{
-                                              color: sidebarAds[sidebarAdToShow].gradient.includes('orange') ? '#ea580c' :
-                                                     sidebarAds[sidebarAdToShow].gradient.includes('purple') ? '#9333ea' :
-                                                     sidebarAds[sidebarAdToShow].gradient.includes('green') ? '#16a34a' :
-                                                     sidebarAds[sidebarAdToShow].gradient.includes('pink') ? '#db2777' :
-                                                     sidebarAds[sidebarAdToShow].gradient.includes('blue') ? '#2563eb' :
-                                                     sidebarAds[sidebarAdToShow].gradient.includes('red') ? '#dc2626' :
-                                                     sidebarAds[sidebarAdToShow].gradient.includes('teal') ? '#0d9488' :
-                                                     sidebarAds[sidebarAdToShow].gradient.includes('indigo') ? '#4f46e5' : '#16a34a'
-                                            }}>
-                                        {sidebarAds[sidebarAdToShow].badge}
-                                      </span>
-                                    </div>
-                                    <h3 className={`text-xl font-bold mb-2 ${sidebarAds[sidebarAdToShow].textColor}`}>
-                                      {sidebarAds[sidebarAdToShow].title}
-                                    </h3>
-                                    <p className={`text-sm mb-3 ${sidebarAds[sidebarAdToShow].textColor} opacity-90`}>
-                                      {sidebarAds[sidebarAdToShow].description}
-                                    </p>
-                                    <button
-                                      className={`${sidebarAds[sidebarAdToShow].ctaClass} px-5 py-2 rounded-lg text-sm font-semibold transition-colors`}
-                                      onClick={(e) => {
-                                        e.stopPropagation()
-                                        if (sidebarAds[sidebarAdToShow].onClick) {
-                                          sidebarAds[sidebarAdToShow].onClick()
-                                        }
-                                      }}
-                                    >
-                                      {sidebarAds[sidebarAdToShow].cta}
-                                    </button>
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          )}
-
                           {/* Product Card */}
                           <div
                             onClick={() => setSelectedProduct(item)}
-                            className="bg-white rounded-lg overflow-hidden border border-gray-200 hover:shadow-lg transition-shadow duration-300 cursor-pointer"
+                            className="product-card cursor-pointer"
                           >
-                            {/* Image Area */}
-                            <div className="relative bg-gradient-to-br from-gray-100 to-gray-200 h-48 flex items-center justify-center overflow-hidden">
+                            {/* Image */}
+                            <div className="product-image-container">
                               {item.images[0]?.startsWith('data:') || item.images[0]?.startsWith('http') ? (
                                 <img
                                   src={item.images[0]}
                                   alt={item.title}
-                                  className="w-full h-full object-cover"
                                   loading="lazy"
                                   onError={(e) => {
                                     e.target.style.display = 'none'
@@ -1560,66 +1536,54 @@ function App() {
                                 />
                               ) : null}
                               <div
-                                className="w-full h-full flex items-center justify-center"
+                                className="w-full h-full flex items-center justify-center bg-slate-100"
                                 style={{ display: item.images[0]?.startsWith('data:') || item.images[0]?.startsWith('http') ? 'none' : 'flex' }}
                               >
-                                <span className="text-7xl">{item.images[0] || '📦'}</span>
+                                <span className="text-5xl">{item.images[0] || '📦'}</span>
                               </div>
+
+                              {/* Image Count */}
                               {item.images.length > 1 && (
-                                <span className="absolute top-3 right-3 bg-black bg-opacity-60 text-white text-xs px-2 py-1 rounded-full font-semibold">
-                                  +{item.images.length - 1} more
+                                <span className="absolute bottom-2 right-2 bg-black/60 text-white text-xs px-2 py-1 rounded">
+                                  1/{item.images.length}
                                 </span>
                               )}
                             </div>
 
-                            {/* Product Info */}
+                            {/* Info */}
                             <div className="p-4">
-                              <div className="flex items-start justify-between mb-2">
-                                <div className="flex-1">
-                                  <h3 className="font-semibold text-gray-900 text-lg">
-                                    {item.title}
-                                  </h3>
-                                  {item.sponsored?.isSponsored && (
-                                    <div className="mt-1">
-                                      <SponsoredBadge size="small" variant="default" />
-                                    </div>
-                                  )}
-                                </div>
-                                <span className="text-blue-600 font-bold text-xl ml-2">
-                                  KES {item.price.toLocaleString()}
-                                </span>
-                              </div>
-
-                              <div className="flex items-center gap-2 mb-3">
-                                <span className="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded-full">
-                                  {item.category}
-                                </span>
-                                <span className={`text-xs px-2 py-1 rounded-full font-semibold ${
+                              <p className="text-lg font-bold text-slate-900 mb-1">
+                                KES {item.price.toLocaleString()}
+                              </p>
+                              <h3 className="text-sm text-slate-700 line-clamp-2 mb-2">
+                                {item.title}
+                              </h3>
+                              <div className="flex items-center gap-2 text-xs text-slate-500">
+                                <span className={`px-2 py-0.5 rounded ${
                                   item.condition === 'Like New' || item.condition === 'Excellent'
                                     ? 'bg-green-100 text-green-700'
-                                    : 'bg-yellow-100 text-yellow-700'
+                                    : 'bg-amber-100 text-amber-700'
                                 }`}>
                                   {item.condition}
                                 </span>
+                                <span>{item.category}</span>
                               </div>
-
-                              <div className="flex gap-2">
-                                <button className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-lg font-semibold transition-colors">
-                                  View Details
+                              {item.sponsored?.isSponsored && (
+                                <div className="mt-2">
+                                  <SponsoredBadge size="small" variant="default" />
+                                </div>
+                              )}
+                              {isAdmin && (
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    handleDeleteItem(item._id)
+                                  }}
+                                  className="mt-3 w-full bg-red-500 hover:bg-red-600 text-white text-sm py-2 rounded transition-colors"
+                                >
+                                  Delete
                                 </button>
-                                {isAdmin && (
-                                  <button
-                                    onClick={(e) => {
-                                      e.stopPropagation()
-                                      handleDeleteItem(item._id)
-                                    }}
-                                    className="bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded-lg transition-colors"
-                                    title="Admin: Delete this item"
-                                  >
-                                    <Trash2 size={18} />
-                                  </button>
-                                )}
-                              </div>
+                              )}
                             </div>
                           </div>
                         </React.Fragment>
@@ -1629,234 +1593,95 @@ function App() {
                 </>
               )}
             </section>
-            </div>
+              </div>
 
-          </div>
+              {/* Right Sidebar - Ads (Large screens only) */}
+              <aside className="hidden lg:block w-72 flex-shrink-0">
+                <div className="sticky top-24 space-y-4">
+                  {/* Ad Slot 1 */}
+                  <AdDisplay position="sidebar" />
+
+                  {/* Promo Banner */}
+                  <div className="bg-[#3E5C50] rounded-lg p-5 text-white">
+                    <h4 className="font-bold mb-2">Sell Your Items</h4>
+                    <p className="text-sm text-white/80 mb-4">List your items for free and reach thousands of students.</p>
+                    <button
+                      onClick={handlePostItem}
+                      className="w-full bg-[#B86B3E] hover:bg-[#A85F36] text-white font-semibold py-2 rounded-lg text-sm transition-colors"
+                    >
+                      Start Selling
+                    </button>
+                  </div>
+
+                  {/* Ad Slot 2 */}
+                  <AdDisplay position="sidebar" />
+                </div>
+              </aside>
+            </div>
+            </div>
+            </div>
           </>
         )}
-        {activeTab === 'official-store' && (
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-            {/* Header with Admin Controls */}
-            <div className="mb-8">
-              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                <div>
-                  <div className="flex items-center gap-3 mb-2">
-                    <Store className="text-orange-600" size={32} />
-                    <h1 className="text-3xl font-bold text-gray-900">E-Soko Official Store</h1>
-                  </div>
-                  <p className="text-gray-600">
-                    Premium quality merchandise and exclusive campus gear
-                  </p>
-                </div>
 
-                {/* Admin-only Add Product Button */}
-                {isAdmin && (
-                  <button
-                    onClick={handlePostItem}
-                    className="inline-flex items-center gap-2 bg-orange-600 text-white px-6 py-3 rounded-lg hover:bg-orange-700 transition-colors font-semibold shadow-lg hover:shadow-xl"
-                  >
-                    <Plus size={20} />
-                    Add Product
-                  </button>
-                )}
-              </div>
-
-              {/* Features Banner */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
-                <div className="bg-gradient-to-br from-orange-50 to-orange-100 rounded-lg p-4 border border-orange-200">
-                  <div className="flex items-center gap-3">
-                    <div className="text-2xl">✓</div>
-                    <div>
-                      <h3 className="font-bold text-gray-900">Verified Quality</h3>
-                      <p className="text-sm text-gray-600">100% authentic products</p>
-                    </div>
-                  </div>
-                </div>
-                <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg p-4 border border-blue-200">
-                  <div className="flex items-center gap-3">
-                    <div className="text-2xl">🚚</div>
-                    <div>
-                      <h3 className="font-bold text-gray-900">Fast Delivery</h3>
-                      <p className="text-sm text-gray-600">Quick campus delivery</p>
-                    </div>
-                  </div>
-                </div>
-                <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-lg p-4 border border-green-200">
-                  <div className="flex items-center gap-3">
-                    <div className="text-2xl">💳</div>
-                    <div>
-                      <h3 className="font-bold text-gray-900">Secure Payment</h3>
-                      <p className="text-sm text-gray-600">Safe payment options</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Loading State */}
-            {officialStoreLoading && (
-              <div className="text-center py-16">
-                <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-orange-600 border-t-transparent"></div>
-                <p className="mt-4 text-gray-600">Loading official store products...</p>
-              </div>
-            )}
-
-            {/* Products Grid */}
-            {!officialStoreLoading && officialStoreProducts.length > 0 && (
-              <section>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                  {officialStoreProducts.map((product) => (
-                    <div
-                      key={product._id}
-                      className="bg-white rounded-xl shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden cursor-pointer border border-gray-100 hover:border-orange-300"
-                      onClick={() => handleProductClick(product)}
-                    >
-                      {/* Official Store Badge */}
-                      <div className="relative">
-                        <img
-                          src={product.images?.[0]?.url || '/placeholder.jpg'}
-                          alt={product.title}
-                          className="w-full h-48 object-cover"
-                          loading="lazy"
-                        />
-                        <span className="absolute top-2 right-2 bg-orange-600 text-white text-xs font-bold px-3 py-1 rounded-full flex items-center gap-1">
-                          <Store size={12} />
-                          Official
-                        </span>
-                      </div>
-
-                      <div className="p-4">
-                        <h3 className="font-bold text-gray-900 mb-1 line-clamp-2 text-lg">
-                          {product.title}
-                        </h3>
-                        <p className="text-gray-600 text-sm mb-3 line-clamp-2">
-                          {product.description}
-                        </p>
-
-                        <div className="flex items-center justify-between mb-3">
-                          <span className="text-2xl font-bold text-orange-600">
-                            KSh {product.price?.toLocaleString()}
-                          </span>
-                          <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full font-medium">
-                            {product.condition}
-                          </span>
-                        </div>
-
-                        {product.category && (
-                          <div className="flex items-center gap-2 text-sm text-gray-500 mb-3">
-                            <Tag size={14} />
-                            <span>{product.category.name}</span>
-                          </div>
-                        )}
-
-                        {isAdmin && (
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              handleDeleteItem(product._id)
-                            }}
-                            className="w-full bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded-lg transition-colors text-sm font-semibold flex items-center justify-center gap-2"
-                            title="Admin: Delete this item"
-                          >
-                            <Trash2 size={16} />
-                            Delete
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </section>
-            )}
-
-            {/* Empty State */}
-            {!officialStoreLoading && officialStoreProducts.length === 0 && (
-              <section className="text-center py-16 bg-gradient-to-br from-orange-50 to-red-50 rounded-2xl border-2 border-dashed border-orange-200">
-                <div className="text-6xl mb-4">🏪</div>
-                <h3 className="text-2xl font-bold text-gray-900 mb-2">
-                  Official Store Coming Soon
-                </h3>
-                <p className="text-gray-600 mb-6 max-w-md mx-auto">
-                  We're curating premium products for you. Check back soon for exclusive deals!
-                </p>
-                {isAdmin && (
-                  <button
-                    onClick={handlePostItem}
-                    className="inline-flex items-center gap-2 bg-orange-600 text-white px-6 py-3 rounded-lg hover:bg-orange-700 transition-colors font-semibold"
-                  >
-                    <Plus size={20} />
-                    Add First Product
-                  </button>
-                )}
-                {!isAdmin && (
-                  <button
-                    onClick={() => setActiveTab('marketplace')}
-                    className="inline-flex items-center gap-2 bg-orange-600 text-white px-6 py-3 rounded-lg hover:bg-orange-700 transition-colors font-semibold"
-                  >
-                    <ShoppingBag size={20} />
-                    Browse Marketplace
-                  </button>
-                )}
-              </section>
-            )}
-          </div>
-        )}
-
-        {/* My Listings Tab */}
+        {/* My Listings Tab - Premium Design */}
         {activeTab === 'my-listings' && (
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
             {/* Header */}
-            <div className="mb-8">
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">My Listings</h1>
-              <p className="text-gray-600">Manage your posted items</p>
+            <div className="mb-10">
+              <h1 className="text-3xl font-bold text-slate-800 mb-2">My Listings</h1>
+              <p className="text-slate-500">Manage your posted items</p>
             </div>
 
             {/* Check if user is logged in */}
             {!authToken || !user ? (
-              <div className="text-center py-16 bg-gray-50 rounded-lg">
-                <div className="text-6xl mb-4">🔒</div>
-                <h3 className="text-xl font-semibold text-gray-900 mb-2">
+              <div className="text-center py-20 bg-gradient-to-br from-slate-50 to-teal-50/30 rounded-3xl border-2 border-dashed border-slate-200">
+                <div className="w-20 h-20 mx-auto mb-6 bg-slate-200 rounded-2xl flex items-center justify-center">
+                  <User className="text-slate-400" size={40} />
+                </div>
+                <h3 className="text-2xl font-bold text-slate-800 mb-3">
                   Login Required
                 </h3>
-                <p className="text-gray-600 mb-6">
-                  Please login or register to view your listings
+                <p className="text-slate-500 mb-8 max-w-md mx-auto">
+                  Please login or register to view and manage your listings
                 </p>
                 <button
                   onClick={() => setShowAuthModal(true)}
-                  className="inline-flex items-center gap-2 bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                  className="btn-primary inline-flex items-center gap-2 px-8 py-3"
                 >
                   <User size={20} />
                   Login / Register
                 </button>
               </div>
             ) : myListingsLoading ? (
-              <div className="text-center py-16">
-                <div className="text-4xl mb-4">⏳</div>
-                <p className="text-gray-600">Loading your listings...</p>
+              <div className="text-center py-20">
+                <div className="w-12 h-12 border-4 border-teal-200 border-t-teal-500 rounded-full animate-spin mx-auto mb-4"></div>
+                <p className="text-slate-500 font-medium">Loading your listings...</p>
               </div>
             ) : getMyListings().length === 0 ? (
-              <div className="text-center py-16 bg-gray-50 rounded-lg">
-                <div className="text-6xl mb-4">📦</div>
-                <h3 className="text-xl font-semibold text-gray-900 mb-2">
+              <div className="text-center py-20 bg-gradient-to-br from-slate-50 to-teal-50/30 rounded-3xl border-2 border-dashed border-slate-200">
+                <div className="w-20 h-20 mx-auto mb-6 bg-gradient-to-br from-teal-400 to-emerald-500 rounded-2xl flex items-center justify-center shadow-lg shadow-teal-500/20">
+                  <ShoppingBag className="text-white" size={40} />
+                </div>
+                <h3 className="text-2xl font-bold text-slate-800 mb-3">
                   No listings yet
                 </h3>
-                <p className="text-gray-600 mb-6">
-                  You haven't posted any items for sale yet.
+                <p className="text-slate-500 mb-8 max-w-md mx-auto">
+                  You haven't posted any items for sale yet. Start selling today!
                 </p>
                 <button
                   onClick={handlePostItem}
-                  className="inline-flex items-center gap-2 bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                  className="btn-cta inline-flex items-center gap-2 px-8 py-3"
                 >
-                  <Plus size={20} />
+                  <Plus size={20} strokeWidth={2.5} />
                   Post Your First Item
                 </button>
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                 {getMyListings().map((item) => (
                   <div
                     key={item._id}
-                    className="bg-white rounded-lg overflow-hidden border border-gray-200 hover:shadow-lg transition-shadow duration-300"
+                    className="product-card"
                   >
                     {/* Image */}
                     <div className="relative bg-gradient-to-br from-gray-100 to-gray-200 h-48 flex items-center justify-center overflow-hidden">
@@ -2010,7 +1835,7 @@ function App() {
               <p className="text-gray-700 mb-4">Have questions, need assistance, or want to report an issue? Reach out to us:</p>
               <div className="space-y-3 text-gray-700">
                 <div className="bg-blue-50 rounded-lg p-4">
-                  <p className="text-lg"><strong>Email:</strong> <a href="mailto:support@ecampus.com" className="text-blue-600 hover:underline">support@ecampus.com</a></p>
+                  <p className="text-lg"><strong>Email:</strong> <a href="mailto:esokostore1@gmail.com" className="text-blue-600 hover:underline">esokostore1@gmail.com</a></p>
                   <p className="text-sm text-gray-600 mt-2">Use this email for all inquiries including:</p>
                   <ul className="text-sm text-gray-600 space-y-1 ml-4 mt-1">
                     <li>• General questions and support</li>
@@ -2055,6 +1880,8 @@ function App() {
             if (e.target === e.currentTarget) {
               setSelectedProduct(null)
               setCurrentImageIndex(0)
+              setIsImageFullscreen(false)
+              setImageZoomLevel(1)
             }
           }}
         >
@@ -2064,6 +1891,8 @@ function App() {
               onClick={() => {
                 setSelectedProduct(null)
                 setCurrentImageIndex(0)
+                setIsImageFullscreen(false)
+                setImageZoomLevel(1)
               }}
               className="absolute top-4 right-4 z-10 bg-white rounded-full p-2 hover:bg-gray-100 transition-colors shadow-lg"
             >
@@ -2073,8 +1902,17 @@ function App() {
             <div className="grid md:grid-cols-2 gap-6 sm:gap-8 p-4 sm:p-6 md:p-8">
               {/* Left Column - Image Gallery */}
               <div className="space-y-4">
-                {/* Main Image Display */}
-                <div className="relative bg-gradient-to-br from-gray-100 to-gray-200 rounded-lg h-64 sm:h-80 md:h-96 flex items-center justify-center overflow-hidden">
+                {/* Main Image Display - Larger on mobile */}
+                <div
+                  className="relative bg-gradient-to-br from-gray-100 to-gray-200 rounded-lg h-80 sm:h-96 md:h-[28rem] flex items-center justify-center overflow-hidden cursor-zoom-in"
+                  onClick={() => {
+                    const currentImage = selectedProduct.images?.[currentImageIndex] || selectedProduct.image
+                    if (currentImage?.startsWith('data:') || currentImage?.startsWith('http')) {
+                      setIsImageFullscreen(true)
+                      setImageZoomLevel(1)
+                    }
+                  }}
+                >
                   {(() => {
                     // Handle both 'image' (official store) and 'images' (marketplace) formats
                     const currentImage = selectedProduct.images?.[currentImageIndex] || selectedProduct.image
@@ -2106,6 +1944,18 @@ function App() {
                       {selectedProduct.images?.[currentImageIndex] || selectedProduct.image || '📦'}
                     </span>
                   </div>
+
+                  {/* Tap to zoom hint */}
+                  {(() => {
+                    const currentImage = selectedProduct.images?.[currentImageIndex] || selectedProduct.image
+                    const isImageUrl = currentImage?.startsWith('data:') || currentImage?.startsWith('http')
+                    return isImageUrl ? (
+                      <div className="absolute top-3 left-3 bg-black bg-opacity-50 text-white px-2 py-1 rounded text-xs font-medium flex items-center gap-1">
+                        <Search size={12} />
+                        Tap to zoom
+                      </div>
+                    ) : null
+                  })()}
 
                   {/* Previous Button */}
                   {selectedProduct.images && currentImageIndex > 0 && (
@@ -2346,6 +2196,112 @@ function App() {
         </div>
       )}
 
+      {/* Fullscreen Image Zoom Modal */}
+      {isImageFullscreen && selectedProduct && (
+        <div
+          className="fixed inset-0 bg-black z-[60] flex flex-col"
+          onClick={() => {
+            setIsImageFullscreen(false)
+            setImageZoomLevel(1)
+          }}
+        >
+          {/* Header Controls */}
+          <div className="absolute top-0 left-0 right-0 z-10 flex items-center justify-between p-4 bg-gradient-to-b from-black/70 to-transparent">
+            <div className="text-white text-sm font-medium">
+              {selectedProduct.images && `${currentImageIndex + 1} / ${selectedProduct.images.length}`}
+            </div>
+            <div className="flex items-center gap-2">
+              {/* Zoom Controls */}
+              <button
+                onClick={(e) => {
+                  e.stopPropagation()
+                  setImageZoomLevel(prev => Math.max(0.5, prev - 0.5))
+                }}
+                className="bg-white/20 hover:bg-white/30 text-white rounded-full w-10 h-10 flex items-center justify-center transition-colors"
+              >
+                <span className="text-xl font-bold">-</span>
+              </button>
+              <span className="text-white text-sm font-medium min-w-[4rem] text-center">
+                {Math.round(imageZoomLevel * 100)}%
+              </span>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation()
+                  setImageZoomLevel(prev => Math.min(3, prev + 0.5))
+                }}
+                className="bg-white/20 hover:bg-white/30 text-white rounded-full w-10 h-10 flex items-center justify-center transition-colors"
+              >
+                <span className="text-xl font-bold">+</span>
+              </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation()
+                  setIsImageFullscreen(false)
+                  setImageZoomLevel(1)
+                }}
+                className="bg-white/20 hover:bg-white/30 text-white rounded-full w-10 h-10 flex items-center justify-center transition-colors ml-2"
+              >
+                <X size={24} />
+              </button>
+            </div>
+          </div>
+
+          {/* Main Image Container */}
+          <div
+            className="flex-1 flex items-center justify-center overflow-auto p-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <img
+              src={selectedProduct.images?.[currentImageIndex] || selectedProduct.image}
+              alt={`${selectedProduct.title} - Fullscreen`}
+              className="max-w-none transition-transform duration-200 ease-out"
+              style={{
+                transform: `scale(${imageZoomLevel})`,
+                maxHeight: imageZoomLevel <= 1 ? '100%' : 'none',
+                maxWidth: imageZoomLevel <= 1 ? '100%' : 'none',
+              }}
+              onClick={(e) => {
+                e.stopPropagation()
+                // Toggle between 1x and 2x on tap
+                setImageZoomLevel(prev => prev === 1 ? 2 : 1)
+              }}
+              draggable={false}
+            />
+          </div>
+
+          {/* Navigation Arrows */}
+          {selectedProduct.images && currentImageIndex > 0 && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                setCurrentImageIndex(currentImageIndex - 1)
+                setImageZoomLevel(1)
+              }}
+              className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/20 hover:bg-white/30 text-white rounded-full p-3 transition-colors"
+            >
+              <ChevronLeft size={32} />
+            </button>
+          )}
+          {selectedProduct.images && currentImageIndex < selectedProduct.images.length - 1 && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                setCurrentImageIndex(currentImageIndex + 1)
+                setImageZoomLevel(1)
+              }}
+              className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/20 hover:bg-white/30 text-white rounded-full p-3 transition-colors"
+            >
+              <ChevronRight size={32} />
+            </button>
+          )}
+
+          {/* Bottom Hint */}
+          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 text-white/70 text-sm text-center">
+            Tap image to zoom in/out • Use +/- buttons to adjust
+          </div>
+        </div>
+      )}
+
       {/* Post Item Modal */}
       {showPostModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
@@ -2461,13 +2417,18 @@ function App() {
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Campus/Location
                     </label>
-                    <input
-                      type="text"
+                    <select
                       value={postFormData.location.campus}
                       onChange={(e) => handlePostFormChange('location.campus', e.target.value)}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      placeholder="e.g., Main Campus"
-                    />
+                    >
+                      <option value="">Select a campus</option>
+                      {campuses.filter(c => c.isActive).map((campus) => (
+                        <option key={campus._id} value={campus.name}>
+                          {campus.name}
+                        </option>
+                      ))}
+                    </select>
                   </div>
                 </div>
 
@@ -2650,50 +2611,89 @@ function App() {
           setShowAuthModal(false)
           setAuthModalMode('login')
           setAuthModalMessage('')
+          setResetToken(null)
         }}
         onAuthSuccess={(userData, token) => {
           setUser(userData)
           setAuthToken(token)
           setAuthModalMode('login')
           setAuthModalMessage('')
+          setResetToken(null)
         }}
         initialMode={authModalMode}
         message={authModalMessage}
+        resetToken={resetToken}
       />
 
-      {/* Footer */}
-      <footer className="bg-gray-800 text-gray-300 mt-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+      {/* Pre-footer Ad Banner */}
+      <section className="bg-[#F5F2ED] border-t border-b border-[#D6D1CA] py-10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <AdDisplay position="banner" />
+          <p className="text-center text-xs text-[#5A5A5A] mt-4">Interested in advertising? Contact us at esokostore1@gmail.com</p>
+        </div>
+      </section>
+
+      {/* Footer - Premium Design */}
+      <footer className="footer-premium text-[#D6D1CA]">
+
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10">
             {/* Column 1 - Logo and Tagline */}
-            <div>
-              <div className="flex items-center gap-2 mb-4">
-                <ShoppingBag className="text-blue-400" size={32} />
-                <span className="text-xl font-bold text-white">E-Soko</span>
+            <div className="lg:col-span-1">
+              <div className="flex items-center gap-3 mb-5">
+                <div className="bg-[#3E5C50] p-2.5 rounded-lg">
+                  <ShoppingBag className="text-white" size={24} />
+                </div>
+                <div>
+                  <span className="text-xl font-bold text-white">E-Soko</span>
+                  <p className="text-xs text-[#D6D1CA]">Campus Marketplace</p>
+                </div>
               </div>
-              <p className="text-gray-400 text-sm">
-                Your trusted marketplace. Buy and sell with fellow students safely and easily.
+              <p className="text-[#D6D1CA] text-sm leading-relaxed mb-6">
+                Your trusted campus marketplace. Buy and sell with fellow students safely, easily, and locally.
               </p>
+              {/* Trust indicators */}
+              <div className="flex items-center gap-4 text-xs text-[#D6D1CA]">
+                <div className="flex items-center gap-1">
+                  <Shield size={14} className="text-[#4E7C63]" />
+                  <span>Secure</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <Users size={14} className="text-[#4E7C63]" />
+                  <span>Student Only</span>
+                </div>
+              </div>
             </div>
 
             {/* Column 2 - Quick Links */}
             <div>
-              <h3 className="text-white font-semibold mb-4">Quick Links</h3>
-              <ul className="space-y-2">
+              <h3 className="text-white font-semibold mb-5 text-sm uppercase tracking-wider">Marketplace</h3>
+              <ul className="space-y-3">
                 <li>
                   <button
-                    onClick={() => handleTabSwitch('about')}
-                    className="text-gray-400 hover:text-white transition-colors text-sm"
+                    onClick={() => handleTabSwitch('marketplace')}
+                    className="text-[#D6D1CA] hover:text-[#B86B3E] transition-colors text-sm flex items-center gap-2 group"
                   >
-                    About Us
+                    <span className="w-1.5 h-1.5 bg-[#5A5A5A] rounded-full group-hover:bg-[#B86B3E] transition-colors"></span>
+                    Browse All Items
                   </button>
                 </li>
                 <li>
                   <button
-                    onClick={() => handleTabSwitch('about')}
-                    className="text-gray-400 hover:text-white transition-colors text-sm"
+                    onClick={handlePostItem}
+                    className="text-[#D6D1CA] hover:text-[#B86B3E] transition-colors text-sm flex items-center gap-2 group"
                   >
-                    Safety Tips
+                    <span className="w-1.5 h-1.5 bg-slate-600 rounded-full group-hover:bg-[#B86B3E] transition-colors"></span>
+                    Sell an Item
+                  </button>
+                </li>
+                <li>
+                  <button
+                    onClick={() => handleTabSwitch('my-listings')}
+                    className="text-slate-400 hover:text-[#B86B3E] transition-colors text-sm flex items-center gap-2 group"
+                  >
+                    <span className="w-1.5 h-1.5 bg-slate-600 rounded-full group-hover:bg-[#B86B3E] transition-colors"></span>
+                    My Listings
                   </button>
                 </li>
               </ul>
@@ -2701,30 +2701,33 @@ function App() {
 
             {/* Column 3 - Support */}
             <div>
-              <h3 className="text-white font-semibold mb-4">Support</h3>
-              <ul className="space-y-2">
+              <h3 className="text-white font-semibold mb-5 text-sm uppercase tracking-wider">Support</h3>
+              <ul className="space-y-3">
                 <li>
                   <button
                     onClick={() => handleTabSwitch('about')}
-                    className="text-gray-400 hover:text-white transition-colors text-sm"
+                    className="text-slate-400 hover:text-[#B86B3E] transition-colors text-sm flex items-center gap-2 group"
                   >
+                    <span className="w-1.5 h-1.5 bg-slate-600 rounded-full group-hover:bg-[#B86B3E] transition-colors"></span>
+                    About Us
+                  </button>
+                </li>
+                <li>
+                  <button
+                    onClick={() => handleTabSwitch('about')}
+                    className="text-slate-400 hover:text-[#B86B3E] transition-colors text-sm flex items-center gap-2 group"
+                  >
+                    <span className="w-1.5 h-1.5 bg-slate-600 rounded-full group-hover:bg-[#B86B3E] transition-colors"></span>
+                    Safety Tips
+                  </button>
+                </li>
+                <li>
+                  <button
+                    onClick={() => handleTabSwitch('about')}
+                    className="text-slate-400 hover:text-[#B86B3E] transition-colors text-sm flex items-center gap-2 group"
+                  >
+                    <span className="w-1.5 h-1.5 bg-slate-600 rounded-full group-hover:bg-[#B86B3E] transition-colors"></span>
                     Help Center
-                  </button>
-                </li>
-                <li>
-                  <button
-                    onClick={() => handleTabSwitch('about')}
-                    className="text-gray-400 hover:text-white transition-colors text-sm"
-                  >
-                    Contact Us
-                  </button>
-                </li>
-                <li>
-                  <button
-                    onClick={() => handleTabSwitch('about')}
-                    className="text-gray-400 hover:text-white transition-colors text-sm"
-                  >
-                    Report Issue
                   </button>
                 </li>
               </ul>
@@ -2732,26 +2735,33 @@ function App() {
 
             {/* Column 4 - Connect */}
             <div>
-              <h3 className="text-white font-semibold mb-4">Connect</h3>
-              <div className="flex gap-4">
+              <h3 className="text-white font-semibold mb-5 text-sm uppercase tracking-wider">Connect With Us</h3>
+              <p className="text-slate-400 text-sm mb-4">Follow us for updates and tips</p>
+              <div className="flex items-center gap-3">
                 <a
                   href="https://www.instagram.com/e_sokostore/"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="bg-gray-700 hover:bg-gray-600 p-2 rounded-lg transition-colors"
+                  className="flex items-center justify-center w-10 h-10 bg-slate-700/50 hover:bg-gradient-to-br hover:from-purple-500 hover:to-pink-500 rounded-xl transition-all duration-300 group"
                   aria-label="Follow us on Instagram"
                 >
-                  <Instagram size={20} className="text-gray-300" />
+                  <Instagram size={20} className="text-slate-400 group-hover:text-white transition-colors" />
                 </a>
               </div>
             </div>
           </div>
 
           {/* Bottom Border with Copyright */}
-          <div className="border-t border-gray-700 mt-8 pt-8 text-center">
-            <p className="text-gray-400 text-sm">
-              © {new Date().getFullYear()} E-Soko. All rights reserved.
-            </p>
+          <div className="border-t border-slate-700/50 mt-12 pt-8">
+            <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+              <p className="text-slate-500 text-sm">
+                © {new Date().getFullYear()} E-Soko. All rights reserved.
+              </p>
+              <div className="flex items-center gap-6 text-sm text-slate-500">
+                <button className="hover:text-[#B86B3E] transition-colors">Privacy Policy</button>
+                <button className="hover:text-[#B86B3E] transition-colors">Terms of Service</button>
+              </div>
+            </div>
           </div>
         </div>
       </footer>

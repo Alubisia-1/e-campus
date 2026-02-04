@@ -16,12 +16,12 @@ exports.getAllProducts = async (req, res) => {
       page = 1,
       limit = 12,
       category,
+      campus,
       minPrice,
       maxPrice,
       search,
       condition,
-      status = 'available',
-      isOfficialStore
+      status = 'available'
     } = req.query;
 
     // Generate cache key
@@ -29,9 +29,9 @@ exports.getAllProducts = async (req, res) => {
       page,
       limit,
       category,
+      campus,
       search,
-      status,
-      isOfficialStore
+      status
     });
 
     // Check cache first
@@ -49,16 +49,14 @@ exports.getAllProducts = async (req, res) => {
       filter.status = status;
     }
 
-    // Filter by official store
-    if (isOfficialStore === 'true') {
-      filter.isOfficialStore = true;
-    } else if (isOfficialStore === 'false') {
-      filter.isOfficialStore = { $ne: true };
-    }
-
     // Filter by category
     if (category) {
       filter.category = category;
+    }
+
+    // Filter by campus
+    if (campus) {
+      filter['location.campus'] = campus;
     }
 
     // Filter by condition
@@ -202,8 +200,7 @@ exports.createProduct = async (req, res) => {
       images,
       location,
       tags,
-      contact,
-      isOfficialStore
+      contact
     } = req.body;
 
     // Validate images array (1-3 URLs)
@@ -225,9 +222,7 @@ exports.createProduct = async (req, res) => {
       location,
       tags: tags || [],
       contact,
-      seller: req.user.id,
-      // Set official store status (only if explicitly set to true)
-      isOfficialStore: isOfficialStore === true
+      seller: req.user.id
     };
 
     // Create product
@@ -240,7 +235,6 @@ exports.createProduct = async (req, res) => {
 
     // Invalidate product caches
     cache.delPattern('products:*');
-    cache.delPattern('official:*');
     if (category) {
       cache.del(cacheKeys.category(category));
     }
@@ -403,7 +397,6 @@ exports.deleteProduct = async (req, res) => {
 
     // Invalidate product caches
     cache.delPattern('products:*');
-    cache.delPattern('official:*');
     if (product.category) {
       cache.del(cacheKeys.category(product.category));
     }

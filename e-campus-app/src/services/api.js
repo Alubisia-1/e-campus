@@ -55,14 +55,29 @@ export const api = {
   // Categories
   getCategories: () => apiRequest('/categories'),
 
+  // Campuses
+  getCampuses: () => apiRequest('/campuses'),
+
+  createCampus: (campusData, token) => apiRequest('/campuses', {
+    method: 'POST',
+    headers: { 'Authorization': `Bearer ${token}` },
+    body: JSON.stringify(campusData),
+  }),
+
+  updateCampus: (id, campusData, token) => apiRequest(`/campuses/${id}`, {
+    method: 'PUT',
+    headers: { 'Authorization': `Bearer ${token}` },
+    body: JSON.stringify(campusData),
+  }),
+
+  deleteCampus: (id, token) => apiRequest(`/campuses/${id}`, {
+    method: 'DELETE',
+    headers: { 'Authorization': `Bearer ${token}` },
+  }),
+
   // Products
   getProducts: (params = {}) => {
     const searchParams = new URLSearchParams(params);
-    return apiRequest(`/products?${searchParams}`);
-  },
-
-  getOfficialStoreProducts: (params = {}) => {
-    const searchParams = new URLSearchParams({ ...params, isOfficialStore: 'true' });
     return apiRequest(`/products?${searchParams}`);
   },
 
@@ -208,10 +223,9 @@ export const api = {
   }),
 
   // Public Ad Viewing (for users)
-  getActiveAds: (position = '') => {
+  getActiveAds: (type = '') => {
     const searchParams = new URLSearchParams({
-      status: 'active',
-      ...(position && { position })
+      ...(type && { type })
     });
     return apiRequest(`/ads?${searchParams}`);
   },
@@ -241,6 +255,17 @@ export const api = {
     headers: {
       'Authorization': `Bearer ${token}`,
     },
+  }),
+
+  // Password Reset
+  forgotPassword: (email) => apiRequest('/auth/forgot-password', {
+    method: 'POST',
+    body: JSON.stringify({ email }),
+  }),
+
+  resetPassword: (token, password) => apiRequest(`/auth/reset-password/${token}`, {
+    method: 'POST',
+    body: JSON.stringify({ password }),
   }),
 
   // Admin authentication

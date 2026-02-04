@@ -10,6 +10,7 @@ const User = require('../src/models/User.model');
 const Category = require('../src/models/Category.model');
 const Product = require('../src/models/Product.model');
 const Advertisement = require('../src/models/Advertisement.model');
+const Campus = require('../src/models/Campus.model');
 
 // Connect to database
 const connectDB = async () => {
@@ -82,6 +83,70 @@ const categories = [
   }
 ];
 
+// Sample campuses data (Kenyan universities)
+const campuses = [
+  {
+    name: 'University of Nairobi - Main Campus',
+    slug: 'uon-main',
+    city: 'Nairobi',
+    isActive: true
+  },
+  {
+    name: 'Kenyatta University',
+    slug: 'ku',
+    city: 'Nairobi',
+    isActive: true
+  },
+  {
+    name: 'Jomo Kenyatta University (JKUAT)',
+    slug: 'jkuat',
+    city: 'Nairobi',
+    isActive: true
+  },
+  {
+    name: 'Strathmore University',
+    slug: 'strathmore',
+    city: 'Nairobi',
+    isActive: true
+  },
+  {
+    name: 'Moi University',
+    slug: 'moi',
+    city: 'Eldoret',
+    isActive: true
+  },
+  {
+    name: 'Egerton University',
+    slug: 'egerton',
+    city: 'Nakuru',
+    isActive: true
+  },
+  {
+    name: 'Maseno University',
+    slug: 'maseno',
+    city: 'Kisumu',
+    isActive: true
+  },
+  {
+    name: 'Technical University of Kenya',
+    slug: 'tuk',
+    city: 'Nairobi',
+    isActive: true
+  },
+  {
+    name: 'Multimedia University of Kenya',
+    slug: 'mmu',
+    city: 'Nairobi',
+    isActive: true
+  },
+  {
+    name: 'Daystar University',
+    slug: 'daystar',
+    city: 'Nairobi',
+    isActive: true
+  }
+];
+
 // Sample users data
 const users = [
   {
@@ -89,7 +154,7 @@ const users = [
     password: 'Admin123!',
     phone: '+1234567890',
     whatsapp: '+1234567890',
-    campus: 'Main Campus',
+    campus: 'University of Nairobi - Main Campus',
     role: 'admin',
     isVerified: true
   },
@@ -98,7 +163,7 @@ const users = [
     password: 'Student123!',
     phone: '+1234567891',
     whatsapp: '+1234567891',
-    campus: 'Main Campus',
+    campus: 'Kenyatta University',
     role: 'user',
     isVerified: true
   },
@@ -107,7 +172,7 @@ const users = [
     password: 'Student123!',
     phone: '+1234567892',
     whatsapp: '+1234567892',
-    campus: 'North Campus',
+    campus: 'Jomo Kenyatta University (JKUAT)',
     role: 'user',
     isVerified: true
   }
@@ -130,7 +195,7 @@ const getProducts = (categoryIds, userIds) => [
       }
     ],
     location: {
-      campus: 'Main Campus',
+      campus: 'University of Nairobi - Main Campus',
       building: 'Engineering Building'
     },
     tags: ['laptop', 'apple', 'macbook', 'computer'],
@@ -151,7 +216,7 @@ const getProducts = (categoryIds, userIds) => [
       }
     ],
     location: {
-      campus: 'Main Campus',
+      campus: 'Kenyatta University',
       building: 'Library'
     },
     tags: ['textbook', 'calculus', 'mathematics', 'stewart'],
@@ -172,7 +237,7 @@ const getProducts = (categoryIds, userIds) => [
       }
     ],
     location: {
-      campus: 'North Campus',
+      campus: 'Jomo Kenyatta University (JKUAT)',
       building: 'Sports Center'
     },
     tags: ['shoes', 'nike', 'running', 'sports'],
@@ -193,7 +258,7 @@ const getProducts = (categoryIds, userIds) => [
       }
     ],
     location: {
-      campus: 'Main Campus',
+      campus: 'Strathmore University',
       building: 'Music Hall'
     },
     tags: ['guitar', 'yamaha', 'acoustic', 'music'],
@@ -214,7 +279,7 @@ const getProducts = (categoryIds, userIds) => [
       }
     ],
     location: {
-      campus: 'Main Campus',
+      campus: 'Moi University',
       building: 'Residence Hall A'
     },
     tags: ['desk', 'furniture', 'study', 'dorm'],
@@ -279,12 +344,18 @@ const seedDatabase = async () => {
     await Category.collection.drop().catch(() => {});
     await Product.collection.drop().catch(() => {});
     await Advertisement.collection.drop().catch(() => {});
+    await Campus.collection.drop().catch(() => {});
     console.log('✅ Existing data cleared\n');
 
     // Seed categories
     console.log('📁 Seeding categories...');
     const createdCategories = await Category.insertMany(categories);
     console.log(`✅ Created ${createdCategories.length} categories\n`);
+
+    // Seed campuses
+    console.log('🏫 Seeding campuses...');
+    const createdCampuses = await Campus.insertMany(campuses);
+    console.log(`✅ Created ${createdCampuses.length} campuses\n`);
 
     // Seed users
     console.log('👥 Seeding users...');
@@ -318,6 +389,7 @@ const seedDatabase = async () => {
     console.log('✨ DATABASE SEEDING COMPLETED! ✨');
     console.log('═══════════════════════════════════════');
     console.log(`📁 Categories:      ${createdCategories.length}`);
+    console.log(`🏫 Campuses:        ${createdCampuses.length}`);
     console.log(`👥 Users:           ${createdUsers.length}`);
     console.log(`📦 Products:        ${createdProducts.length}`);
     console.log(`📢 Advertisements:  ${createdAds.length}`);

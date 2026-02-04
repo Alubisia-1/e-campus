@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
+const crypto = require('crypto');
 
 const userSchema = new mongoose.Schema({
   username: {
@@ -17,8 +18,8 @@ const userSchema = new mongoose.Schema({
   },
   email: {
     type: String,
+    required: [true, 'Please provide an email'],
     unique: true,
-    sparse: true,
     lowercase: true,
     trim: true,
     match: [
@@ -52,6 +53,14 @@ const userSchema = new mongoose.Schema({
   isVerified: {
     type: Boolean,
     default: false
+  },
+  passwordResetToken: {
+    type: String,
+    select: false
+  },
+  passwordResetExpires: {
+    type: Date,
+    select: false
   },
   bio: {
     type: String,
@@ -108,7 +117,27 @@ userSchema.methods.generateToken = function() {
 userSchema.methods.toJSON = function() {
   const user = this.toObject();
   delete user.password;
+  delete user.passwordResetToken;
+  delete user.passwordResetExpires;
   return user;
+};
+
+// Generate password reset token
+userSchema.methods.createPasswordResetToken = function() {
+  // Generate random token
+  const resetToken = crypto.randomBytes(32).toString('hex');
+
+  // Hash token before storing in database
+  this.passwordResetToken = crypto
+    .createHash('sha256')
+    .update(resetToken)
+    .digest('hex');
+
+  // Token expires in 10 minutes
+  this.passwordResetExpires = Date.now() + 10 * 60 * 1000;
+
+  // Return unhashed token (this gets sent to user's email)
+  return resetToken;
 };
 
 module.exports = mongoose.model('User', userSchema);

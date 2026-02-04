@@ -1,9 +1,9 @@
 const express = require('express');
 const router = express.Router();
 const { body } = require('express-validator');
-const { register, login, getMe, updateProfile } = require('../controllers/auth.controller');
+const { register, login, getMe, updateProfile, forgotPassword, resetPassword } = require('../controllers/auth.controller');
 const { protect } = require('../middleware/auth.middleware');
-const { authLimiter } = require('../middleware/rateLimiter');
+const { authLimiter, passwordResetLimiter } = require('../middleware/rateLimiter');
 
 // Validation rules
 const registerValidation = [
@@ -15,6 +15,13 @@ const registerValidation = [
     .withMessage('Username must be between 3 and 30 characters')
     .matches(/^[a-zA-Z0-9_]+$/)
     .withMessage('Username can only contain letters, numbers, and underscores'),
+  body('email')
+    .trim()
+    .notEmpty()
+    .withMessage('Email is required')
+    .isEmail()
+    .withMessage('Please provide a valid email address')
+    .normalizeEmail(),
   body('password')
     .notEmpty()
     .withMessage('Password is required')
@@ -41,9 +48,30 @@ const loginValidation = [
     .withMessage('Password is required')
 ];
 
+const forgotPasswordValidation = [
+  body('email')
+    .trim()
+    .notEmpty()
+    .withMessage('Email is required')
+    .isEmail()
+    .withMessage('Please provide a valid email address')
+];
+
+const resetPasswordValidation = [
+  body('password')
+    .notEmpty()
+    .withMessage('Password is required')
+    .isLength({ min: 6 })
+    .withMessage('Password must be at least 6 characters')
+];
+
 // Public routes with stricter rate limiting
 router.post('/register', authLimiter, registerValidation, register);
 router.post('/login', authLimiter, loginValidation, login);
+
+// Password reset routes
+router.post('/forgot-password', passwordResetLimiter, forgotPasswordValidation, forgotPassword);
+router.post('/reset-password/:token', passwordResetLimiter, resetPasswordValidation, resetPassword);
 
 // Protected routes
 router.get('/me', protect, getMe);

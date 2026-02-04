@@ -1,5 +1,7 @@
 const User = require('../models/User.model');
 const { validationResult } = require('express-validator');
+const crypto = require('crypto');
+const { sendPasswordResetEmail } = require('../utils/email');
 
 // @desc    Register new user
 // @route   POST /api/auth/register
@@ -15,7 +17,7 @@ exports.register = async (req, res) => {
       });
     }
 
-    const { username, password, phone, whatsapp, campus } = req.body;
+    const { username, email, password, phone, whatsapp, campus } = req.body;
 
     // Check if username already exists
     const existingUser = await User.findOne({ username });
@@ -26,9 +28,19 @@ exports.register = async (req, res) => {
       });
     }
 
+    // Check if email already exists
+    const existingEmail = await User.findOne({ email: email.toLowerCase() });
+    if (existingEmail) {
+      return res.status(400).json({
+        status: 'error',
+        message: 'Email already registered'
+      });
+    }
+
     // Create new user (password will be hashed by pre-save hook)
     const user = await User.create({
       username,
+      email,
       password,
       phone,
       whatsapp,
@@ -45,6 +57,7 @@ exports.register = async (req, res) => {
         user: {
           id: user._id,
           username: user.username,
+          email: user.email,
           phone: user.phone,
           whatsapp: user.whatsapp,
           campus: user.campus,
@@ -107,6 +120,7 @@ exports.login = async (req, res) => {
         user: {
           id: user._id,
           username: user.username,
+          email: user.email,
           phone: user.phone,
           whatsapp: user.whatsapp,
           campus: user.campus,
@@ -208,6 +222,132 @@ exports.updateProfile = async (req, res) => {
       status: 'error',
       message: 'Server error updating profile',
       error: error.message
+    });
+  }
+};
+
+// @desc    Request password reset (forgot password)
+// @route   POST /api/auth/forgot-password
+// @access  Public
+exports.forgotPassword = async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({
+        status: 'error',
+        message: 'Please provide an email address'
+      });
+    }
+
+    // Find user by email
+    const user = await User.findOne({ email: email.toLowerCase() });
+
+    // Always return success to prevent email enumeration attacks
+    // Don't reveal whether email exists in database
+    if (!user) {
+      return res.status(200).json({
+        status: 'success',
+        message: 'If an account exists with this email, a password reset link will be sent.'
+      });
+    }
+
+    // Generate reset token
+    const resetToken = user.createPasswordResetToken();
+    await user.save({ validateBeforeSave: false });
+
+    // Build reset URL (frontend will handle this route)
+    const resetUrl = `${process.env.FRONTEND_URL || 'http://localhost:5173'}?reset=${resetToken}`;
+
+    try {
+      // Send email
+      await sendPasswordResetEmail(user.email, resetUrl);
+
+      res.status(200).json({
+        status: 'success',
+        message: 'If an account exists with this email, a password reset link will be sent.'
+      });
+    } catch (emailError) {
+      // If email fails, clear the reset token
+      user.passwordResetToken = undefined;
+      user.passwordResetExpires = undefined;
+      await user.save({ validateBeforeSave: false });
+
+      console.error('Email send error:', emailError);
+      return res.status(500).json({
+        status: 'error',
+        message: 'Failed to send reset email. Please try again later.'
+      });
+    }
+  } catch (error) {
+    console.error('Forgot password error:', error);
+    res.status(500).json({
+      status: 'error',
+      message: 'Server error during password reset request'
+    });
+  }
+};
+
+// @desc    Reset password with token
+// @route   POST /api/auth/reset-password/:token
+// @access  Public
+exports.resetPassword = async (req, res) => {
+  try {
+    const { password } = req.body;
+    const { token } = req.params;
+
+    if (!password || password.length < 6) {
+      return res.status(400).json({
+        status: 'error',
+        message: 'Password must be at least 6 characters'
+      });
+    }
+
+    // Hash the token to compare with stored hash
+    const hashedToken = crypto
+      .createHash('sha256')
+      .update(token)
+      .digest('hex');
+
+    // Find user with valid (non-expired) token
+    const user = await User.findOne({
+      passwordResetToken: hashedToken,
+      passwordResetExpires: { $gt: Date.now() }
+    }).select('+passwordResetToken +passwordResetExpires');
+
+    if (!user) {
+      return res.status(400).json({
+        status: 'error',
+        message: 'Invalid or expired reset token. Please request a new password reset.'
+      });
+    }
+
+    // Update password and clear reset token fields
+    user.password = password;
+    user.passwordResetToken = undefined;
+    user.passwordResetExpires = undefined;
+    await user.save();
+
+    // Generate new auth token so user is logged in after reset
+    const authToken = user.generateToken();
+
+    res.status(200).json({
+      status: 'success',
+      message: 'Password reset successful! You are now logged in.',
+      data: {
+        user: {
+          id: user._id,
+          username: user.username,
+          email: user.email
+        },
+        token: authToken
+      }
+    });
+  } catch (error) {
+    console.error('Reset password error:', error);
+    res.status(500).json({
+      status: 'error',
+      message: 'Server error during password reset'
     });
   }
 };

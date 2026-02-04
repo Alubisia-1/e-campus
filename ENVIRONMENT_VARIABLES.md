@@ -3,12 +3,12 @@
 ## 🔑 Your Current Admin Password
 
 ```
-E-Soko@Admin2024!Secure
+esokostore1@gmail.com
 ```
 
 **How to use it:**
 1. Tap the E-Soko logo 7 times (mobile) OR press `Ctrl+Shift+A` (desktop)
-2. Enter: `E-Soko@Admin2024!Secure`
+2. Enter: `esokostore1@gmail.com`
 3. Click "Login as Admin"
 
 ⚠️ **IMPORTANT:** Change this password to your own secure password!
@@ -31,8 +31,8 @@ VITE_APP_NAME=E-Soko
 # 3. App Version
 VITE_APP_VERSION=1.0.0
 
-# 4. Admin Password - CHANGE THIS!
-VITE_ADMIN_PASSWORD=E-Soko@Admin2024!Secure
+# 4. Admin Password
+VITE_ADMIN_PASSWORD=esokostore1@gmail.com
 
 # 5. Google AdSense Publisher ID
 VITE_ADSENSE_CLIENT=ca-pub-7406671560728064
@@ -72,7 +72,7 @@ VITE_ADSENSE_SLOT_DEFAULT=1979531774
 | `VITE_API_URL` | `https://e-campus-backend-production.up.railway.app/api` |
 | `VITE_APP_NAME` | `E-Soko` |
 | `VITE_APP_VERSION` | `1.0.0` |
-| `VITE_ADMIN_PASSWORD` | `E-Soko@Admin2024!Secure` (or your own) |
+| `VITE_ADMIN_PASSWORD` | `esokostore1@gmail.com` (or your own) |
 | `VITE_ADSENSE_CLIENT` | `ca-pub-7406671560728064` |
 | `VITE_ADSENSE_SLOT_BANNER` | `7590009154` |
 | `VITE_ADSENSE_SLOT_SIDEBAR` | `6211803712` |
@@ -194,7 +194,7 @@ VITE_APP_VERSION
 1.0.0
 
 VITE_ADMIN_PASSWORD
-E-Soko@Admin2024!Secure
+esokostore1@gmail.com
 
 VITE_ADSENSE_CLIENT
 ca-pub-7406671560728064
@@ -280,7 +280,7 @@ After adding environment variables:
 
 **Your Admin Password:**
 ```
-E-Soko@Admin2024!Secure
+esokostore1@gmail.com
 ```
 
 **Total Variables Needed:**

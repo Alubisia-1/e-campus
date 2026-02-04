@@ -80,6 +80,13 @@
   border-color: #007bff;
 }
 
+.field-hint {
+  display: block;
+  margin-top: 0.25rem;
+  font-size: 0.8rem;
+  color: #666;
+}
+
 .submit-button {
   width: 100%;
   padding: 0.75rem;
@@ -183,4 +190,35 @@
 /* Reduce repaints during typing */
 .form-group input:focus {
   will-change: border-color;
+}
+
+/* Forgot password link */
+.forgot-password {
+  text-align: center;
+  margin-top: 1rem;
+  margin-bottom: 0;
+}
+
+/* Success view styles */
+.success-view {
+  text-align: center;
+  padding: 1rem 0;
+}
+
+.success-icon {
+  font-size: 4rem;
+  margin-bottom: 1rem;
+}
+
+.success-message {
+  color: #333;
+  font-size: 1rem;
+  line-height: 1.5;
+  margin-bottom: 0.5rem;
+}
+
+.success-note {
+  color: #666;
+  font-size: 0.875rem;
+  margin-bottom: 1.5rem;
 }

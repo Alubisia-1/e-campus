@@ -9,7 +9,16 @@ export default function AdDisplay({ position = 'sidebar', fallbackToAdSense = tr
 
   // Use React Query hook for ads with proper caching
   const { data, isLoading: loading } = useActiveAds(position)
-  const ads = useMemo(() => data?.data?.ads || [], [data])
+  // Map backend fields to frontend expected fields
+  const ads = useMemo(() => {
+    const rawAds = data?.data || []
+    return rawAds.map(ad => ({
+      ...ad,
+      title: ad.company || ad.title,
+      description: ad.message || ad.description,
+      targetUrl: ad.link || ad.targetUrl,
+    }))
+  }, [data])
 
   // Rotate ads every 30 seconds if multiple ads available
   useEffect(() => {
@@ -234,6 +243,123 @@ function AdSkeleton({ position }) {
   return null
 }
 
+// Internal Promotion Component (shown when AdSense not configured)
+function InternalPromo({ position }) {
+  const promos = {
+    banner: {
+      title: "Sell Your Items on E-Campus",
+      description: "Turn your unused items into cash. List for free and reach thousands of students!",
+      buttonText: "Start Selling",
+      icon: "📦",
+      gradient: "from-blue-500 to-purple-600"
+    },
+    sidebar: {
+      title: "Quick Selling Tips",
+      tips: [
+        "Take clear, well-lit photos",
+        "Set competitive prices",
+        "Respond to buyers quickly",
+        "Meet in safe, public places"
+      ],
+      icon: "💡"
+    },
+    footer: {
+      title: "Join the Campus Marketplace",
+      description: "Buy and sell textbooks, electronics, furniture, and more with fellow students.",
+      buttonText: "Browse Listings",
+      icon: "🎓",
+      gradient: "from-green-500 to-teal-600"
+    },
+    header: {
+      title: "🔥 Post your first listing today — it's free!",
+      buttonText: "Sell Now"
+    }
+  }
+
+  const promo = promos[position] || promos.sidebar
+
+  if (position === 'header') {
+    return (
+      <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white py-2 px-4">
+        <div className="max-w-7xl mx-auto flex items-center justify-between">
+          <span className="text-sm font-medium">{promo.title}</span>
+          <button className="text-sm bg-white/20 hover:bg-white/30 px-3 py-1 rounded-full transition-colors">
+            {promo.buttonText}
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  if (position === 'banner') {
+    return (
+      <div className={`w-full bg-gradient-to-r ${promo.gradient} rounded-lg overflow-hidden`}>
+        <div className="flex flex-col sm:flex-row items-center justify-between p-6 text-white">
+          <div className="flex items-center gap-4 mb-4 sm:mb-0">
+            <span className="text-4xl">{promo.icon}</span>
+            <div>
+              <h3 className="font-bold text-lg">{promo.title}</h3>
+              <p className="text-white/90 text-sm mt-1">{promo.description}</p>
+            </div>
+          </div>
+          <button className="bg-white text-blue-600 font-semibold px-6 py-2 rounded-lg hover:bg-blue-50 transition-colors whitespace-nowrap">
+            {promo.buttonText}
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  if (position === 'sidebar') {
+    return (
+      <div className="bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-200 rounded-lg p-5">
+        <div className="flex items-center gap-2 mb-4">
+          <span className="text-2xl">{promo.icon}</span>
+          <h3 className="font-bold text-gray-800">{promo.title}</h3>
+        </div>
+        <ul className="space-y-3">
+          {promo.tips.map((tip, index) => (
+            <li key={index} className="flex items-start gap-2 text-sm text-gray-700">
+              <span className="text-green-500 mt-0.5">✓</span>
+              {tip}
+            </li>
+          ))}
+        </ul>
+        <div className="mt-4 pt-4 border-t border-amber-200">
+          <p className="text-xs text-gray-500 text-center">Sell smarter, not harder</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (position === 'footer') {
+    return (
+      <div className={`bg-gradient-to-r ${promo.gradient} rounded-lg overflow-hidden`}>
+        <div className="flex flex-col sm:flex-row items-center justify-between p-6 text-white">
+          <div className="flex items-center gap-4 mb-4 sm:mb-0 text-center sm:text-left">
+            <span className="text-3xl hidden sm:block">{promo.icon}</span>
+            <div>
+              <h3 className="font-bold text-lg">{promo.title}</h3>
+              <p className="text-white/90 text-sm mt-1">{promo.description}</p>
+            </div>
+          </div>
+          <button className="bg-white text-green-600 font-semibold px-6 py-2 rounded-lg hover:bg-green-50 transition-colors whitespace-nowrap">
+            {promo.buttonText}
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  // Default fallback
+  return (
+    <div className="bg-gray-50 border border-gray-200 rounded-lg p-6 text-center">
+      <p className="text-gray-600 font-medium">E-Campus Marketplace</p>
+      <p className="text-sm text-gray-500 mt-1">Buy & sell with students near you</p>
+    </div>
+  )
+}
+
 // Google AdSense Fallback Component
 function GoogleAdSense({ position }) {
   useEffect(() => {
@@ -288,14 +414,9 @@ function GoogleAdSense({ position }) {
 
   const adConfig = getAdConfig()
 
-  // Don't show AdSense if not configured (still has placeholder values)
+  // Show internal promo content when AdSense is not configured
   if (ADSENSE_CLIENT.includes('XXXX')) {
-    return (
-      <div className="bg-gray-100 border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
-        <p className="text-gray-500 font-medium">AdSense Placeholder</p>
-        <p className="text-xs text-gray-400 mt-2">Configure AdSense to show ads here</p>
-      </div>
-    )
+    return <InternalPromo position={position} />
   }
 
   return (

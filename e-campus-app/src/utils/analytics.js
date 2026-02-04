@@ -30,7 +30,7 @@ export const trackProductView = (product) => {
       item_name: product.title,
       item_category: product.category?.name || 'Unknown',
       price: product.price,
-      item_brand: product.isOfficialStore ? 'Official Store' : 'Student Seller'
+      item_brand: 'Student Seller'
     }]
   });
 };

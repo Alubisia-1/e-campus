@@ -128,14 +128,13 @@ const cacheKeys = {
 
   // Products
   products: (params) => {
-    const { page = 1, limit = 12, category, search, sort } = params;
-    return `products:p${page}:l${limit}:c${category || 'all'}:s${search || 'none'}:sort${sort || 'default'}`;
+    const { page = 1, limit = 12, category, campus, search, sort } = params;
+    return `products:p${page}:l${limit}:c${category || 'all'}:campus${campus || 'all'}:s${search || 'none'}:sort${sort || 'default'}`;
   },
   product: (id) => `product:${id}`,
-  officialStore: (params) => {
-    const { page = 1, limit = 20 } = params;
-    return `official:p${page}:l${limit}`;
-  },
+
+  // Campuses
+  campuses: () => 'campuses:all',
 
   // Ads
   ads: (position) => `ads:${position}`,

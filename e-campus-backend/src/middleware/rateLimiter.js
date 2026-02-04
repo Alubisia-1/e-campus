@@ -79,10 +79,27 @@ const searchLimiter = rateLimit({
   legacyHeaders: false
 });
 
+/**
+ * Password reset rate limiter
+ * 3 requests per hour per IP (prevent abuse)
+ */
+const passwordResetLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: 3,
+  message: {
+    status: 'error',
+    message: 'Too many password reset attempts. Please try again after 1 hour.'
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+  skipSuccessfulRequests: false
+});
+
 module.exports = {
   apiLimiter,
   authLimiter,
   uploadLimiter,
   createProductLimiter,
-  searchLimiter
+  searchLimiter,
+  passwordResetLimiter
 };

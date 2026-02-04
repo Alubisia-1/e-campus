@@ -11,6 +11,16 @@ export function useCategories() {
   })
 }
 
+// Campuses hook - cached for 30 minutes as they rarely change
+export function useCampuses() {
+  return useQuery({
+    queryKey: ['campuses'],
+    queryFn: api.getCampuses,
+    staleTime: 30 * 60 * 1000, // 30 minutes
+    cacheTime: 60 * 60 * 1000, // 1 hour
+  })
+}
+
 // Products with infinite scroll support
 export function useProducts(filters = {}) {
   return useInfiniteQuery({
@@ -24,22 +34,6 @@ export function useProducts(filters = {}) {
       return currentPage < totalPages ? currentPage + 1 : undefined
     },
     staleTime: 2 * 60 * 1000, // 2 minutes
-  })
-}
-
-// Official store products with infinite scroll
-export function useOfficialStoreProducts(filters = {}) {
-  return useInfiniteQuery({
-    queryKey: ['official-store-products', filters],
-    queryFn: ({ pageParam = 1 }) => {
-      return api.getOfficialStoreProducts({ ...filters, page: pageParam, limit: 20 })
-    },
-    getNextPageParam: (lastPage) => {
-      if (!lastPage?.pagination) return undefined
-      const { currentPage, totalPages } = lastPage.pagination
-      return currentPage < totalPages ? currentPage + 1 : undefined
-    },
-    staleTime: 2 * 60 * 1000,
   })
 }
 

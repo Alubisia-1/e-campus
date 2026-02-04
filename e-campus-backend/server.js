@@ -21,6 +21,7 @@ const authRoutes = require('./src/routes/auth.routes');
 const userRoutes = require('./src/routes/user.routes');
 const productRoutes = require('./src/routes/product.routes');
 const categoryRoutes = require('./src/routes/category.routes');
+const campusRoutes = require('./src/routes/campus.routes');
 const uploadRoutes = require('./src/routes/upload.routes');
 const advertisementRoutes = require('./src/routes/advertisement.routes');
 const adminRoutes = require('./src/routes/admin.routes');
@@ -157,6 +158,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/categories', categoryRoutes);
+app.use('/api/campuses', campusRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/ads', advertisementRoutes);
 app.use('/api/admin', adminRoutes);
@@ -181,6 +183,7 @@ app.get('/', (req, res) => {
       users: '/api/users',
       products: '/api/products',
       categories: '/api/categories',
+      campuses: '/api/campuses',
       ads: '/api/ads',
       admin: '/api/admin'
     }

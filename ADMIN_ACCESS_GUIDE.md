@@ -53,7 +53,7 @@ e-campus-app/.env
 
 Look for this line:
 ```env
-VITE_ADMIN_PASSWORD=E-Soko@Admin2024!Secure
+VITE_ADMIN_PASSWORD=esokostore1@gmail.com
 ```
 
 ### ⚠️ IMPORTANT: Change Your Password!
@@ -153,7 +153,7 @@ Once logged in as admin, you have access to:
 
 ### `.env` (Your actual password - NOT in git)
 ```env
-VITE_ADMIN_PASSWORD=E-Soko@Admin2024!Secure
+VITE_ADMIN_PASSWORD=esokostore1@gmail.com
 ```
 
 ### `.env.example` (Template - IN git)
