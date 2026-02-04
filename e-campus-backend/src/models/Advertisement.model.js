@@ -31,12 +31,6 @@ const advertisementSchema = new mongoose.Schema(
       required: [true, 'Advertisement type is required'],
       default: 'banner'
     },
-    position: {
-      type: String,
-      enum: ['top', 'middle', 'bottom', 'right', 'left'],
-      required: [true, 'Advertisement position is required'],
-      default: 'top'
-    },
     isActive: {
       type: Boolean,
       default: true,
@@ -139,7 +133,7 @@ const advertisementSchema = new mongoose.Schema(
 
 // Index for querying active ads within date range
 advertisementSchema.index({ isActive: 1, startDate: 1, endDate: 1 });
-advertisementSchema.index({ type: 1, position: 1 });
+advertisementSchema.index({ type: 1 });
 
 // Virtual for click-through rate (CTR)
 advertisementSchema.virtual('ctr').get(function() {
@@ -160,7 +154,7 @@ advertisementSchema.methods.incrementClicks = async function() {
 };
 
 // Static method to get active ads
-advertisementSchema.statics.getActiveAds = async function(type = null, position = null) {
+advertisementSchema.statics.getActiveAds = async function(type = null) {
   const now = new Date();
   const query = {
     isActive: true,
@@ -169,7 +163,6 @@ advertisementSchema.statics.getActiveAds = async function(type = null, position 
   };
 
   if (type) query.type = type;
-  if (position) query.position = position;
 
   return await this.find(query)
     .sort({ priority: -1, createdAt: -1 })

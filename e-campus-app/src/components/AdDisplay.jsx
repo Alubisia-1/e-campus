@@ -89,14 +89,6 @@ export default function AdDisplay({ position = 'sidebar', fallbackToAdSense = tr
         <SidebarAd ad={currentAd} onClick={() => handleAdClick(currentAd)} />
       )}
 
-      {position === 'footer' && (
-        <FooterAd ad={currentAd} onClick={() => handleAdClick(currentAd)} />
-      )}
-
-      {position === 'header' && (
-        <HeaderAd ad={currentAd} onClick={() => handleAdClick(currentAd)} />
-      )}
-
       {/* Indicator for multiple ads */}
       {ads.length > 1 && (
         <div className="flex justify-center gap-1 mt-2">
@@ -170,49 +162,6 @@ function SidebarAd({ ad, onClick }) {
   )
 }
 
-// Footer Ad (wide, bottom of page)
-function FooterAd({ ad, onClick }) {
-  return (
-    <div className="bg-gradient-to-r from-blue-50 to-purple-50 border border-gray-200 rounded-lg overflow-hidden hover:shadow-lg transition-shadow cursor-pointer">
-      <div className="flex flex-col sm:flex-row items-center gap-4 p-4" onClick={onClick}>
-        <img
-          src={ad.imageUrl}
-          alt={ad.title}
-          className="w-full sm:w-32 h-24 object-cover rounded"
-        />
-        <div className="flex-1 text-center sm:text-left">
-          <div className="text-xs text-gray-500 mb-1">Sponsored</div>
-          <h3 className="font-semibold text-gray-900 hover:text-blue-600 transition-colors">
-            {ad.title}
-          </h3>
-          <p className="text-sm text-gray-600 mt-1">{ad.description}</p>
-        </div>
-        <button className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors font-medium whitespace-nowrap flex items-center gap-2">
-          Visit <ExternalLink size={16} />
-        </button>
-      </div>
-    </div>
-  )
-}
-
-// Header Ad (thin banner)
-function HeaderAd({ ad, onClick }) {
-  return (
-    <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white py-2 px-4 cursor-pointer hover:from-blue-700 hover:to-purple-700 transition-all" onClick={onClick}>
-      <div className="max-w-7xl mx-auto flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <span className="text-sm font-semibold">{ad.title}</span>
-          <span className="text-xs opacity-90">{ad.description}</span>
-        </div>
-        <div className="flex items-center gap-2 text-sm">
-          <span>Learn More</span>
-          <ExternalLink size={14} />
-        </div>
-      </div>
-    </div>
-  )
-}
-
 // Loading skeleton
 function AdSkeleton({ position }) {
   if (position === 'banner') {
@@ -262,34 +211,10 @@ function InternalPromo({ position }) {
         "Meet in safe, public places"
       ],
       icon: "💡"
-    },
-    footer: {
-      title: "Join the Campus Marketplace",
-      description: "Buy and sell textbooks, electronics, furniture, and more with fellow students.",
-      buttonText: "Browse Listings",
-      icon: "🎓",
-      gradient: "from-green-500 to-teal-600"
-    },
-    header: {
-      title: "🔥 Post your first listing today — it's free!",
-      buttonText: "Sell Now"
     }
   }
 
   const promo = promos[position] || promos.sidebar
-
-  if (position === 'header') {
-    return (
-      <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white py-2 px-4">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <span className="text-sm font-medium">{promo.title}</span>
-          <button className="text-sm bg-white/20 hover:bg-white/30 px-3 py-1 rounded-full transition-colors">
-            {promo.buttonText}
-          </button>
-        </div>
-      </div>
-    )
-  }
 
   if (position === 'banner') {
     return (
@@ -332,25 +257,6 @@ function InternalPromo({ position }) {
     )
   }
 
-  if (position === 'footer') {
-    return (
-      <div className={`bg-gradient-to-r ${promo.gradient} rounded-lg overflow-hidden`}>
-        <div className="flex flex-col sm:flex-row items-center justify-between p-6 text-white">
-          <div className="flex items-center gap-4 mb-4 sm:mb-0 text-center sm:text-left">
-            <span className="text-3xl hidden sm:block">{promo.icon}</span>
-            <div>
-              <h3 className="font-bold text-lg">{promo.title}</h3>
-              <p className="text-white/90 text-sm mt-1">{promo.description}</p>
-            </div>
-          </div>
-          <button className="bg-white text-green-600 font-semibold px-6 py-2 rounded-lg hover:bg-green-50 transition-colors whitespace-nowrap">
-            {promo.buttonText}
-          </button>
-        </div>
-      </div>
-    )
-  }
-
   // Default fallback
   return (
     <div className="bg-gray-50 border border-gray-200 rounded-lg p-6 text-center">
@@ -386,26 +292,9 @@ function GoogleAdSense({ position }) {
           style: { display: 'block', textAlign: 'center' }
         }
       case 'sidebar':
-        return {
-          slot: import.meta.env.VITE_ADSENSE_SLOT_SIDEBAR || 'XXXXXXXXXX',
-          format: 'rectangle',
-          style: { display: 'block' }
-        }
-      case 'footer':
-        return {
-          slot: import.meta.env.VITE_ADSENSE_SLOT_FOOTER || 'XXXXXXXXXX',
-          format: 'horizontal',
-          style: { display: 'block', textAlign: 'center' }
-        }
-      case 'header':
-        return {
-          slot: import.meta.env.VITE_ADSENSE_SLOT_HEADER || 'XXXXXXXXXX',
-          format: 'horizontal',
-          style: { display: 'block', textAlign: 'center' }
-        }
       default:
         return {
-          slot: import.meta.env.VITE_ADSENSE_SLOT_DEFAULT || 'XXXXXXXXXX',
+          slot: import.meta.env.VITE_ADSENSE_SLOT_SIDEBAR || 'XXXXXXXXXX',
           format: 'rectangle',
           style: { display: 'block' }
         }

@@ -5,6 +5,7 @@ import ContactReveal from './components/ContactReveal'
 import LocalContactReveal from './components/LocalContactReveal'
 import AuthModal from './components/AuthModal'
 import Toast from './components/Toast'
+import ConfirmModal from './components/ConfirmModal'
 import AdManager from './components/AdManager'
 import AdDisplay from './components/AdDisplay'
 import SponsoredBadge from './components/SponsoredBadge'
@@ -62,6 +63,22 @@ function App() {
 
   const showToast = (message, type = 'info') => {
     setToast({ message, type })
+  }
+
+  // Confirm modal state
+  const [confirmModal, setConfirmModal] = useState({
+    isOpen: false,
+    title: '',
+    message: '',
+    onConfirm: null
+  })
+
+  const showConfirmModal = (title, message, onConfirm) => {
+    setConfirmModal({ isOpen: true, title, message, onConfirm })
+  }
+
+  const closeConfirmModal = () => {
+    setConfirmModal({ isOpen: false, title: '', message: '', onConfirm: null })
   }
 
   // Admin state
@@ -168,7 +185,7 @@ function App() {
     setIsAdmin(false)
     localStorage.removeItem('adminToken')
     setActiveTab('marketplace')
-    alert('Admin logged out')
+    showToast('Admin logged out', 'success')
   }
 
   // Hidden admin access via logo taps (tap logo 7 times within 3 seconds)
@@ -215,7 +232,7 @@ function App() {
     localStorage.removeItem('authToken')
     localStorage.removeItem('user')
     setActiveTab('marketplace')
-    alert('Logged out successfully')
+    showToast('Logged out successfully', 'success')
   }
 
   // Secret admin access via keyboard shortcut (Ctrl+Shift+A)
@@ -340,7 +357,7 @@ function App() {
   }
 
   // Delete item handler using backend API
-  const handleDeleteItem = async (productId) => {
+  const handleDeleteItem = (productId) => {
     if (!authToken || !user) {
       showToast('Please login to delete items', 'error')
       setShowAuthModal(true)
@@ -349,32 +366,32 @@ function App() {
 
     console.log('Attempting to delete product:', productId)
 
+    const confirmTitle = isAdmin ? 'Delete Listing (Admin)' : 'Delete Listing'
     const confirmMessage = isAdmin
-      ? 'Admin: Are you sure you want to delete this listing?'
+      ? 'Are you sure you want to delete this listing? This action cannot be undone.'
       : 'Are you sure you want to delete this listing? This action cannot be undone.'
 
-    if (!window.confirm(confirmMessage)) {
-      return
-    }
+    showConfirmModal(confirmTitle, confirmMessage, async () => {
+      closeConfirmModal()
+      try {
+        // Call backend API to delete product
+        const response = await api.deleteProduct(productId, authToken)
 
-    try {
-      // Call backend API to delete product
-      const response = await api.deleteProduct(productId, authToken)
+        if (response.status === 'success') {
+          // Update state (removes from display immediately)
+          setProducts(prevProducts => prevProducts.filter(p => p._id !== productId))
+          setMyListings(prevListings => prevListings.filter(p => p._id !== productId))
 
-      if (response.status === 'success') {
-        // Update state (removes from display immediately)
-        setProducts(prevProducts => prevProducts.filter(p => p._id !== productId))
-        setMyListings(prevListings => prevListings.filter(p => p._id !== productId))
+          // Track deletion event
+          trackListingDeleted(productId)
 
-        // Track deletion event
-        trackListingDeleted(productId)
-
-        showToast('Listing deleted successfully!', 'success')
+          showToast('Listing deleted successfully!', 'success')
+        }
+      } catch (error) {
+        console.error('Failed to delete product:', error)
+        showToast('Failed to delete listing. Please try again.', 'error')
       }
-    } catch (error) {
-      console.error('Failed to delete product:', error)
-      showToast('Failed to delete listing. Please try again.', 'error')
-    }
+    })
   }
 
   // State for My Listings
@@ -1162,22 +1179,23 @@ function App() {
 
             {/* Premium Search Bar */}
             <form onSubmit={handleSearch} className="search-premium flex items-center max-w-3xl mx-auto">
-              <div className="pl-5 text-slate-400">
-                <Search size={22} />
+              <div className="search-icon">
+                <Search size={20} />
               </div>
               <input
                 type="text"
                 value={searchQuery}
                 onChange={handleSearchInputChange}
-                placeholder="Search for textbooks, electronics, furniture..."
-                className="flex-1 px-4 py-4 text-slate-800 placeholder-slate-400 focus:outline-none bg-transparent text-lg"
+                placeholder="Search items..."
+                className="search-input"
               />
               <button
                 type="submit"
-                className="btn-cta m-2 px-8 py-3 text-base disabled:opacity-50"
+                className="search-btn"
                 disabled={isSearching || !searchQuery.trim()}
               >
-                {isSearching ? 'Searching...' : 'Search'}
+                <span className="search-btn-text">{isSearching ? 'Searching...' : 'Search'}</span>
+                <Search size={18} className="search-btn-icon" />
               </button>
             </form>
 
@@ -1868,7 +1886,7 @@ function App() {
 
         {/* Ad Manager Tab */}
         {activeTab === 'ad-manager' && (
-          <AdManager authToken={authToken} />
+          <AdManager authToken={authToken} showToast={showToast} showConfirmModal={showConfirmModal} closeConfirmModal={closeConfirmModal} />
         )}
       </main>
 
@@ -2304,193 +2322,237 @@ function App() {
 
       {/* Post Item Modal */}
       {showPostModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="p-6">
-              <div className="flex justify-between items-center mb-6">
-                <h2 className="text-2xl font-bold text-gray-900">Post New Item</h2>
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div
+            className="bg-[#F5F2ED] rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden shadow-2xl"
+            style={{ animation: 'modalSlideIn 0.3s ease-out' }}
+          >
+            {/* Modal Header */}
+            <div className="bg-[#3E5C50] px-6 py-5">
+              <div className="flex justify-between items-center">
+                <div>
+                  <h2 className="text-xl font-bold text-white">List Your Item</h2>
+                  <p className="text-[#A8C5B8] text-sm mt-1">Reach thousands of campus buyers</p>
+                </div>
                 <button
                   onClick={handleClosePostModal}
-                  className="text-gray-400 hover:text-gray-600"
+                  className="text-white/70 hover:text-white hover:bg-white/10 rounded-full p-2 transition-all"
                 >
-                  <X size={24} />
+                  <X size={22} />
                 </button>
               </div>
+            </div>
 
+            {/* Modal Body */}
+            <div className="overflow-y-auto max-h-[calc(90vh-180px)] p-6">
               <form onSubmit={handleSubmitPost} className="space-y-6">
-                {/* Title */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Title *
-                  </label>
-                  <input
-                    type="text"
-                    value={postFormData.title}
-                    onChange={(e) => handlePostFormChange('title', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="e.g., iPhone 13 Pro - Like New"
-                    maxLength={100}
-                    required
-                  />
-                  <p className={`text-xs mt-1 ${postFormData.title.length < 5 ? 'text-red-500' : 'text-gray-500'}`}>
-                    {postFormData.title.length}/100 characters (minimum 5)
-                  </p>
-                </div>
 
-                {/* Description */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Description *
-                  </label>
-                  <textarea
-                    value={postFormData.description}
-                    onChange={(e) => handlePostFormChange('description', e.target.value)}
-                    rows={4}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="Describe your item in detail..."
-                    maxLength={2000}
-                    required
-                  />
-                  <p className={`text-xs mt-1 ${postFormData.description.length < 10 ? 'text-red-500' : 'text-gray-500'}`}>
-                    {postFormData.description.length}/2000 characters (minimum 10)
-                  </p>
-                </div>
+                {/* Section: Basic Info */}
+                <div className="bg-white rounded-xl p-5 border border-[#D6D1CA]">
+                  <h3 className="text-sm font-semibold text-[#3E5C50] uppercase tracking-wide mb-4 flex items-center gap-2">
+                    <Tag size={16} />
+                    Item Details
+                  </h3>
 
-                {/* Price and Category */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Price * (KES)
+                  {/* Title */}
+                  <div className="mb-4">
+                    <label className="block text-sm font-medium text-[#1E1E1E] mb-2">
+                      Title <span className="text-[#B86B3E]">*</span>
                     </label>
                     <input
-                      type="number"
-                      value={postFormData.price}
-                      onChange={(e) => handlePostFormChange('price', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      placeholder="1000"
-                      min="0"
-                      step="0.01"
+                      type="text"
+                      value={postFormData.title}
+                      onChange={(e) => handlePostFormChange('title', e.target.value)}
+                      className="w-full px-4 py-3 bg-[#F5F2ED] border border-[#D6D1CA] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3E5C50] focus:border-transparent text-[#1E1E1E] placeholder-[#5A5A5A]/60 transition-all"
+                      placeholder="e.g., iPhone 13 Pro - Like New"
+                      maxLength={100}
                       required
                     />
+                    <p className={`text-xs mt-2 ${postFormData.title.length < 5 ? 'text-[#8C3A3A]' : 'text-[#5A5A5A]'}`}>
+                      {postFormData.title.length}/100 characters {postFormData.title.length < 5 && '(minimum 5)'}
+                    </p>
                   </div>
 
+                  {/* Description */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Category *
+                    <label className="block text-sm font-medium text-[#1E1E1E] mb-2">
+                      Description <span className="text-[#B86B3E]">*</span>
                     </label>
-                    <select
-                      value={postFormData.category}
-                      onChange={(e) => handlePostFormChange('category', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    <textarea
+                      value={postFormData.description}
+                      onChange={(e) => handlePostFormChange('description', e.target.value)}
+                      rows={4}
+                      className="w-full px-4 py-3 bg-[#F5F2ED] border border-[#D6D1CA] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3E5C50] focus:border-transparent text-[#1E1E1E] placeholder-[#5A5A5A]/60 transition-all resize-none"
+                      placeholder="Describe your item - include condition, features, why you're selling..."
+                      maxLength={2000}
                       required
-                    >
-                      <option value="">Select a category</option>
-                      {categories.map((category) => (
-                        <option key={category._id} value={category._id}>
-                          {category.name}
-                        </option>
-                      ))}
-                    </select>
+                    />
+                    <p className={`text-xs mt-2 ${postFormData.description.length < 10 ? 'text-[#8C3A3A]' : 'text-[#5A5A5A]'}`}>
+                      {postFormData.description.length}/2000 characters {postFormData.description.length < 10 && '(minimum 10)'}
+                    </p>
                   </div>
                 </div>
 
-                {/* Condition and Location */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Condition
-                    </label>
-                    <select
-                      value={postFormData.condition}
-                      onChange={(e) => handlePostFormChange('condition', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    >
-                      <option value="New">New</option>
-                      <option value="Like New">Like New</option>
-                      <option value="Excellent">Excellent</option>
-                      <option value="Good">Good</option>
-                      <option value="Fair">Fair</option>
-                    </select>
-                  </div>
+                {/* Section: Pricing & Category */}
+                <div className="bg-white rounded-xl p-5 border border-[#D6D1CA]">
+                  <h3 className="text-sm font-semibold text-[#3E5C50] uppercase tracking-wide mb-4 flex items-center gap-2">
+                    <ShoppingBag size={16} />
+                    Pricing & Category
+                  </h3>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Campus/Location
-                    </label>
-                    <select
-                      value={postFormData.location.campus}
-                      onChange={(e) => handlePostFormChange('location.campus', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    >
-                      <option value="">Select a campus</option>
-                      {campuses.filter(c => c.isActive).map((campus) => (
-                        <option key={campus._id} value={campus.name}>
-                          {campus.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-
-                {/* Contact Information */}
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-3">Contact Information</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Phone Number *
+                      <label className="block text-sm font-medium text-[#1E1E1E] mb-2">
+                        Price <span className="text-[#B86B3E]">*</span>
+                      </label>
+                      <div className="relative">
+                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[#5A5A5A] font-medium">KES</span>
+                        <input
+                          type="number"
+                          value={postFormData.price}
+                          onChange={(e) => handlePostFormChange('price', e.target.value)}
+                          className="w-full pl-14 pr-4 py-3 bg-[#F5F2ED] border border-[#D6D1CA] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3E5C50] focus:border-transparent text-[#1E1E1E] transition-all"
+                          placeholder="0"
+                          min="0"
+                          step="1"
+                          required
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-[#1E1E1E] mb-2">
+                        Category <span className="text-[#B86B3E]">*</span>
+                      </label>
+                      <select
+                        value={postFormData.category}
+                        onChange={(e) => handlePostFormChange('category', e.target.value)}
+                        className="w-full px-4 py-3 bg-[#F5F2ED] border border-[#D6D1CA] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3E5C50] focus:border-transparent text-[#1E1E1E] transition-all appearance-none cursor-pointer"
+                        required
+                        style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%235A5A5A'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 12px center', backgroundSize: '20px' }}
+                      >
+                        <option value="">Select category</option>
+                        {categories.map((category) => (
+                          <option key={category._id} value={category._id}>
+                            {category.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                    <div>
+                      <label className="block text-sm font-medium text-[#1E1E1E] mb-2">
+                        Condition
+                      </label>
+                      <select
+                        value={postFormData.condition}
+                        onChange={(e) => handlePostFormChange('condition', e.target.value)}
+                        className="w-full px-4 py-3 bg-[#F5F2ED] border border-[#D6D1CA] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3E5C50] focus:border-transparent text-[#1E1E1E] transition-all appearance-none cursor-pointer"
+                        style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%235A5A5A'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 12px center', backgroundSize: '20px' }}
+                      >
+                        <option value="New">New</option>
+                        <option value="Like New">Like New</option>
+                        <option value="Excellent">Excellent</option>
+                        <option value="Good">Good</option>
+                        <option value="Fair">Fair</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-[#1E1E1E] mb-2">
+                        Campus
+                      </label>
+                      <select
+                        value={postFormData.location.campus}
+                        onChange={(e) => handlePostFormChange('location.campus', e.target.value)}
+                        className="w-full px-4 py-3 bg-[#F5F2ED] border border-[#D6D1CA] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3E5C50] focus:border-transparent text-[#1E1E1E] transition-all appearance-none cursor-pointer"
+                        style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%235A5A5A'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 12px center', backgroundSize: '20px' }}
+                      >
+                        <option value="">Select campus</option>
+                        {campuses.filter(c => c.isActive).map((campus) => (
+                          <option key={campus._id} value={campus.name}>
+                            {campus.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Section: Contact */}
+                <div className="bg-white rounded-xl p-5 border border-[#D6D1CA]">
+                  <h3 className="text-sm font-semibold text-[#3E5C50] uppercase tracking-wide mb-4 flex items-center gap-2">
+                    <Phone size={16} />
+                    Contact Information
+                  </h3>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-[#1E1E1E] mb-2">
+                        Phone Number <span className="text-[#B86B3E]">*</span>
                       </label>
                       <input
                         type="tel"
                         value={postFormData.contact.phone}
                         onChange={(e) => handlePostFormChange('contact.phone', e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        placeholder="e.g., +1234567890"
+                        className="w-full px-4 py-3 bg-[#F5F2ED] border border-[#D6D1CA] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3E5C50] focus:border-transparent text-[#1E1E1E] placeholder-[#5A5A5A]/60 transition-all"
+                        placeholder="0712 345 678"
                         required
                       />
-                      <p className="text-xs text-gray-500 mt-1">Buyers will use this to contact you</p>
+                      <p className="text-xs text-[#5A5A5A] mt-2">Buyers will contact you here</p>
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Email (Optional)
+                      <label className="block text-sm font-medium text-[#1E1E1E] mb-2">
+                        Email <span className="text-[#5A5A5A] font-normal">(optional)</span>
                       </label>
                       <input
                         type="text"
                         value={postFormData.contact.email}
                         onChange={(e) => handlePostFormChange('contact.email', e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        placeholder="e.g., seller@email.com"
+                        className="w-full px-4 py-3 bg-[#F5F2ED] border border-[#D6D1CA] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3E5C50] focus:border-transparent text-[#1E1E1E] placeholder-[#5A5A5A]/60 transition-all"
+                        placeholder="your@email.com"
                       />
-                      <p className="text-xs text-gray-500 mt-1">Alternative contact method</p>
+                      <p className="text-xs text-[#5A5A5A] mt-2">Alternative contact method</p>
                     </div>
                   </div>
                 </div>
 
-                {/* Image Upload */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Images * (Up to 3 images)
-                  </label>
+                {/* Section: Images */}
+                <div className="bg-white rounded-xl p-5 border border-[#D6D1CA]">
+                  <h3 className="text-sm font-semibold text-[#3E5C50] uppercase tracking-wide mb-4 flex items-center gap-2">
+                    <Upload size={16} />
+                    Photos <span className="text-[#B86B3E]">*</span>
+                    <span className="text-xs font-normal text-[#5A5A5A] ml-auto">Up to 3 images</span>
+                  </h3>
 
                   {/* Image Previews */}
                   {imagePreviewUrls.length > 0 && (
                     <div className="grid grid-cols-3 gap-3 mb-4">
                       {imagePreviewUrls.map((url, index) => (
-                        <div key={index} className="relative">
+                        <div key={index} className="relative group">
                           <img
                             src={url}
                             alt={`Preview ${index + 1}`}
-                            className="w-full h-24 object-cover rounded-lg border"
+                            className="w-full h-28 object-cover rounded-lg border-2 border-[#D6D1CA]"
                             loading="lazy"
                           />
-                          <button
-                            type="button"
-                            onClick={() => removeImage(index)}
-                            className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
-                          >
-                            <Trash2 size={12} />
-                          </button>
+                          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 rounded-lg transition-opacity flex items-center justify-center">
+                            <button
+                              type="button"
+                              onClick={() => removeImage(index)}
+                              className="bg-[#8C3A3A] text-white rounded-full p-2 hover:bg-[#7A3232] transition-colors"
+                            >
+                              <Trash2 size={16} />
+                            </button>
+                          </div>
+                          {index === 0 && (
+                            <span className="absolute top-2 left-2 bg-[#3E5C50] text-white text-xs px-2 py-1 rounded font-medium">
+                              Main
+                            </span>
+                          )}
                         </div>
                       ))}
                     </div>
@@ -2498,7 +2560,7 @@ function App() {
 
                   {/* Upload Area */}
                   {selectedImages.length < 3 && (
-                    <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-gray-400 transition-colors">
+                    <div className="border-2 border-dashed border-[#D6D1CA] rounded-xl p-8 text-center hover:border-[#3E5C50] hover:bg-[#F5F2ED]/50 transition-all cursor-pointer group">
                       <input
                         type="file"
                         multiple
@@ -2508,42 +2570,54 @@ function App() {
                         id="image-upload"
                       />
                       <label htmlFor="image-upload" className="cursor-pointer">
-                        <Upload size={32} className="mx-auto text-gray-400 mb-2" />
-                        <p className="text-gray-500 text-sm">
-                          Click to upload images (JPG, PNG, WebP)
+                        <div className="w-16 h-16 bg-[#3E5C50]/10 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:bg-[#3E5C50]/20 transition-colors">
+                          <Upload size={28} className="text-[#3E5C50]" />
+                        </div>
+                        <p className="text-[#1E1E1E] font-medium mb-1">
+                          Click to upload photos
                         </p>
-                        <p className="text-gray-400 text-xs mt-1">
-                          Max 5MB per image • {3 - selectedImages.length} remaining
+                        <p className="text-[#5A5A5A] text-sm">
+                          JPG, PNG or WebP (max 5MB each)
+                        </p>
+                        <p className="text-[#B86B3E] text-sm font-medium mt-2">
+                          {3 - selectedImages.length} {3 - selectedImages.length === 1 ? 'photo' : 'photos'} remaining
                         </p>
                       </label>
                     </div>
                   )}
                 </div>
-
-                {/* Form Actions */}
-                <div className="flex gap-4 pt-4">
-                  <button
-                    type="button"
-                    onClick={handleClosePostModal}
-                    className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 font-medium"
-                    disabled={isSubmittingPost}
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-                    disabled={isSubmittingPost}
-                  >
-                    {isSubmittingPost ? (
-                      <span className="flex items-center justify-center gap-2">
-                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                        {uploadProgress || 'Posting...'}
-                      </span>
-                    ) : 'Post Item'}
-                  </button>
-                </div>
               </form>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="bg-white border-t border-[#D6D1CA] px-6 py-4">
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={handleClosePostModal}
+                  className="flex-1 px-5 py-3 border-2 border-[#D6D1CA] text-[#5A5A5A] rounded-xl hover:bg-[#F5F2ED] font-semibold transition-all"
+                  disabled={isSubmittingPost}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleSubmitPost}
+                  className="flex-1 px-5 py-3 bg-[#B86B3E] text-white rounded-xl hover:bg-[#A85F36] font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-[#B86B3E]/25"
+                  disabled={isSubmittingPost}
+                >
+                  {isSubmittingPost ? (
+                    <span className="flex items-center justify-center gap-2">
+                      <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                      {uploadProgress || 'Posting...'}
+                    </span>
+                  ) : (
+                    <span className="flex items-center justify-center gap-2">
+                      <Plus size={20} />
+                      Post Item
+                    </span>
+                  )}
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -2765,6 +2839,15 @@ function App() {
           </div>
         </div>
       </footer>
+
+      {/* Confirm Modal */}
+      <ConfirmModal
+        isOpen={confirmModal.isOpen}
+        title={confirmModal.title}
+        message={confirmModal.message}
+        onConfirm={confirmModal.onConfirm}
+        onCancel={closeConfirmModal}
+      />
 
       {/* Toast Notification */}
       {toast && (

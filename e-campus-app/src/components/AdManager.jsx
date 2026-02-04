@@ -3,7 +3,7 @@ import { Plus, Edit2, Trash2, ToggleLeft, ToggleRight, DollarSign, Eye, MousePoi
 import api from '../services/api'
 import AdForm from './AdForm'
 
-export default function AdManager({ authToken }) {
+export default function AdManager({ authToken, showToast, showConfirmModal, closeConfirmModal }) {
   const [ads, setAds] = useState([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
@@ -50,23 +50,27 @@ export default function AdManager({ authToken }) {
       await api.toggleAd(adId, authToken)
       fetchAds()
     } catch (err) {
-      alert('Failed to toggle ad status: ' + err.message)
+      showToast('Failed to toggle ad status: ' + err.message, 'error')
     }
   }
 
   // Delete ad
-  const handleDelete = async (adId, title) => {
-    if (!window.confirm(`Are you sure you want to delete ad "${title}"? This action cannot be undone.`)) {
-      return
-    }
-
-    try {
-      await api.deleteAd(adId, authToken)
-      fetchAds()
-      fetchRevenueStats()
-    } catch (err) {
-      alert('Failed to delete ad: ' + err.message)
-    }
+  const handleDelete = (adId, title) => {
+    showConfirmModal(
+      'Delete Advertisement',
+      `Are you sure you want to delete "${title}"? This action cannot be undone.`,
+      async () => {
+        closeConfirmModal()
+        try {
+          await api.deleteAd(adId, authToken)
+          fetchAds()
+          fetchRevenueStats()
+          showToast('Ad deleted successfully', 'success')
+        } catch (err) {
+          showToast('Failed to delete ad: ' + err.message, 'error')
+        }
+      }
+    )
   }
 
   // Mark as paid
@@ -76,7 +80,7 @@ export default function AdManager({ authToken }) {
       fetchAds()
       fetchRevenueStats()
     } catch (err) {
-      alert('Failed to mark ad as paid: ' + err.message)
+      showToast('Failed to mark ad as paid: ' + err.message, 'error')
     }
   }
 

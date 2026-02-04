@@ -7,10 +7,10 @@ const asyncHandler = require('../middleware/asyncHandler');
  * @access  Public
  */
 exports.getActiveAds = asyncHandler(async (req, res) => {
-  const { type, position, limit = 5 } = req.query;
+  const { type, limit = 5 } = req.query;
 
   // Get active ads using the static method
-  let ads = await Advertisement.getActiveAds(type, position);
+  let ads = await Advertisement.getActiveAds(type);
 
   // Rotate ads - shuffle to show different ones each time
   ads = shuffleArray(ads);
@@ -148,13 +148,12 @@ exports.getAdStats = asyncHandler(async (req, res) => {
  * @access  Private/Admin
  */
 exports.getAllAdsAdmin = asyncHandler(async (req, res) => {
-  const { status, type, position, page = 1, limit = 20 } = req.query;
+  const { status, type, page = 1, limit = 20 } = req.query;
 
   const query = {};
   if (status === 'active') query.isActive = true;
   if (status === 'inactive') query.isActive = false;
   if (type) query.type = type;
-  if (position) query.position = position;
 
   const skip = (parseInt(page) - 1) * parseInt(limit);
   const total = await Advertisement.countDocuments(query);
