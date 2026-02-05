@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react'
-import { ShoppingBag, Menu, X, Plus, Search, Book, Laptop, Sofa, Shirt, ChevronDown, ChevronLeft, ChevronRight, MessageCircle, Phone, Mail, Instagram, Upload, Trash2, LogOut, User, Tag, Shield, Zap, Users, Star, TrendingUp, Eye } from 'lucide-react'
+import { ShoppingBag, Menu, X, Plus, Search, Book, Laptop, Sofa, Shirt, ChevronDown, ChevronLeft, ChevronRight, MessageCircle, Phone, Mail, Instagram, Upload, Trash2, LogOut, User, Tag, Shield, Zap, Users, Star, TrendingUp, Eye, WifiOff, RefreshCw, Loader2 } from 'lucide-react'
 import { api } from './services/api'
 import ContactReveal from './components/ContactReveal'
 import LocalContactReveal from './components/LocalContactReveal'
@@ -292,51 +292,67 @@ function App() {
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [selectedProduct, currentImageIndex, isImageFullscreen])
 
+  // Retry state for connection failures
+  const [retryCount, setRetryCount] = useState(0)
+  const [isRetrying, setIsRetrying] = useState(false)
+
   // Test API connection and fetch data on mount
   useEffect(() => {
-    const initializeApp = async () => {
+    const maxRetries = 3
+
+    // Function to load data with retry logic
+    const loadAppData = async (attempt = 1) => {
+      const timeout = attempt === 1 ? 10000 : 15000 // Shorter timeout on first try
+
       try {
-        // Load data immediately without waiting for health check
-        // Run health check in parallel but don't block on it
-        const dataPromise = Promise.all([
-          api.getCategories(),
-          api.getProducts(),
-          api.getCampuses()
+        // Load all data in parallel
+        const [categoriesResponse, productsResponse, campusesResponse] = await Promise.all([
+          api.getCategories({ timeout }),
+          api.getProducts({ timeout }),
+          api.getCampuses({ timeout })
         ])
 
-        const healthPromise = api.healthCheck().then(
-          (response) => {
-            console.log('Backend connection successful:', response)
-            setApiConnected(true)
-          }
-        ).catch((err) => {
-          console.warn('Health check failed, but attempting to load data:', err)
-          // Don't set apiConnected to false yet - let data requests determine connectivity
-        })
-
-        // Wait for data to load (health check runs in background)
-        const [categoriesResponse, productsResponse, campusesResponse] = await dataPromise
-
-        console.log('Categories loaded:', categoriesResponse)
-        console.log('Products loaded:', productsResponse)
-        console.log('Campuses loaded:', campusesResponse)
+        console.log('Data loaded successfully on attempt', attempt)
 
         setCategories(categoriesResponse.data || [])
         setCampuses(campusesResponse.data || [])
         setCampusesLoading(false)
 
-        // Use only API products (no more localStorage)
         const apiProducts = productsResponse.data?.products || []
         setProducts(apiProducts)
         setApiConnected(true)
+        setRetryCount(0)
 
-        // Wait for health check to complete (if it hasn't already)
-        await healthPromise
-
+        return true
       } catch (error) {
-        console.error('Failed to connect to backend or fetch data:', error)
+        console.error(`Attempt ${attempt} failed:`, error.message)
+
+        // If we have retries left, try again with exponential backoff
+        if (attempt < maxRetries) {
+          const delay = Math.min(1000 * Math.pow(2, attempt - 1), 5000) // 1s, 2s, 4s (max 5s)
+          console.log(`Retrying in ${delay}ms...`)
+          await new Promise(resolve => setTimeout(resolve, delay))
+          return loadAppData(attempt + 1)
+        }
+
+        throw error
+      }
+    }
+
+    const initializeApp = async () => {
+      // First, send a quick "wake-up" ping to the backend (fire and forget)
+      // This helps warm up sleeping servers on free hosting tiers
+      api.healthCheck().then(
+        (response) => console.log('Backend health check:', response)
+      ).catch(
+        (err) => console.warn('Health check failed:', err.message)
+      )
+
+      try {
+        await loadAppData()
+      } catch (error) {
+        console.error('Failed to connect to backend after retries:', error)
         setApiConnected(false)
-        // Show empty state - no fallback data
         setCategories([])
         setProducts([])
         setCampuses([])
@@ -349,6 +365,59 @@ function App() {
 
     initializeApp()
   }, [])
+
+  // Manual retry function for users
+  const handleRetryConnection = async () => {
+    setIsRetrying(true)
+    setRetryCount(prev => prev + 1)
+    setDataLoading(true)
+
+    const maxRetries = 3
+
+    const attemptLoad = async (attempt = 1) => {
+      const timeout = attempt === 1 ? 10000 : 15000
+
+      try {
+        const [categoriesResponse, productsResponse, campusesResponse] = await Promise.all([
+          api.getCategories({ timeout }),
+          api.getProducts({ timeout }),
+          api.getCampuses({ timeout })
+        ])
+
+        setCategories(categoriesResponse.data || [])
+        setCampuses(campusesResponse.data || [])
+        setCampusesLoading(false)
+
+        const apiProducts = productsResponse.data?.products || []
+        setProducts(apiProducts)
+        setApiConnected(true)
+        setRetryCount(0)
+
+        return true
+      } catch (error) {
+        console.error(`Retry attempt ${attempt} failed:`, error.message)
+
+        if (attempt < maxRetries) {
+          const delay = Math.min(1000 * Math.pow(2, attempt - 1), 5000)
+          console.log(`Retrying in ${delay}ms...`)
+          await new Promise(resolve => setTimeout(resolve, delay))
+          return attemptLoad(attempt + 1)
+        }
+
+        throw error
+      }
+    }
+
+    try {
+      await attemptLoad()
+    } catch (error) {
+      console.error('Manual retry failed after all attempts:', error)
+      setApiConnected(false)
+    } finally {
+      setIsRetrying(false)
+      setDataLoading(false)
+    }
+  }
 
   const handleTabSwitch = (tab) => {
     setActiveTab(tab)
@@ -1216,6 +1285,58 @@ function App() {
             </div>
           </div>
         </section>
+      )}
+
+      {/* Connection Failed Banner */}
+      {!apiConnected && !dataLoading && !loading && (
+        <div className="bg-gradient-to-r from-amber-50 to-orange-50 border-b border-amber-200">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+            <div className="flex items-center justify-between gap-4 flex-wrap">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-amber-100 rounded-full flex items-center justify-center">
+                  <WifiOff className="text-amber-600" size={20} />
+                </div>
+                <div>
+                  <p className="font-semibold text-amber-800">Connection Issue</p>
+                  <p className="text-sm text-amber-600">
+                    {retryCount > 0
+                      ? `Unable to connect after ${retryCount} ${retryCount === 1 ? 'attempt' : 'attempts'}. The server may be starting up.`
+                      : 'Unable to connect to the server. It may be waking up from sleep.'}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={handleRetryConnection}
+                disabled={isRetrying}
+                className="inline-flex items-center gap-2 px-5 py-2.5 bg-amber-600 text-white rounded-lg hover:bg-amber-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium shadow-sm"
+              >
+                {isRetrying ? (
+                  <>
+                    <Loader2 className="animate-spin" size={18} />
+                    Connecting...
+                  </>
+                ) : (
+                  <>
+                    <RefreshCw size={18} />
+                    Try Again
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Retrying Banner (shown while retrying in background) */}
+      {isRetrying && apiConnected && (
+        <div className="bg-blue-50 border-b border-blue-200">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
+            <div className="flex items-center justify-center gap-3">
+              <Loader2 className="animate-spin text-blue-600" size={18} />
+              <p className="text-sm text-blue-700 font-medium">Refreshing data...</p>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Content */}

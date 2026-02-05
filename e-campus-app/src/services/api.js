@@ -53,10 +53,10 @@ async function apiRequest(endpoint, options = {}) {
 // API Services
 export const api = {
   // Categories
-  getCategories: () => apiRequest('/categories'),
+  getCategories: (options = {}) => apiRequest('/categories', { timeout: options.timeout }),
 
   // Campuses
-  getCampuses: () => apiRequest('/campuses'),
+  getCampuses: (options = {}) => apiRequest('/campuses', { timeout: options.timeout }),
 
   createCampus: (campusData, token) => apiRequest('/campuses', {
     method: 'POST',
@@ -77,8 +77,9 @@ export const api = {
 
   // Products
   getProducts: (params = {}) => {
-    const searchParams = new URLSearchParams(params);
-    return apiRequest(`/products?${searchParams}`);
+    const { timeout, ...queryParams } = params;
+    const searchParams = new URLSearchParams(queryParams);
+    return apiRequest(`/products?${searchParams}`, { timeout });
   },
 
   getProductById: (id) => apiRequest(`/products/${id}`),
