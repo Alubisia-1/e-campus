@@ -48,11 +48,18 @@ function CampusList({ campuses, selectedCampus, onCampusSelect, loading, product
               : 'bg-white text-slate-600 hover:bg-slate-50 border-2 border-slate-200 hover:border-teal-400'
           }`}
         >
-          <option value="">All Campuses ({getTotalItemCount()})</option>
+          <option value="" className="text-slate-700 bg-white" style={{ color: '#334155', backgroundColor: '#ffffff' }}>
+            All Campuses ({getTotalItemCount()})
+          </option>
           {activeCampuses.map((campus) => {
             const itemCount = getCampusItemCount(campus.name)
             return (
-              <option key={campus._id} value={campus.name}>
+              <option
+                key={campus._id}
+                value={campus.name}
+                className="text-slate-700 bg-white"
+                style={{ color: '#334155', backgroundColor: '#ffffff' }}
+              >
                 {campus.name} ({itemCount})
               </option>
             )
