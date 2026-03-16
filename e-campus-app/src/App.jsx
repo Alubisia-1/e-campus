@@ -2005,6 +2005,553 @@ function App() {
           </div>
         )}
 
+        {/* Privacy Policy Tab */}
+        {activeTab === 'privacy-policy' && (
+          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            {/* Header */}
+            <div className="mb-8 text-center">
+              <h1 className="text-3xl font-bold text-gray-900 mb-2">Privacy Policy</h1>
+              <p className="text-gray-600">Effective Date: March 7, 2026</p>
+            </div>
+
+            {/* Introduction */}
+            <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
+              <h2 className="text-2xl font-semibold text-gray-900 mb-4">1. Introduction</h2>
+              <p className="text-gray-700 leading-relaxed mb-4">
+                E-Soko operates a campus-focused marketplace accessible at <strong>e-soko.store</strong>. Our platform enables university and college community members to list, discover, and purchase items from fellow students within their campus network.
+              </p>
+              <p className="text-gray-700 leading-relaxed">
+                This Privacy Policy outlines how we collect, process, store, and safeguard your personal information when you access or use our platform. By creating an account or using any of our services, you acknowledge and consent to the data practices described herein.
+              </p>
+            </div>
+
+            {/* Information We Collect */}
+            <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
+              <h2 className="text-2xl font-semibold text-gray-900 mb-4">2. Information We Collect</h2>
+
+              <div className="mb-5">
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">2.1 Account Registration Data</h3>
+                <p className="text-gray-700 text-sm leading-relaxed">
+                  Upon registration, we collect your <strong>username</strong> and <strong>email address</strong>. These are required for account identification, listing management, and account recovery purposes.
+                </p>
+              </div>
+
+              <div className="mb-5">
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">2.2 Listing Data</h3>
+                <p className="text-gray-700 text-sm leading-relaxed">
+                  When you create a product listing, we collect and publicly display the information you provide, including: item title, description, pricing, condition, category, campus location, uploaded images, and seller contact details (phone number and/or email address). This information is visible to all platform users to facilitate transactions.
+                </p>
+              </div>
+
+              <div className="mb-5">
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">2.3 Device Identifiers</h3>
+                <p className="text-gray-700 text-sm leading-relaxed">
+                  We generate and store a unique <strong>device identifier</strong> within your browser's local storage. This identifier is used exclusively to associate listings with your device, enabling you to manage your posted items prior to account creation.
+                </p>
+              </div>
+
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">2.4 Usage and Analytics Data</h3>
+                <p className="text-gray-700 text-sm leading-relaxed">
+                  We utilize <strong>Google Analytics</strong> to collect aggregated, anonymized usage metrics including page views, session duration, device type, and approximate geographic location (country/city level). This data is used solely for platform optimization and service improvement. Google Analytics may deploy cookies to facilitate this data collection.
+                </p>
+              </div>
+            </div>
+
+            {/* How We Use Your Information */}
+            <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
+              <h2 className="text-2xl font-semibold text-gray-900 mb-4">3. Use of Information</h2>
+              <p className="text-gray-700 text-sm leading-relaxed mb-4">
+                We process your personal information for the following purposes:
+              </p>
+              <ul className="space-y-3 text-gray-700 text-sm">
+                <li className="flex items-start gap-2">
+                  <span className="font-bold mt-1">•</span>
+                  <span><strong>Service Delivery:</strong> Publishing and displaying your listings on the marketplace to connect buyers and sellers within the campus community.</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="font-bold mt-1">•</span>
+                  <span><strong>Account Administration:</strong> Authenticating user identity, managing account credentials, and enabling listing management (creation, editing, and deletion).</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="font-bold mt-1">•</span>
+                  <span><strong>User Support:</strong> Responding to inquiries, support requests, and reports of prohibited or fraudulent activity.</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="font-bold mt-1">•</span>
+                  <span><strong>Platform Improvement:</strong> Analyzing anonymized usage patterns to enhance platform functionality, performance, and user experience.</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="font-bold mt-1">•</span>
+                  <span><strong>Platform Integrity:</strong> Detecting and preventing fraudulent listings, misuse, spam, and violations of our Terms of Service.</span>
+                </li>
+              </ul>
+            </div>
+
+            {/* Data Storage & Security */}
+            <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
+              <h2 className="text-2xl font-semibold text-gray-900 mb-4">4. Data Security</h2>
+              <p className="text-gray-700 text-sm leading-relaxed mb-4">
+                We implement industry-standard security measures to protect your personal information against unauthorized access, alteration, disclosure, or destruction. These safeguards include:
+              </p>
+              <ul className="space-y-2 text-gray-700 text-sm">
+                <li className="flex items-start gap-2">
+                  <span className="font-bold mt-1">•</span>
+                  <span>Password encryption using secure hashing algorithms (passwords are never stored in plain text).</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="font-bold mt-1">•</span>
+                  <span>Token-based authentication for secure session management.</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="font-bold mt-1">•</span>
+                  <span>Client-side storage of authentication tokens, which are not transmitted to or shared with third parties.</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="font-bold mt-1">•</span>
+                  <span>Ongoing monitoring for suspicious activity and unauthorized access attempts.</span>
+                </li>
+              </ul>
+              <p className="text-gray-700 text-sm leading-relaxed mt-4">
+                While we employ reasonable precautions to secure your data, no electronic transmission or storage method is entirely impervious to risk. We cannot provide an absolute guarantee of data security.
+              </p>
+            </div>
+
+            {/* Third-Party Services */}
+            <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
+              <h2 className="text-2xl font-semibold text-gray-900 mb-4">5. Third-Party Services</h2>
+              <p className="text-gray-700 text-sm leading-relaxed mb-4">
+                Our platform integrates the following third-party services, each of which operates under its own privacy policy:
+              </p>
+              <ul className="space-y-3 text-gray-700 text-sm">
+                <li className="flex items-start gap-2">
+                  <span className="font-bold mt-1">•</span>
+                  <span><strong>Google Analytics:</strong> Collects anonymized website usage statistics. Users may opt out via the <a href="https://tools.google.com/dlpage/gaoptout" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">Google Analytics Opt-out Browser Add-on</a>.</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="font-bold mt-1">•</span>
+                  <span><strong>Google AdSense:</strong> Serves advertisements on our platform. Google may utilize cookies to deliver ads based on browsing behavior. For details, refer to <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">Google's Privacy Policy</a>.</span>
+                </li>
+              </ul>
+            </div>
+
+            {/* Cookies & Local Storage */}
+            <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
+              <h2 className="text-2xl font-semibold text-gray-900 mb-4">6. Cookies & Local Storage</h2>
+              <p className="text-gray-700 text-sm leading-relaxed mb-4">
+                E-Soko primarily utilizes browser <strong>local storage</strong> rather than traditional cookies for the following purposes:
+              </p>
+              <ul className="space-y-2 text-gray-700 text-sm">
+                <li className="flex items-start gap-2">
+                  <span className="font-bold mt-1">•</span>
+                  <span>Storing your device identifier for listing ownership verification.</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="font-bold mt-1">•</span>
+                  <span>Maintaining your authentication session.</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="font-bold mt-1">•</span>
+                  <span>Caching user profile data for display optimization.</span>
+                </li>
+              </ul>
+              <p className="text-gray-700 text-sm leading-relaxed mt-4">
+                Third-party services integrated into our platform (Google Analytics, Google AdSense) may independently set cookies. You may manage or disable cookies through your browser settings at any time.
+              </p>
+            </div>
+
+            {/* Children's Privacy */}
+            <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
+              <h2 className="text-2xl font-semibold text-gray-900 mb-4">7. Age Restriction</h2>
+              <p className="text-gray-700 text-sm leading-relaxed">
+                E-Soko is intended exclusively for use by campus community members, primarily university and college students aged 16 and above. We do not knowingly collect or process personal information from individuals under the age of 16. Should we become aware that data has been collected from a minor, we will take immediate steps to delete such information. To report a concern, please contact us at <a href="mailto:esokostore1@gmail.com" className="text-blue-600 hover:underline">esokostore1@gmail.com</a>.
+              </p>
+            </div>
+
+            {/* Changes to This Policy */}
+            <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
+              <h2 className="text-2xl font-semibold text-gray-900 mb-4">8. Policy Amendments</h2>
+              <p className="text-gray-700 text-sm leading-relaxed">
+                We reserve the right to modify this Privacy Policy at any time to reflect changes in our practices, services, or applicable legal requirements. Material changes will be indicated by updating the "Effective Date" at the top of this page. Continued use of the platform following any amendments constitutes acceptance of the revised policy. We recommend reviewing this page periodically.
+              </p>
+            </div>
+
+            {/* Contact */}
+            <div className="bg-white rounded-xl shadow-sm p-6">
+              <h2 className="text-2xl font-semibold text-gray-900 mb-4">9. Contact Information</h2>
+              <p className="text-gray-700 text-sm leading-relaxed mb-3">
+                For questions, concerns, or requests related to this Privacy Policy or our data handling practices, please reach out to us through the following channels:
+              </p>
+              <div className="bg-blue-50 rounded-lg p-4">
+                <p className="text-gray-700 text-sm"><strong>Email:</strong> <a href="mailto:esokostore1@gmail.com" className="text-blue-600 hover:underline">esokostore1@gmail.com</a></p>
+                <p className="text-gray-700 text-sm mt-1"><strong>Website:</strong> <a href="https://e-soko.store" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">e-soko.store</a></p>
+                <p className="text-sm text-gray-600 mt-2">We endeavor to respond to all privacy-related inquiries within 48 hours.</p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Terms of Service Tab */}
+        {activeTab === 'terms-of-service' && (
+          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            {/* Header */}
+            <div className="mb-8 text-center">
+              <h1 className="text-3xl font-bold text-gray-900 mb-2">Terms of Service</h1>
+              <p className="text-gray-600">Last updated: March 7, 2026</p>
+            </div>
+
+            {/* Introduction */}
+            <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
+              <h2 className="text-2xl font-semibold text-gray-900 mb-4">Agreement to Terms</h2>
+              <p className="text-gray-700 leading-relaxed mb-4">
+                Welcome to E-Soko. These Terms of Service govern your access to and use of the E-Soko platform, accessible at <strong>e-soko.store</strong>, including all related services and features. E-Soko operates as a free campus marketplace advertisement platform designed primarily for university and college students, while also welcoming members of the general public.
+              </p>
+              <p className="text-gray-700 leading-relaxed">
+                By accessing or using E-Soko, you acknowledge that you have read, understood, and agree to be bound by these Terms of Service. If you do not agree to these Terms, please discontinue use of the platform immediately. E-Soko reserves the right to modify these Terms at any time, and your continued use of the platform following any such changes constitutes your acceptance of the revised Terms.
+              </p>
+            </div>
+
+            {/* Nature of Service */}
+            <div className="bg-yellow-50 border-l-4 border-yellow-400 p-6 mb-6 rounded-lg">
+              <h3 className="text-lg font-semibold text-yellow-900 mb-3">Important: Nature of Our Service</h3>
+              <p className="text-yellow-800 text-sm leading-relaxed mb-3">
+                E-Soko is <strong>strictly an advertisement platform</strong>. We provide a space for campus community members to post and browse listings. Please understand the following:
+              </p>
+              <ul className="space-y-2 text-yellow-800 text-sm">
+                <li className="flex items-start gap-2">
+                  <span className="font-bold mt-1">•</span>
+                  <span>We do <strong>not</strong> process payments, facilitate transactions, or handle any financial exchanges.</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="font-bold mt-1">•</span>
+                  <span>We do <strong>not</strong> verify the identity of sellers, the quality of items, or the accuracy of listings.</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="font-bold mt-1">•</span>
+                  <span>All transactions occur <strong>directly between buyers and sellers</strong>, outside of our platform.</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="font-bold mt-1">•</span>
+                  <span>We do <strong>not</strong> mediate disputes, offer refunds, or guarantee any transaction outcomes.</span>
+                </li>
+              </ul>
+            </div>
+
+            {/* Eligibility */}
+            <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
+              <h2 className="text-2xl font-semibold text-gray-900 mb-4">Eligibility</h2>
+              <p className="text-gray-700 text-sm leading-relaxed mb-3">
+                To use E-Soko, you must:
+              </p>
+              <ul className="space-y-2 text-gray-700 text-sm">
+                <li className="flex items-start gap-2">
+                  <span className="font-bold mt-1">•</span>
+                  <span>Be at least <strong>16 years of age</strong>.</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="font-bold mt-1">•</span>
+                  <span>Be a member of a campus community (student, faculty, or staff) or have a legitimate reason to buy or sell items within a campus setting.</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="font-bold mt-1">•</span>
+                  <span>Have the legal capacity to enter into a binding agreement.</span>
+                </li>
+              </ul>
+            </div>
+
+            {/* User Accounts */}
+            <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
+              <h2 className="text-2xl font-semibold text-gray-900 mb-4">User Accounts</h2>
+              <ul className="space-y-3 text-gray-700 text-sm">
+                <li className="flex items-start gap-2">
+                  <span className="font-bold mt-1">•</span>
+                  <span>You may create an account using a username and email address. You are responsible for maintaining the confidentiality of your account credentials.</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="font-bold mt-1">•</span>
+                  <span>You are responsible for all activity that occurs under your account. Notify us immediately if you suspect unauthorized access.</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="font-bold mt-1">•</span>
+                  <span>You must provide accurate information when creating your account and posting listings. Impersonation or use of false information is prohibited.</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="font-bold mt-1">•</span>
+                  <span>We reserve the right to suspend or terminate accounts that violate these Terms.</span>
+                </li>
+              </ul>
+            </div>
+
+            {/* Listing Rules */}
+            <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
+              <h2 className="text-2xl font-semibold text-gray-900 mb-4">Listing Guidelines</h2>
+              <p className="text-gray-700 text-sm leading-relaxed mb-3">
+                When posting items on E-Soko, you agree to the following:
+              </p>
+
+              <div className="mb-4">
+                <h3 className="text-base font-semibold text-gray-900 mb-2">You Must:</h3>
+                <ul className="space-y-2 text-gray-700 text-sm">
+                  <li className="flex items-start gap-2">
+                    <span className="font-bold mt-1">•</span>
+                    <span>Provide accurate and truthful descriptions of items, including their condition and price.</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="font-bold mt-1">•</span>
+                    <span>Only post items that you legally own or are authorized to sell.</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="font-bold mt-1">•</span>
+                    <span>Use real, unedited photos of the actual items being sold.</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="font-bold mt-1">•</span>
+                    <span>Remove listings once items have been sold.</span>
+                  </li>
+                </ul>
+              </div>
+
+              <div>
+                <h3 className="text-base font-semibold text-gray-900 mb-2">You Must Not:</h3>
+                <ul className="space-y-2 text-gray-700 text-sm">
+                  <li className="flex items-start gap-2">
+                    <span className="font-bold mt-1">•</span>
+                    <span>Post illegal, stolen, counterfeit, or prohibited items.</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="font-bold mt-1">•</span>
+                    <span>Post misleading, deceptive, or fraudulent listings.</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="font-bold mt-1">•</span>
+                    <span>Post content that is offensive, discriminatory, or violates the rights of others.</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="font-bold mt-1">•</span>
+                    <span>Use the platform for spam, phishing, or any form of unsolicited advertising unrelated to campus marketplace activities.</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="font-bold mt-1">•</span>
+                    <span>Post weapons, drugs, alcohol, or any items prohibited by law or campus regulations.</span>
+                  </li>
+                </ul>
+              </div>
+            </div>
+
+            {/* User Conduct */}
+            <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
+              <h2 className="text-2xl font-semibold text-gray-900 mb-4">User Conduct</h2>
+              <p className="text-gray-700 text-sm leading-relaxed mb-3">
+                When using E-Soko, you agree not to:
+              </p>
+              <ul className="space-y-2 text-gray-700 text-sm">
+                <li className="flex items-start gap-2">
+                  <span className="font-bold mt-1">•</span>
+                  <span>Harass, threaten, or intimidate other users.</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="font-bold mt-1">•</span>
+                  <span>Attempt to gain unauthorized access to other users' accounts or our systems.</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="font-bold mt-1">•</span>
+                  <span>Use automated tools (bots, scrapers) to access the Service without our written permission.</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="font-bold mt-1">•</span>
+                  <span>Interfere with or disrupt the integrity or performance of the Service.</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="font-bold mt-1">•</span>
+                  <span>Use the platform for any purpose that is unlawful or prohibited by these Terms.</span>
+                </li>
+              </ul>
+            </div>
+
+            {/* Disclaimer & Limitation of Liability */}
+            <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
+              <h2 className="text-2xl font-semibold text-gray-900 mb-4">Disclaimer of Warranties</h2>
+              <div className="bg-gray-50 rounded-lg p-4 mb-4">
+                <p className="text-gray-700 text-sm leading-relaxed">
+                  THE SERVICE IS PROVIDED ON AN <strong>"AS IS"</strong> AND <strong>"AS AVAILABLE"</strong> BASIS WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED. WE DO NOT WARRANT THAT THE SERVICE WILL BE UNINTERRUPTED, SECURE, OR ERROR-FREE.
+                </p>
+              </div>
+              <ul className="space-y-2 text-gray-700 text-sm">
+                <li className="flex items-start gap-2">
+                  <span className="font-bold mt-1">•</span>
+                  <span>We make no guarantees about the accuracy, reliability, or completeness of any listing or user-generated content on the platform.</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="font-bold mt-1">•</span>
+                  <span>We do not endorse, verify, or guarantee any items listed, sellers, or buyers on the platform.</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="font-bold mt-1">•</span>
+                  <span>You use the Service at your own risk. Any material obtained through the Service is at your own discretion and risk.</span>
+                </li>
+              </ul>
+            </div>
+
+            {/* Limitation of Liability */}
+            <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
+              <h2 className="text-2xl font-semibold text-gray-900 mb-4">Limitation of Liability</h2>
+              <p className="text-gray-700 text-sm leading-relaxed mb-3">
+                To the fullest extent permitted by law, E-Soko shall not be liable for:
+              </p>
+              <ul className="space-y-2 text-gray-700 text-sm">
+                <li className="flex items-start gap-2">
+                  <span className="font-bold mt-1">•</span>
+                  <span>Any losses, damages, or injuries arising from transactions between buyers and sellers.</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="font-bold mt-1">•</span>
+                  <span>Fraudulent, misleading, or inaccurate listings posted by users.</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="font-bold mt-1">•</span>
+                  <span>Loss of data, unauthorized access to your account, or any security breaches.</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="font-bold mt-1">•</span>
+                  <span>Any indirect, incidental, special, consequential, or punitive damages arising from your use of the Service.</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="font-bold mt-1">•</span>
+                  <span>The quality, safety, legality, or availability of items listed on the platform.</span>
+                </li>
+              </ul>
+            </div>
+
+            {/* Intellectual Property */}
+            <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
+              <h2 className="text-2xl font-semibold text-gray-900 mb-4">Intellectual Property</h2>
+              <ul className="space-y-3 text-gray-700 text-sm">
+                <li className="flex items-start gap-2">
+                  <span className="font-bold mt-1">•</span>
+                  <span>The E-Soko name, logo, design, and all original content are the property of E-Soko and are protected by applicable intellectual property laws.</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="font-bold mt-1">•</span>
+                  <span>By posting content (images, descriptions) on E-Soko, you grant us a non-exclusive, royalty-free license to display that content on our platform for the purpose of providing the Service.</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="font-bold mt-1">•</span>
+                  <span>You retain ownership of all content you post. When you delete a listing, we will remove the associated content from our platform.</span>
+                </li>
+              </ul>
+            </div>
+
+            {/* Content Removal */}
+            <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
+              <h2 className="text-2xl font-semibold text-gray-900 mb-4">Content Moderation & Removal</h2>
+              <p className="text-gray-700 text-sm leading-relaxed mb-3">
+                We reserve the right to remove, modify, or restrict any content or accounts that:
+              </p>
+              <ul className="space-y-2 text-gray-700 text-sm">
+                <li className="flex items-start gap-2">
+                  <span className="font-bold mt-1">•</span>
+                  <span>Violate these Terms of Service.</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="font-bold mt-1">•</span>
+                  <span>Are reported by other users as fraudulent or inappropriate.</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="font-bold mt-1">•</span>
+                  <span>Contain illegal, harmful, or offensive material.</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="font-bold mt-1">•</span>
+                  <span>Pose a risk to the safety or experience of other users.</span>
+                </li>
+              </ul>
+              <p className="text-gray-700 text-sm leading-relaxed mt-3">
+                We may take these actions without prior notice. If you believe content was removed in error, contact us at <a href="mailto:esokostore1@gmail.com" className="text-blue-600 hover:underline">esokostore1@gmail.com</a>.
+              </p>
+            </div>
+
+            {/* Safety */}
+            <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
+              <h2 className="text-2xl font-semibold text-gray-900 mb-4">Safety Recommendations</h2>
+              <p className="text-gray-700 text-sm leading-relaxed mb-3">
+                For your safety when conducting transactions arranged through E-Soko:
+              </p>
+              <ul className="space-y-2 text-gray-700 text-sm">
+                <li className="flex items-start gap-2">
+                  <span className="font-bold mt-1">•</span>
+                  <span>Always meet in <strong>public, well-lit locations</strong> on campus.</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="font-bold mt-1">•</span>
+                  <span>Bring a friend or let someone know where you're going.</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="font-bold mt-1">•</span>
+                  <span><strong>Inspect items thoroughly</strong> before making any payment.</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="font-bold mt-1">•</span>
+                  <span>Be cautious of deals that seem too good to be true.</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="font-bold mt-1">•</span>
+                  <span>Never share sensitive personal information (bank details, ID numbers) with other users.</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="font-bold mt-1">•</span>
+                  <span>Report suspicious listings or users to us immediately.</span>
+                </li>
+              </ul>
+            </div>
+
+            {/* Termination */}
+            <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
+              <h2 className="text-2xl font-semibold text-gray-900 mb-4">Termination</h2>
+              <p className="text-gray-700 text-sm leading-relaxed mb-3">
+                We may suspend or terminate your access to the Service at any time, with or without cause, including but not limited to:
+              </p>
+              <ul className="space-y-2 text-gray-700 text-sm">
+                <li className="flex items-start gap-2">
+                  <span className="font-bold mt-1">•</span>
+                  <span>Violation of these Terms of Service.</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="font-bold mt-1">•</span>
+                  <span>Engagement in fraudulent or illegal activity.</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="font-bold mt-1">•</span>
+                  <span>Conduct that harms other users or the platform's reputation.</span>
+                </li>
+              </ul>
+              <p className="text-gray-700 text-sm leading-relaxed mt-3">
+                You may also stop using E-Soko at any time. You can delete your listings and request account deletion by contacting us.
+              </p>
+            </div>
+
+            {/* Governing Law */}
+            <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
+              <h2 className="text-2xl font-semibold text-gray-900 mb-4">Governing Law</h2>
+              <p className="text-gray-700 text-sm leading-relaxed">
+                These Terms shall be governed by and construed in accordance with applicable local laws. Any disputes arising from these Terms or your use of the Service shall be resolved through good-faith negotiation. If a resolution cannot be reached, disputes shall be submitted to the appropriate courts of competent jurisdiction.
+              </p>
+            </div>
+
+            {/* Contact */}
+            <div className="bg-white rounded-xl shadow-sm p-6">
+              <h2 className="text-2xl font-semibold text-gray-900 mb-4">Contact Us</h2>
+              <p className="text-gray-700 text-sm leading-relaxed mb-3">
+                If you have any questions about these Terms of Service, please contact us:
+              </p>
+              <div className="bg-blue-50 rounded-lg p-4">
+                <p className="text-gray-700 text-sm"><strong>Email:</strong> <a href="mailto:esokostore1@gmail.com" className="text-blue-600 hover:underline">esokostore1@gmail.com</a></p>
+                <p className="text-gray-700 text-sm mt-1"><strong>Website:</strong> <a href="https://e-soko.store" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">e-soko.store</a></p>
+                <p className="text-sm text-gray-600 mt-2">We aim to respond to all inquiries within 48 hours.</p>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Ad Manager Tab */}
         {activeTab === 'ad-manager' && (
           <AdManager authToken={authToken} showToast={showToast} showConfirmModal={showConfirmModal} closeConfirmModal={closeConfirmModal} />
@@ -2818,6 +3365,7 @@ function App() {
         initialMode={authModalMode}
         message={authModalMessage}
         resetToken={resetToken}
+        onNavigateToTerms={() => handleTabSwitch('terms-of-service')}
       />
 
       {/* Pre-footer Ad Banner */}
@@ -2953,8 +3501,8 @@ function App() {
                 © {new Date().getFullYear()} E-Soko. All rights reserved.
               </p>
               <div className="flex items-center gap-6 text-sm text-slate-500">
-                <button className="hover:text-[#B86B3E] transition-colors">Privacy Policy</button>
-                <button className="hover:text-[#B86B3E] transition-colors">Terms of Service</button>
+                <button onClick={() => handleTabSwitch('privacy-policy')} className="hover:text-[#B86B3E] transition-colors">Privacy Policy</button>
+                <button onClick={() => handleTabSwitch('terms-of-service')} className="hover:text-[#B86B3E] transition-colors">Terms of Service</button>
               </div>
             </div>
           </div>

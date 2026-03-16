@@ -192,6 +192,28 @@
   will-change: border-color;
 }
 
+/* Terms agreement checkbox */
+.terms-agreement {
+  margin-bottom: 0.5rem;
+}
+
+.terms-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  color: #555;
+  cursor: pointer;
+}
+
+.terms-label input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  cursor: pointer;
+  accent-color: #007bff;
+}
+
 /* Forgot password link */
 .forgot-password {
   text-align: center;

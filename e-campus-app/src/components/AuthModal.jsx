@@ -3,14 +3,15 @@ import '../styles/AuthModal.css'
 import { api } from '../services/api'
 import { trackLogin, trackSignUp } from '../utils/analytics'
 
-export default function AuthModal({ isOpen, onClose, onAuthSuccess, initialMode = 'login', message = '', resetToken = null }) {
+export default function AuthModal({ isOpen, onClose, onAuthSuccess, initialMode = 'login', message = '', resetToken = null, onNavigateToTerms }) {
   // View states: 'login', 'register', 'forgot', 'reset-sent', 'reset-password'
   const [view, setView] = useState(initialMode === 'register' ? 'register' : 'login')
   const [formData, setFormData] = useState({
     username: '',
     password: '',
     confirmPassword: '',
-    email: ''
+    email: '',
+    agreeToTerms: false
   })
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
@@ -60,6 +61,11 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, initialMode 
 
     if (formData.password.length < 6) {
       setError('Password must be at least 6 characters')
+      return
+    }
+
+    if (view === 'register' && !formData.agreeToTerms) {
+      setError('You must agree to the Terms of Service')
       return
     }
 
@@ -163,7 +169,8 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, initialMode 
       username: '',
       password: '',
       confirmPassword: '',
-      email: ''
+      email: '',
+      agreeToTerms: false
     })
     setError('')
     setSuccessMessage('')
@@ -309,7 +316,36 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, initialMode 
                 />
               </div>
 
-              <button type="submit" className="submit-button" disabled={loading}>
+              <div className="terms-agreement">
+                <label className="terms-label">
+                  <input
+                    type="checkbox"
+                    checked={formData.agreeToTerms}
+                    onChange={(e) => {
+                      setFormData({ ...formData, agreeToTerms: e.target.checked })
+                      setError('')
+                    }}
+                  />
+                  <span>
+                    I agree to the{' '}
+                    <button
+                      type="button"
+                      className="link-button"
+                      onClick={(e) => {
+                        e.preventDefault()
+                        if (onNavigateToTerms) {
+                          onClose()
+                          onNavigateToTerms()
+                        }
+                      }}
+                    >
+                      Terms of Service
+                    </button>
+                  </span>
+                </label>
+              </div>
+
+              <button type="submit" className="submit-button" disabled={loading || !formData.agreeToTerms}>
                 {loading ? (
                   <span className="loading-content">
                     <span className="spinner"></span>

@@ -224,9 +224,9 @@ export const api = {
   }),
 
   // Public Ad Viewing (for users)
-  getActiveAds: (type = '') => {
+  getActiveAds: (position = '') => {
     const searchParams = new URLSearchParams({
-      ...(type && { type })
+      ...(position && { position })
     });
     return apiRequest(`/ads?${searchParams}`);
   },
