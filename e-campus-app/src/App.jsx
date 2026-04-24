@@ -12,6 +12,11 @@ import SponsoredBadge from './components/SponsoredBadge'
 import CampusList from './components/CampusList'
 import { trackProductView, trackSearch, trackListingCreated, trackListingDeleted, trackCategoryView, trackLogin, trackSignUp } from './utils/analytics'
 
+// ===========================================
+// MAINTENANCE MODE - set to true to show maintenance page
+const MAINTENANCE_MODE = true
+// ===========================================
+
 function App() {
   // State management
   const [activeTab, setActiveTab] = useState('marketplace')
@@ -947,6 +952,70 @@ function App() {
         email: product.seller?.email || ''
       }
     }))
+  }
+
+  // Maintenance Mode Screen
+  if (MAINTENANCE_MODE) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center p-4">
+        <div className="max-w-lg w-full text-center">
+          {/* Logo */}
+          <div className="flex justify-center mb-8">
+            <div className="bg-gradient-to-br from-teal-400 to-teal-600 p-4 rounded-2xl shadow-2xl">
+              <ShoppingBag className="text-white" size={48} />
+            </div>
+          </div>
+
+          {/* Heading */}
+          <h1 className="text-3xl md:text-4xl font-bold text-white mb-3">
+            E-Soko is Under Maintenance
+          </h1>
+          <div className="w-16 h-1 bg-teal-500 mx-auto rounded-full mb-6"></div>
+
+          {/* Message */}
+          <p className="text-slate-300 text-lg mb-8 leading-relaxed">
+            We're currently experiencing a temporary service disruption due to a database provider outage.
+            Our team is working to restore full service as quickly as possible.
+          </p>
+
+          {/* Status Card */}
+          <div className="bg-slate-800/50 border border-slate-700 rounded-2xl p-6 mb-8 backdrop-blur-sm">
+            <div className="flex items-center justify-center gap-3 mb-4">
+              <div className="w-3 h-3 bg-amber-400 rounded-full animate-pulse"></div>
+              <span className="text-amber-400 font-semibold text-sm uppercase tracking-wider">Service Status</span>
+            </div>
+            <div className="space-y-3 text-left">
+              <div className="flex items-center justify-between py-2 border-b border-slate-700/50">
+                <span className="text-slate-400">Website</span>
+                <span className="text-green-400 font-medium flex items-center gap-2">
+                  <span className="w-2 h-2 bg-green-400 rounded-full"></span> Online
+                </span>
+              </div>
+              <div className="flex items-center justify-between py-2 border-b border-slate-700/50">
+                <span className="text-slate-400">API Server</span>
+                <span className="text-green-400 font-medium flex items-center gap-2">
+                  <span className="w-2 h-2 bg-green-400 rounded-full"></span> Online
+                </span>
+              </div>
+              <div className="flex items-center justify-between py-2">
+                <span className="text-slate-400">Database</span>
+                <span className="text-amber-400 font-medium flex items-center gap-2">
+                  <span className="w-2 h-2 bg-amber-400 rounded-full animate-pulse"></span> Provider Outage
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Footer Note */}
+          <p className="text-slate-500 text-sm">
+            All your data is safe. We'll be back shortly.
+          </p>
+          <p className="text-slate-600 text-xs mt-4">
+            E-Soko &mdash; Campus Marketplace
+          </p>
+        </div>
+      </div>
+    )
   }
 
   return (
