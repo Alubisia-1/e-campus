@@ -151,6 +151,7 @@ const campuses = [
 const users = [
   {
     username: 'admin',
+    email: 'admin@ecampus.com',
     password: 'Admin123!',
     phone: '+1234567890',
     whatsapp: '+1234567890',
@@ -160,6 +161,7 @@ const users = [
   },
   {
     username: 'john',
+    email: 'john@ecampus.com',
     password: 'Student123!',
     phone: '+1234567891',
     whatsapp: '+1234567891',
@@ -169,6 +171,7 @@ const users = [
   },
   {
     username: 'sarah',
+    email: 'sarah@ecampus.com',
     password: 'Student123!',
     phone: '+1234567892',
     whatsapp: '+1234567892',
@@ -179,13 +182,13 @@ const users = [
 ];
 
 // Sample products data (using placeholder Cloudinary URLs)
-const getProducts = (categoryIds, userIds) => [
+const getProducts = (categoryIds, sellerUsers) => [
   {
     title: 'MacBook Pro 13" 2020',
     description: 'Excellent condition MacBook Pro with M1 chip, 8GB RAM, 256GB SSD. Perfect for students. Comes with original charger and box. Battery health 95%. No scratches or dents.',
     price: 899.99,
     category: categoryIds[0], // Electronics
-    seller: userIds[1], // John Student
+    seller: sellerUsers[1]._id, // John Student
     condition: 'Excellent',
     status: 'available',
     images: [
@@ -198,6 +201,10 @@ const getProducts = (categoryIds, userIds) => [
       campus: 'University of Nairobi - Main Campus',
       building: 'Engineering Building'
     },
+    contact: {
+      phone: sellerUsers[1].phone,
+      email: sellerUsers[1].email
+    },
     tags: ['laptop', 'apple', 'macbook', 'computer'],
     views: 45
   },
@@ -206,7 +213,7 @@ const getProducts = (categoryIds, userIds) => [
     description: 'James Stewart calculus textbook in great condition. Minimal highlighting, no torn pages. Perfect for MATH 101 and 102 courses.',
     price: 45.00,
     category: categoryIds[1], // Books
-    seller: userIds[2], // Sarah Smith
+    seller: sellerUsers[2]._id, // Sarah Smith
     condition: 'Good',
     status: 'available',
     images: [
@@ -219,6 +226,10 @@ const getProducts = (categoryIds, userIds) => [
       campus: 'Kenyatta University',
       building: 'Library'
     },
+    contact: {
+      phone: sellerUsers[2].phone,
+      email: sellerUsers[2].email
+    },
     tags: ['textbook', 'calculus', 'mathematics', 'stewart'],
     views: 23
   },
@@ -227,7 +238,7 @@ const getProducts = (categoryIds, userIds) => [
     description: 'Size 10 US, worn only a few times. Excellent condition, very comfortable. Perfect for campus walks or gym workouts.',
     price: 65.00,
     category: categoryIds[4], // Sports
-    seller: userIds[1],
+    seller: sellerUsers[1]._id,
     condition: 'Like New',
     status: 'available',
     images: [
@@ -240,6 +251,10 @@ const getProducts = (categoryIds, userIds) => [
       campus: 'Jomo Kenyatta University (JKUAT)',
       building: 'Sports Center'
     },
+    contact: {
+      phone: sellerUsers[1].phone,
+      email: sellerUsers[1].email
+    },
     tags: ['shoes', 'nike', 'running', 'sports'],
     views: 18
   },
@@ -248,7 +263,7 @@ const getProducts = (categoryIds, userIds) => [
     description: 'Beautiful acoustic guitar in excellent condition. Comes with soft case, extra strings, and picks. Perfect for beginners or intermediate players.',
     price: 150.00,
     category: categoryIds[5], // Musical Instruments
-    seller: userIds[2],
+    seller: sellerUsers[2]._id,
     condition: 'Excellent',
     status: 'available',
     images: [
@@ -261,6 +276,10 @@ const getProducts = (categoryIds, userIds) => [
       campus: 'Strathmore University',
       building: 'Music Hall'
     },
+    contact: {
+      phone: sellerUsers[2].phone,
+      email: sellerUsers[2].email
+    },
     tags: ['guitar', 'yamaha', 'acoustic', 'music'],
     views: 31
   },
@@ -269,7 +288,7 @@ const getProducts = (categoryIds, userIds) => [
     description: 'Sturdy wooden desk perfect for dorm room. Includes one large drawer for storage. Minor wear on surface but fully functional. Easy to assemble.',
     price: 40.00,
     category: categoryIds[3], // Furniture
-    seller: userIds[1],
+    seller: sellerUsers[1]._id,
     condition: 'Good',
     status: 'available',
     images: [
@@ -281,6 +300,10 @@ const getProducts = (categoryIds, userIds) => [
     location: {
       campus: 'Moi University',
       building: 'Residence Hall A'
+    },
+    contact: {
+      phone: sellerUsers[1].phone,
+      email: sellerUsers[1].email
     },
     tags: ['desk', 'furniture', 'study', 'dorm'],
     views: 27
@@ -294,39 +317,42 @@ const advertisements = [
     message: '🎉 Back to School Sale! Save 20% on all textbooks this week only. Visit us at the main campus bookstore.',
     link: 'https://example.com/bookstore',
     type: 'banner',
-    position: 'top',
     isActive: true,
     startDate: new Date(),
     endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days
     priority: 10,
     impressions: 0,
-    clicks: 0
+    clicks: 0,
+    pricing: { amount: 5000, currency: 'KSH', period: 'month' },
+    paymentStatus: 'paid'
   },
   {
     company: 'Tech Hub',
     message: '💻 Student discount on laptops and accessories. Special prices for verified students. Free shipping on orders over $100.',
     link: 'https://example.com/techhub',
     type: 'sidebar',
-    position: 'right',
     isActive: true,
     startDate: new Date(),
     endDate: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000), // 60 days
     priority: 8,
     impressions: 0,
-    clicks: 0
+    clicks: 0,
+    pricing: { amount: 3000, currency: 'KSH', period: 'month' },
+    paymentStatus: 'paid'
   },
   {
     company: 'Campus Fitness Center',
     message: '🏋️ New semester fitness memberships available! First month 50% off for students. State-of-the-art equipment and personal trainers.',
     link: 'https://example.com/fitness',
     type: 'inline',
-    position: 'middle',
     isActive: true,
     startDate: new Date(),
     endDate: new Date(Date.now() + 45 * 24 * 60 * 60 * 1000), // 45 days
     priority: 7,
     impressions: 0,
-    clicks: 0
+    clicks: 0,
+    pricing: { amount: 2500, currency: 'KSH', period: 'month' },
+    paymentStatus: 'paid'
   }
 ];
 
@@ -357,16 +383,18 @@ const seedDatabase = async () => {
     const createdCampuses = await Campus.insertMany(campuses);
     console.log(`✅ Created ${createdCampuses.length} campuses\n`);
 
-    // Seed users
+    // Seed users (use create so the pre-save hook hashes passwords)
     console.log('👥 Seeding users...');
-    const createdUsers = await User.insertMany(users);
+    const createdUsers = [];
+    for (const u of users) {
+      createdUsers.push(await User.create(u));
+    }
     console.log(`✅ Created ${createdUsers.length} users\n`);
 
     // Seed products
     console.log('📦 Seeding products...');
     const categoryIds = createdCategories.map(cat => cat._id);
-    const userIds = createdUsers.map(user => user._id);
-    const products = getProducts(categoryIds, userIds);
+    const products = getProducts(categoryIds, createdUsers);
     const createdProducts = await Product.insertMany(products);
     console.log(`✅ Created ${createdProducts.length} products\n`);
 

@@ -14,7 +14,7 @@ import { trackProductView, trackSearch, trackListingCreated, trackListingDeleted
 
 // ===========================================
 // MAINTENANCE MODE - set to true to show maintenance page
-const MAINTENANCE_MODE = true
+const MAINTENANCE_MODE = false
 // ===========================================
 
 function App() {
@@ -313,7 +313,7 @@ function App() {
         // Load all data in parallel
         const [categoriesResponse, productsResponse, campusesResponse] = await Promise.all([
           api.getCategories({ timeout }),
-          api.getProducts({ timeout }),
+          api.getProducts({ timeout, limit: 500 }),
           api.getCampuses({ timeout })
         ])
 
@@ -385,7 +385,7 @@ function App() {
       try {
         const [categoriesResponse, productsResponse, campusesResponse] = await Promise.all([
           api.getCategories({ timeout }),
-          api.getProducts({ timeout }),
+          api.getProducts({ timeout, limit: 500 }),
           api.getCampuses({ timeout })
         ])
 
@@ -1344,7 +1344,7 @@ function App() {
                 <p className="text-slate-400 text-sm">Active Listings</p>
               </div>
               <div>
-                <p className="text-3xl md:text-4xl font-bold text-white">{campuses.length}+</p>
+                <p className="text-3xl md:text-4xl font-bold text-white">{campuses.length}</p>
                 <p className="text-slate-400 text-sm">Campuses</p>
               </div>
               <div>
@@ -1594,7 +1594,7 @@ function App() {
             {/* Product Listings with Sidebar */}
             <div className="flex gap-6">
               {/* Main Content - Scrollable */}
-              <div className="flex-1 min-w-0 max-h-[800px] overflow-y-auto pr-2 scroll-container">
+              <div className="flex-1 min-w-0">
             {/* Recent Listings Section */}
             <section id="product-listings">
               {/* Header with Sort */}
@@ -1804,15 +1804,15 @@ function App() {
               </div>
 
               {/* Right Sidebar - Ads (Large screens only) */}
-              <aside className="hidden lg:block w-72 flex-shrink-0">
+              <aside className="hidden lg:block w-64 flex-shrink-0">
                 <div className="sticky top-24 space-y-4">
-                  {/* Ad Slot 1 */}
+                  {/* Ad Slot */}
                   <AdDisplay position="sidebar" />
 
                   {/* Promo Banner */}
-                  <div className="bg-[#3E5C50] rounded-lg p-5 text-white">
+                  <div className="bg-[#3E5C50] rounded-lg p-4 text-white">
                     <h4 className="font-bold mb-2">Sell Your Items</h4>
-                    <p className="text-sm text-white/80 mb-4">List your items for free and reach thousands of students.</p>
+                    <p className="text-sm text-white/80 mb-3">List your items for free and reach thousands of students.</p>
                     <button
                       onClick={handlePostItem}
                       className="w-full bg-[#B86B3E] hover:bg-[#A85F36] text-white font-semibold py-2 rounded-lg text-sm transition-colors"
@@ -1820,9 +1820,6 @@ function App() {
                       Start Selling
                     </button>
                   </div>
-
-                  {/* Ad Slot 2 */}
-                  <AdDisplay position="sidebar" />
                 </div>
               </aside>
             </div>

@@ -1,5 +1,7 @@
 const rateLimit = require('express-rate-limit');
 
+const skipInDev = () => process.env.NODE_ENV === 'development';
+
 /**
  * General API rate limiter
  * 100 requests per 15 minutes per IP
@@ -13,6 +15,7 @@ const apiLimiter = rateLimit({
   },
   standardHeaders: true,
   legacyHeaders: false,
+  skip: skipInDev,
   // Skip successful requests to not penalize normal usage
   skipSuccessfulRequests: false
 });
@@ -30,6 +33,7 @@ const authLimiter = rateLimit({
   },
   standardHeaders: true,
   legacyHeaders: false,
+  skip: skipInDev,
   skipSuccessfulRequests: true // Only count failed attempts
 });
 
@@ -45,7 +49,8 @@ const uploadLimiter = rateLimit({
     message: 'Too many upload requests, please try again after 1 hour'
   },
   standardHeaders: true,
-  legacyHeaders: false
+  legacyHeaders: false,
+  skip: skipInDev
 });
 
 /**
@@ -61,6 +66,7 @@ const createProductLimiter = rateLimit({
   },
   standardHeaders: true,
   legacyHeaders: false,
+  skip: skipInDev,
   skipSuccessfulRequests: true
 });
 
@@ -76,7 +82,8 @@ const searchLimiter = rateLimit({
     message: 'Too many search requests, please try again later'
   },
   standardHeaders: true,
-  legacyHeaders: false
+  legacyHeaders: false,
+  skip: skipInDev
 });
 
 /**
@@ -92,6 +99,7 @@ const passwordResetLimiter = rateLimit({
   },
   standardHeaders: true,
   legacyHeaders: false,
+  skip: skipInDev,
   skipSuccessfulRequests: false
 });
 

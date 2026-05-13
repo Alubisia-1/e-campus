@@ -49,7 +49,7 @@ function CampusList({ campuses, selectedCampus, onCampusSelect, loading, product
           }`}
         >
           <option value="" className="text-slate-700 bg-white" style={{ color: '#334155', backgroundColor: '#ffffff' }}>
-            All Campuses ({getTotalItemCount()})
+            All Campuses ({activeCampuses.length})
           </option>
           {activeCampuses.map((campus) => {
             const itemCount = getCampusItemCount(campus.name)
