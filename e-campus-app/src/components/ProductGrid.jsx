@@ -91,7 +91,7 @@ export default function ProductGrid({ selectedCategory, onProductClick }) {
 }
 
 function ProductCard({ product, onClick }) {
-  const mainImage = product.images?.[0] || '/placeholder-product.jpg'
+  const mainImage = product.images?.[0]?.url || product.images?.[0] || '/placeholder-product.jpg'
 
   return (
     <div

@@ -33,16 +33,17 @@ function CampusList({ campuses, selectedCampus, onCampusSelect, loading, product
   const activeCampuses = campuses.filter(c => c.isActive)
 
   return (
-    <div className="relative inline-block">
-      <div className="relative">
+    <div className="relative block w-full max-w-full sm:inline-block sm:w-auto">
+      <div className="relative w-full max-w-full">
         <MapPin
           size={16}
-          className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"
+          className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none z-10"
         />
         <select
           value={selectedCampus || ''}
           onChange={(e) => onCampusSelect(e.target.value || null)}
-          className={`appearance-none pl-9 pr-10 py-2.5 rounded-xl text-sm font-semibold transition-all duration-300 cursor-pointer min-w-[180px] ${
+          style={{ textOverflow: 'ellipsis' }}
+          className={`block appearance-none pl-9 pr-10 py-2.5 rounded-xl text-sm font-semibold transition-all duration-300 cursor-pointer w-full max-w-full min-w-0 overflow-hidden whitespace-nowrap sm:w-auto sm:min-w-[180px] ${
             selectedCampus
               ? 'bg-gradient-to-r from-teal-500 to-emerald-500 text-white shadow-lg shadow-teal-500/25'
               : 'bg-white text-slate-600 hover:bg-slate-50 border-2 border-slate-200 hover:border-teal-400'
