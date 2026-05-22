@@ -7,10 +7,11 @@ const asyncHandler = require('../middleware/asyncHandler');
  * @access  Public
  */
 exports.getActiveAds = asyncHandler(async (req, res) => {
-  const { type, limit = 5 } = req.query;
+  const { type, position, limit = 5 } = req.query;
+  const filterType = type || position;
 
   // Get active ads using the static method
-  let ads = await Advertisement.getActiveAds(type);
+  let ads = await Advertisement.getActiveAds(filterType);
 
   // Rotate ads - shuffle to show different ones each time
   ads = shuffleArray(ads);
