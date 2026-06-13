@@ -1,4 +1,5 @@
 const User = require('../models/User.model');
+const Product = require('../models/Product.model');
 const { validationResult } = require('express-validator');
 const crypto = require('crypto');
 const { sendPasswordResetEmail } = require('../utils/email');
@@ -221,6 +222,65 @@ exports.updateProfile = async (req, res) => {
     res.status(500).json({
       status: 'error',
       message: 'Server error updating profile',
+      error: error.message
+    });
+  }
+};
+
+// @desc    Delete the authenticated user's account and all their data
+// @route   DELETE /api/auth/me
+// @access  Private
+exports.deleteAccount = async (req, res) => {
+  try {
+    const { password } = req.body;
+
+    if (!password) {
+      return res.status(400).json({
+        status: 'error',
+        message: 'Please confirm your password to delete your account'
+      });
+    }
+
+    // Re-fetch with password field (it's select:false by default)
+    const user = await User.findById(req.user.id).select('+password');
+
+    if (!user) {
+      return res.status(404).json({
+        status: 'error',
+        message: 'User not found'
+      });
+    }
+
+    // Verify password before destructive action
+    const isMatch = await user.matchPassword(password);
+    if (!isMatch) {
+      return res.status(401).json({
+        status: 'error',
+        message: 'Incorrect password'
+      });
+    }
+
+    // Cascade: remove the user's product listings
+    await Product.deleteMany({ seller: user._id });
+
+    // Remove this user from other products' savedBy lists
+    await Product.updateMany(
+      { savedBy: user._id },
+      { $pull: { savedBy: user._id } }
+    );
+
+    // Finally remove the user record
+    await User.findByIdAndDelete(user._id);
+
+    res.status(200).json({
+      status: 'success',
+      message: 'Your account and all associated data have been deleted'
+    });
+  } catch (error) {
+    console.error('Delete account error:', error);
+    res.status(500).json({
+      status: 'error',
+      message: 'Server error deleting account',
       error: error.message
     });
   }

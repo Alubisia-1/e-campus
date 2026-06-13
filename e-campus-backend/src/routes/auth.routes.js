@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { body } = require('express-validator');
-const { register, login, getMe, updateProfile, forgotPassword, resetPassword } = require('../controllers/auth.controller');
+const { register, login, getMe, updateProfile, deleteAccount, forgotPassword, resetPassword } = require('../controllers/auth.controller');
 const { protect } = require('../middleware/auth.middleware');
 const { authLimiter, passwordResetLimiter } = require('../middleware/rateLimiter');
 
@@ -76,5 +76,6 @@ router.post('/reset-password/:token', passwordResetLimiter, resetPasswordValidat
 // Protected routes
 router.get('/me', protect, getMe);
 router.put('/profile', protect, updateProfile);
+router.delete('/me', protect, deleteAccount);
 
 module.exports = router;

@@ -17,8 +17,8 @@ export default function AdManager({ authToken, showToast, showConfirmModal, clos
     setLoading(true)
     setError(null)
     try {
-      const response = await api.getAllAds(authToken, { status: filter !== 'all' ? filter : undefined })
-      setAds(response.data.ads || [])
+      const response = await api.getAllAdsAdmin(authToken, { status: filter !== 'all' ? filter : undefined })
+      setAds(response.data || [])
     } catch (err) {
       setError(err.message || 'Failed to fetch ads')
       console.error('Error fetching ads:', err)
@@ -30,8 +30,20 @@ export default function AdManager({ authToken, showToast, showConfirmModal, clos
   // Fetch revenue stats
   const fetchRevenueStats = async () => {
     try {
-      const response = await api.getRevenueStats(authToken)
-      setRevenueStats(response.data)
+      const response = await api.getRevenue(authToken)
+      const { revenue = [], stats = {} } = response.data || {}
+      // Backend returns revenue as an aggregation array ([{ _id: currency, total }]);
+      // the cards expect an object keyed by currency.
+      const totalRevenue = revenue.reduce((acc, row) => {
+        acc[row._id || 'KES'] = row.total || 0
+        return acc
+      }, {})
+      setRevenueStats({
+        totalRevenue,
+        activeAds: stats.activeAds || 0,
+        paidAds: stats.paidAds || 0,
+        pendingPayments: stats.pendingPayment || 0,
+      })
     } catch (err) {
       console.error('Error fetching revenue stats:', err)
     }
@@ -47,7 +59,7 @@ export default function AdManager({ authToken, showToast, showConfirmModal, clos
   // Toggle ad active status
   const handleToggleActive = async (adId, currentStatus) => {
     try {
-      await api.toggleAd(adId, authToken)
+      await api.toggleAdStatus(adId, authToken)
       fetchAds()
     } catch (err) {
       showToast('Failed to toggle ad status: ' + err.message, 'error')
@@ -76,7 +88,7 @@ export default function AdManager({ authToken, showToast, showConfirmModal, clos
   // Mark as paid
   const handleMarkAsPaid = async (adId) => {
     try {
-      await api.markAdAsPaid(adId, authToken)
+      await api.markAdPaid(adId, {}, authToken)
       fetchAds()
       fetchRevenueStats()
     } catch (err) {

@@ -3,7 +3,7 @@ import { ExternalLink, Book, Laptop, Sofa, Shirt, Smartphone, Coffee, ArrowRight
 import { useActiveAds } from '../hooks/useApi'
 import { api } from '../services/api'
 
-export default function AdDisplay({ position = 'sidebar', fallbackToAdSense = true }) {
+export default function AdDisplay({ position = 'sidebar' }) {
   const [currentAdIndex, setCurrentAdIndex] = useState(0)
   const [impressionTracked, setImpressionTracked] = useState(false)
 
@@ -67,12 +67,9 @@ export default function AdDisplay({ position = 'sidebar', fallbackToAdSense = tr
     return <AdSkeleton position={position} />
   }
 
-  // If no direct ads available, show AdSense (if enabled)
+  // If no customer ads are available, show a simple internal promo (no third-party ads)
   if (ads.length === 0) {
-    if (fallbackToAdSense) {
-      return <GoogleAdSense position={position} />
-    }
-    return null
+    return <InternalPromo position={position} />
   }
 
   // Get current ad to display
@@ -459,58 +456,3 @@ function InternalPromo({ position }) {
   )
 }
 
-// Google AdSense Fallback Component
-function GoogleAdSense({ position }) {
-  useEffect(() => {
-    // Initialize AdSense
-    try {
-      if (window.adsbygoogle) {
-        (window.adsbygoogle = window.adsbygoogle || []).push({})
-      }
-    } catch (err) {
-      console.error('AdSense error:', err)
-    }
-  }, [])
-
-  // Get AdSense configuration from environment variables or use defaults
-  const ADSENSE_CLIENT = import.meta.env.VITE_ADSENSE_CLIENT || 'ca-pub-XXXXXXXXXXXXXXXX'
-
-  // Different ad slots for different positions
-  const getAdConfig = () => {
-    switch (position) {
-      case 'banner':
-        return {
-          slot: import.meta.env.VITE_ADSENSE_SLOT_BANNER || 'XXXXXXXXXX',
-          format: 'horizontal',
-          style: { display: 'block', textAlign: 'center' }
-        }
-      case 'sidebar':
-      default:
-        return {
-          slot: import.meta.env.VITE_ADSENSE_SLOT_SIDEBAR || 'XXXXXXXXXX',
-          format: 'rectangle',
-          style: { display: 'block' }
-        }
-    }
-  }
-
-  const adConfig = getAdConfig()
-
-  // Show internal promo content when AdSense is not configured
-  if (ADSENSE_CLIENT.includes('XXXX')) {
-    return <InternalPromo position={position} />
-  }
-
-  return (
-    <div className="adsense-container">
-      <ins
-        className="adsbygoogle"
-        style={adConfig.style}
-        data-ad-client={ADSENSE_CLIENT}
-        data-ad-slot={adConfig.slot}
-        data-ad-format={adConfig.format}
-        data-full-width-responsive="true"
-      />
-    </div>
-  )
-}

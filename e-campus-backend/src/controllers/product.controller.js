@@ -564,10 +564,9 @@ exports.revealContact = async (req, res) => {
     product.contactReveals += 1;
     await product.save();
 
-    // Return seller contact information from the product listing
+    // Return only what a buyer needs to make contact (privacy-minimal)
     const contactData = {
       name: product.seller.name || product.seller.username,
-      username: product.seller.username,
       email: product.contact.email,
       phone: product.contact.phone,
       campus: product.location.campus || product.seller.campus

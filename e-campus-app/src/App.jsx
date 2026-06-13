@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react'
+import React, { useState, useEffect, useCallback, useRef, Suspense, lazy } from 'react'
 import { ShoppingBag, Menu, X, Plus, Search, Book, Laptop, Sofa, Shirt, ChevronDown, ChevronLeft, ChevronRight, MessageCircle, Phone, Mail, Instagram, Upload, Trash2, LogOut, User, Tag, Shield, Zap, Users, Star, TrendingUp, Eye, WifiOff, RefreshCw, Loader2 } from 'lucide-react'
 import { api } from './services/api'
 import ContactReveal from './components/ContactReveal'
@@ -6,16 +6,32 @@ import LocalContactReveal from './components/LocalContactReveal'
 import AuthModal from './components/AuthModal'
 import Toast from './components/Toast'
 import ConfirmModal from './components/ConfirmModal'
-import AdManager from './components/AdManager'
+// Admin-only screens are code-split: their JS only downloads when an admin
+// actually opens them, keeping the initial bundle smaller for everyone else.
+const AdManager = lazy(() => import('./components/AdManager'))
+const UserManager = lazy(() => import('./components/UserManager'))
 import AdDisplay from './components/AdDisplay'
 import SponsoredBadge from './components/SponsoredBadge'
 import CampusList from './components/CampusList'
+import CookieConsent from './components/CookieConsent'
 import { trackProductView, trackSearch, trackListingCreated, trackListingDeleted, trackCategoryView, trackLogin, trackSignUp } from './utils/analytics'
 
 // ===========================================
 // MAINTENANCE MODE - set to true to show maintenance page
 const MAINTENANCE_MODE = false
 // ===========================================
+
+// Request a smaller, format-optimized version of Cloudinary images for grid
+// thumbnails. This only rewrites Cloudinary delivery URLs; data: previews and
+// other hosts are returned untouched, so the displayed image looks identical
+// but downloads far fewer bytes.
+function optimizedThumb(url, width = 400) {
+  if (typeof url !== 'string') return url
+  if (!url.includes('res.cloudinary.com') || !url.includes('/upload/')) return url
+  // Don't transform a URL that already has transformation params.
+  if (/\/upload\/[^/]*(?:w_|q_|f_)/.test(url)) return url
+  return url.replace('/upload/', `/upload/f_auto,q_auto,w_${width}/`)
+}
 
 function App() {
   // State management
@@ -86,12 +102,23 @@ function App() {
     setConfirmModal({ isOpen: false, title: '', message: '', onConfirm: null })
   }
 
-  // Admin state
+  // Marketplace products are fetched from the server one page at a time and
+  // appended as the user scrolls (infinite scroll). Filtering and search also
+  // happen server-side, so we never download or render the entire catalog.
+  const PRODUCTS_PER_PAGE = 24
+  const [productsPage, setProductsPage] = useState(1)
+  const [hasMoreProducts, setHasMoreProducts] = useState(false)
+  const [loadingMoreProducts, setLoadingMoreProducts] = useState(false)
+  const [totalProducts, setTotalProducts] = useState(0)
+  const loadMoreRef = useRef(null)
+  const filtersMounted = useRef(false)
+
+  // Admin state — admin status is derived from the logged-in user's role.
   const [isAdmin, setIsAdmin] = useState(false)
-  const [showAdminLogin, setShowAdminLogin] = useState(false)
-  const [adminPassword, setAdminPassword] = useState('')
-  const [logoTapCount, setLogoTapCount] = useState(0)
-  const [tapTimer, setTapTimer] = useState(null)
+  const [showDeleteAccount, setShowDeleteAccount] = useState(false)
+  const [deleteAccountPassword, setDeleteAccountPassword] = useState('')
+  const [deletingAccount, setDeletingAccount] = useState(false)
+  const [userMenuOpen, setUserMenuOpen] = useState(false)
 
   // Post item modal state
   const [showPostModal, setShowPostModal] = useState(false)
@@ -160,66 +187,6 @@ function App() {
     }
   }, [])
 
-  // Handle admin login
-  const handleAdminLogin = async (e) => {
-    e.preventDefault()
-
-    try {
-      // Authenticate with backend
-      const response = await api.adminLogin(adminPassword)
-
-      if (response.status === 'success' && response.data.token) {
-        setIsAdmin(true)
-        localStorage.setItem('adminToken', response.data.token)
-        setShowAdminLogin(false)
-        setAdminPassword('')
-        showToast('Admin access granted!', 'success')
-      } else {
-        showToast('Admin authentication failed', 'error')
-        setAdminPassword('')
-      }
-    } catch (error) {
-      console.error('Admin login error:', error)
-      showToast(error.message || 'Incorrect password! Access denied.', 'error')
-      setAdminPassword('')
-    }
-  }
-
-  // Handle admin logout (for separate admin password login)
-  const handleAdminLogout = () => {
-    setIsAdmin(false)
-    localStorage.removeItem('adminToken')
-    setActiveTab('marketplace')
-    showToast('Admin logged out', 'success')
-  }
-
-  // Hidden admin access via logo taps (tap logo 7 times within 3 seconds)
-  const handleLogoTap = () => {
-    // Clear existing timer
-    if (tapTimer) {
-      clearTimeout(tapTimer)
-    }
-
-    const newCount = logoTapCount + 1
-
-    // Reset counter after 3 seconds of no taps
-    const newTimer = setTimeout(() => {
-      setLogoTapCount(0)
-    }, 3000)
-
-    setTapTimer(newTimer)
-    setLogoTapCount(newCount)
-
-    // If 7 taps reached, open admin login (silently)
-    if (newCount === 7) {
-      setLogoTapCount(0)
-      clearTimeout(newTimer)
-      if (!isAdmin) {
-        setShowAdminLogin(true)
-      }
-    }
-  }
-
   // Authentication handler
   const handleAuthSuccess = (userData, token) => {
     setUser(userData)
@@ -240,20 +207,31 @@ function App() {
     showToast('Logged out successfully', 'success')
   }
 
-  // Secret admin access via keyboard shortcut (Ctrl+Shift+A)
-  useEffect(() => {
-    const handleAdminShortcut = (e) => {
-      if (e.ctrlKey && e.shiftKey && e.key === 'A') {
-        e.preventDefault()
-        if (!isAdmin) {
-          setShowAdminLogin(true)
-        }
-      }
+  const handleDeleteAccount = async (e) => {
+    if (e) e.preventDefault()
+    if (!deleteAccountPassword) {
+      showToast('Please enter your password to confirm', 'error')
+      return
     }
-
-    window.addEventListener('keydown', handleAdminShortcut)
-    return () => window.removeEventListener('keydown', handleAdminShortcut)
-  }, [isAdmin])
+    setDeletingAccount(true)
+    try {
+      await api.deleteAccount(authToken, deleteAccountPassword)
+      // Clear all local session state
+      setUser(null)
+      setAuthToken(null)
+      setIsAdmin(false)
+      localStorage.removeItem('authToken')
+      localStorage.removeItem('user')
+      setShowDeleteAccount(false)
+      setDeleteAccountPassword('')
+      setActiveTab('marketplace')
+      showToast('Your account has been permanently deleted', 'success')
+    } catch (error) {
+      showToast(error.message || 'Failed to delete account', 'error')
+    } finally {
+      setDeletingAccount(false)
+    }
+  }
 
   // Lock body scroll when modal is open
   useEffect(() => {
@@ -313,7 +291,7 @@ function App() {
         // Load all data in parallel
         const [categoriesResponse, productsResponse, campusesResponse] = await Promise.all([
           api.getCategories({ timeout }),
-          api.getProducts({ timeout, limit: 500 }),
+          api.getProducts({ timeout, page: 1, limit: PRODUCTS_PER_PAGE }),
           api.getCampuses({ timeout })
         ])
 
@@ -324,7 +302,11 @@ function App() {
         setCampusesLoading(false)
 
         const apiProducts = productsResponse.data?.products || []
+        const apiPagination = productsResponse.data?.pagination || {}
         setProducts(apiProducts)
+        setProductsPage(1)
+        setHasMoreProducts(Boolean(apiPagination.hasNextPage))
+        setTotalProducts(typeof apiPagination.total === 'number' ? apiPagination.total : apiProducts.length)
         setApiConnected(true)
         setRetryCount(0)
 
@@ -371,6 +353,57 @@ function App() {
     initializeApp()
   }, [])
 
+  // Fetch one page of products from the server (filtered by the current
+  // category/campus). `reset` replaces the list (new filter / first page);
+  // otherwise the page is appended for infinite scroll.
+  const loadProducts = useCallback(async (pageNum = 1, { reset = false, category = selectedCategory, campus = selectedCampus } = {}) => {
+    setLoadingMoreProducts(true)
+    try {
+      const params = { page: pageNum, limit: PRODUCTS_PER_PAGE }
+      if (category) params.category = category
+      if (campus) params.campus = campus
+      const res = await api.getProducts(params)
+      const newProducts = res.data?.products || []
+      const pag = res.data?.pagination || {}
+      setProducts(prev => (reset ? newProducts : [...prev, ...newProducts]))
+      setProductsPage(pageNum)
+      setHasMoreProducts(Boolean(pag.hasNextPage))
+      setTotalProducts(typeof pag.total === 'number' ? pag.total : newProducts.length)
+    } catch (err) {
+      console.error('Failed to load products page:', err)
+    } finally {
+      setLoadingMoreProducts(false)
+    }
+  }, [selectedCategory, selectedCampus])
+
+  // Whenever the category/campus filter changes, refetch page 1 from the server.
+  // (Skipped on first mount, where the initial data load already fetches page 1.)
+  useEffect(() => {
+    if (!filtersMounted.current) {
+      filtersMounted.current = true
+      return
+    }
+    loadProducts(1, { reset: true })
+  }, [selectedCategory, selectedCampus, loadProducts])
+
+  // Infinite scroll: when the sentinel near the bottom of the grid enters view,
+  // load the next page from the server. The sentinel only renders while more
+  // pages remain, so this naturally stops at the end of the list.
+  useEffect(() => {
+    const node = loadMoreRef.current
+    if (!node) return
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasMoreProducts && !loadingMoreProducts) {
+          loadProducts(productsPage + 1)
+        }
+      },
+      { rootMargin: '600px' }
+    )
+    observer.observe(node)
+    return () => observer.disconnect()
+  }, [hasMoreProducts, loadingMoreProducts, productsPage, loadProducts])
+
   // Manual retry function for users
   const handleRetryConnection = async () => {
     setIsRetrying(true)
@@ -385,7 +418,7 @@ function App() {
       try {
         const [categoriesResponse, productsResponse, campusesResponse] = await Promise.all([
           api.getCategories({ timeout }),
-          api.getProducts({ timeout, limit: 500 }),
+          api.getProducts({ timeout, page: 1, limit: PRODUCTS_PER_PAGE }),
           api.getCampuses({ timeout })
         ])
 
@@ -394,7 +427,11 @@ function App() {
         setCampusesLoading(false)
 
         const apiProducts = productsResponse.data?.products || []
+        const apiPagination = productsResponse.data?.pagination || {}
         setProducts(apiProducts)
+        setProductsPage(1)
+        setHasMoreProducts(Boolean(apiPagination.hasNextPage))
+        setTotalProducts(typeof apiPagination.total === 'number' ? apiPagination.total : apiProducts.length)
         setApiConnected(true)
         setRetryCount(0)
 
@@ -454,6 +491,7 @@ function App() {
         if (response.status === 'success') {
           // Update state (removes from display immediately)
           setProducts(prevProducts => prevProducts.filter(p => p._id !== productId))
+          setTotalProducts(t => Math.max(0, t - 1))
           setMyListings(prevListings => prevListings.filter(p => p._id !== productId))
 
           // Track deletion event
@@ -544,38 +582,27 @@ function App() {
   }
 
   // Separate search logic for both manual and auto search
-  const performSearch = (query) => {
+  const performSearch = async (query) => {
     if (!query?.trim()) return
 
     setIsSearching(true)
     setShowSearchResults(true)
 
-    const searchTerm = query.toLowerCase().trim()
+    const searchTerm = query.trim()
 
     // Track search event
-    trackSearch(searchTerm)
+    trackSearch(searchTerm.toLowerCase())
 
-    const results = products.filter(product => {
-      // Search in title
-      if (product.title?.toLowerCase().includes(searchTerm)) return true
-
-      // Search in description
-      if (product.description?.toLowerCase().includes(searchTerm)) return true
-
-      // Search in category name
-      if (product.category?.name?.toLowerCase().includes(searchTerm)) return true
-
-      // Search in condition
-      if (product.condition?.toLowerCase().includes(searchTerm)) return true
-
-      // Search in price (convert to string)
-      if (product.price?.toString().includes(searchTerm)) return true
-
-      return false
-    })
-
-    setSearchResults(results)
-    setIsSearching(false)
+    try {
+      // Search the full catalog server-side (matches title, description, tags).
+      const res = await api.getProducts({ search: searchTerm, limit: 50 })
+      setSearchResults(res.data?.products || [])
+    } catch (err) {
+      console.error('Search failed:', err)
+      setSearchResults([])
+    } finally {
+      setIsSearching(false)
+    }
   }
 
   // Post item functionality
@@ -724,6 +751,7 @@ function App() {
         // Add the newly created product to the list immediately
         const newProduct = createResponse.data.product
         setProducts(prev => [newProduct, ...prev])
+        setTotalProducts(t => t + 1)
 
         // Track listing creation
         trackListingCreated(newProduct)
@@ -916,21 +944,15 @@ function App() {
     return filtered
   }
 
-  // Map API categories to UI format with real product counts
+  // Map API categories to UI format. Counts come from the server (productCount)
+  // so they stay accurate without loading every product into the client.
   const getMappedCategories = () => {
-    return categories.map(category => {
-      // Count actual products in this category
-      const productCount = products.filter(product =>
-        product.category?._id === category._id || product.category?.id === category._id
-      ).length
-
-      return {
-        id: category._id,
-        name: category.name,
-        icon: category.icon || '📦',
-        itemCount: productCount
-      }
-    })
+    return categories.map(category => ({
+      id: category._id,
+      name: category.name,
+      icon: category.icon || '📦',
+      itemCount: category.productCount || 0
+    }))
   }
 
   // Map API products to UI format
@@ -1024,10 +1046,9 @@ function App() {
       <nav className="sticky top-0 z-50 header-premium">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
-            {/* Logo - Tap 7 times for admin access */}
+            {/* Logo */}
             <div
-              className="flex items-center gap-3 cursor-pointer select-none"
-              onClick={handleLogoTap}
+              className="flex items-center gap-3 select-none"
               title="E-Soko"
             >
               <div className="bg-gradient-to-br from-teal-400 to-teal-600 p-2 rounded-xl shadow-lg">
@@ -1097,6 +1118,19 @@ function App() {
                 </button>
               )}
 
+              {isAdmin && (
+                <button
+                  onClick={() => handleTabSwitch('users')}
+                  className={`px-4 py-2 rounded-lg font-medium transition-all duration-200 ${
+                    activeTab === 'users'
+                      ? 'bg-white/10 text-teal-400'
+                      : 'text-slate-300 hover:text-white hover:bg-white/5'
+                  }`}
+                >
+                  Users
+                </button>
+              )}
+
               <div className="w-px h-8 bg-slate-600 mx-2"></div>
 
               <button
@@ -1107,34 +1141,72 @@ function App() {
                 Sell Now
               </button>
 
-              {/* User Menu - Show logout only when logged in */}
+              {/* User Account Menu */}
               {user && (
-                <div className="flex items-center gap-3 ml-2">
-                  <div className="flex items-center gap-2 bg-white/10 px-3 py-1.5 rounded-lg">
+                <div className="relative ml-2">
+                  <button
+                    onClick={() => setUserMenuOpen((o) => !o)}
+                    className={`flex items-center gap-2 pl-1.5 pr-2.5 py-1.5 rounded-full border transition-all ${
+                      userMenuOpen
+                        ? 'bg-white/15 border-white/20'
+                        : 'bg-white/10 border-transparent hover:bg-white/15'
+                    }`}
+                    title="Account"
+                  >
                     <div className="w-7 h-7 bg-gradient-to-br from-teal-400 to-emerald-500 rounded-full flex items-center justify-center text-white text-xs font-bold">
                       {user.username?.[0]?.toUpperCase()}
                     </div>
-                    <span className="text-sm text-white font-medium">{user.username}</span>
-                  </div>
-                  <button
-                    onClick={handleLogout}
-                    className="flex items-center gap-1.5 text-slate-400 hover:text-white px-3 py-1.5 rounded-lg hover:bg-white/5 transition-all text-sm"
-                  >
-                    <LogOut size={16} />
+                    <span className="text-sm text-white font-medium max-w-[120px] truncate">{user.username}</span>
+                    <ChevronDown
+                      size={16}
+                      className={`text-slate-300 transition-transform ${userMenuOpen ? 'rotate-180' : ''}`}
+                    />
                   </button>
+
+                  {userMenuOpen && (
+                    <>
+                      {/* Click-away overlay */}
+                      <div className="fixed inset-0 z-40" onClick={() => setUserMenuOpen(false)} />
+
+                      <div className="absolute right-0 mt-2 w-64 bg-white rounded-2xl shadow-xl border border-slate-100 overflow-hidden z-50 origin-top-right">
+                        {/* Profile header */}
+                        <div className="flex items-center gap-3 p-4 bg-gradient-to-br from-slate-50 to-slate-100">
+                          <div className="w-11 h-11 bg-gradient-to-br from-teal-400 to-emerald-500 rounded-full flex items-center justify-center text-white text-base font-bold shrink-0">
+                            {user.username?.[0]?.toUpperCase()}
+                          </div>
+                          <div className="min-w-0">
+                            <p className="font-semibold text-slate-800 truncate flex items-center gap-1.5">
+                              {user.username}
+                              {isAdmin && (
+                                <span className="bg-red-100 text-red-600 text-[9px] px-1.5 py-0.5 rounded-full font-bold uppercase tracking-wide">Admin</span>
+                              )}
+                            </p>
+                            {user.email && <p className="text-xs text-slate-500 truncate">{user.email}</p>}
+                          </div>
+                        </div>
+
+                        <div className="p-1.5">
+                          <button
+                            onClick={() => { setUserMenuOpen(false); handleLogout() }}
+                            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-700 hover:bg-slate-100 transition-colors"
+                          >
+                            <LogOut size={17} className="text-slate-500" />
+                            Log out
+                          </button>
+                          <button
+                            onClick={() => { setUserMenuOpen(false); setShowDeleteAccount(true) }}
+                            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-red-600 hover:bg-red-50 transition-colors"
+                          >
+                            <Trash2 size={17} />
+                            Delete account
+                          </button>
+                        </div>
+                      </div>
+                    </>
+                  )}
                 </div>
               )}
 
-              {/* Admin Logout */}
-              {isAdmin && (
-                <button
-                  onClick={handleAdminLogout}
-                  className="flex items-center gap-1.5 bg-red-500/20 text-red-400 hover:bg-red-500/30 px-3 py-1.5 rounded-lg transition-all text-sm font-medium ml-2"
-                >
-                  <LogOut size={14} />
-                  Exit Admin
-                </button>
-              )}
             </div>
 
             {/* Mobile Menu Button */}
@@ -1235,6 +1307,22 @@ function App() {
                         </button>
                       )}
 
+                      {isAdmin && (
+                        <button
+                          onClick={() => {
+                            handleTabSwitch('users')
+                            setMobileMenuOpen(false)
+                          }}
+                          className={`text-left font-semibold py-3 px-4 rounded-xl transition-all duration-200 ${
+                            activeTab === 'users'
+                              ? 'bg-gradient-to-r from-teal-50 to-emerald-50 text-teal-600 border-l-4 border-teal-500'
+                              : 'text-slate-700 hover:bg-slate-50'
+                          }`}
+                        >
+                          Users
+                        </button>
+                      )}
+
                       <div className="border-t border-slate-200 my-4"></div>
 
                       <button
@@ -1257,9 +1345,14 @@ function App() {
                               <div className="w-10 h-10 bg-gradient-to-br from-teal-400 to-emerald-500 rounded-full flex items-center justify-center text-white font-bold">
                                 {user.username?.[0]?.toUpperCase()}
                               </div>
-                              <div>
-                                <p className="font-semibold text-slate-800">{user.username}</p>
-                                <p className="text-xs text-slate-500">Logged in</p>
+                              <div className="min-w-0">
+                                <p className="font-semibold text-slate-800 truncate flex items-center gap-1.5">
+                                  {user.username}
+                                  {isAdmin && (
+                                    <span className="bg-red-100 text-red-600 text-[9px] px-1.5 py-0.5 rounded-full font-bold uppercase tracking-wide">Admin</span>
+                                  )}
+                                </p>
+                                <p className="text-xs text-slate-500 truncate">{user.email || 'Logged in'}</p>
                               </div>
                             </div>
                             <button
@@ -1271,6 +1364,16 @@ function App() {
                             >
                               <LogOut size={18} />
                               Logout
+                            </button>
+                            <button
+                              onClick={() => {
+                                setShowDeleteAccount(true)
+                                setMobileMenuOpen(false)
+                              }}
+                              className="flex items-center justify-center gap-2 bg-red-50 text-red-600 px-4 py-3 rounded-xl hover:bg-red-100 transition-colors font-medium w-full"
+                            >
+                              <Trash2 size={18} />
+                              Delete Account
                             </button>
                           </div>
                         </>
@@ -1340,7 +1443,7 @@ function App() {
             {/* Quick Stats */}
             <div className="flex justify-center gap-8 md:gap-16 mt-10 text-center">
               <div>
-                <p className="text-3xl md:text-4xl font-bold text-white">{products.length}+</p>
+                <p className="text-3xl md:text-4xl font-bold text-white">{totalProducts}+</p>
                 <p className="text-slate-400 text-sm">Active Listings</p>
               </div>
               <div>
@@ -1455,7 +1558,7 @@ function App() {
                         >
                           <div className="product-image-container">
                             <img
-                              src={item.images?.[0]?.url || item.images?.[0] || 'https://via.placeholder.com/300x200'}
+                              src={optimizedThumb(item.images?.[0]?.url || item.images?.[0]) || 'https://via.placeholder.com/300x200'}
                               alt={item.title}
                               loading="lazy"
                             />
@@ -1508,7 +1611,7 @@ function App() {
                           Filtering by: {categories.find(cat => cat._id === selectedCategory)?.name || 'Category'}
                         </p>
                         <p className="text-teal-600 text-sm mt-0.5">
-                          Showing {getFilteredProducts().length} {getFilteredProducts().length === 1 ? 'item' : 'items'}
+                          Showing {totalProducts} {totalProducts === 1 ? 'item' : 'items'}
                         </p>
                       </div>
                     </div>
@@ -1583,7 +1686,7 @@ function App() {
                         Filtering by: {selectedCampus}
                       </p>
                       <p className="text-emerald-600 text-sm mt-0.5">
-                        Showing {getFilteredProducts().length} {getFilteredProducts().length === 1 ? 'item' : 'items'}
+                        Showing {totalProducts} {totalProducts === 1 ? 'item' : 'items'}
                       </p>
                     </div>
                   </div>
@@ -1610,7 +1713,7 @@ function App() {
                       }
                     </h2>
                     <span className="bg-gradient-to-r from-teal-500 to-emerald-500 text-white text-sm font-semibold px-4 py-1.5 rounded-full shadow-sm">
-                      {getFilteredProducts().length} {getFilteredProducts().length === 1 ? 'item' : 'items'}
+                      {totalProducts} {totalProducts === 1 ? 'item' : 'items'}
                     </span>
                   </div>
                   {(selectedCategory || selectedCampus) && (
@@ -1734,9 +1837,10 @@ function App() {
                             <div className="product-image-container">
                               {item.images[0]?.startsWith('data:') || item.images[0]?.startsWith('http') ? (
                                 <img
-                                  src={item.images[0]}
+                                  src={optimizedThumb(item.images[0])}
                                   alt={item.title}
                                   loading="lazy"
+                                  decoding="async"
                                   onError={(e) => {
                                     e.target.style.display = 'none'
                                     e.target.nextSibling.style.display = 'flex'
@@ -1798,6 +1902,13 @@ function App() {
                       )
                     })}
                   </div>
+
+                  {/* Infinite-scroll sentinel: loads the next page from the server as it nears view */}
+                  {hasMoreProducts && (
+                    <div ref={loadMoreRef} className="flex justify-center py-8">
+                      <Loader2 className="animate-spin text-slate-400" size={24} />
+                    </div>
+                  )}
                 </>
               )}
             </section>
@@ -2040,7 +2151,7 @@ function App() {
               <p className="text-gray-700 mb-4">Have questions, need assistance, or want to report an issue? Reach out to us:</p>
               <div className="space-y-3 text-gray-700">
                 <div className="bg-blue-50 rounded-lg p-4">
-                  <p className="text-lg"><strong>Email:</strong> <a href="mailto:esokostore1@gmail.com" className="text-blue-600 hover:underline">esokostore1@gmail.com</a></p>
+                  <p className="text-lg"><strong>Email:</strong> <a href="mailto:e-soko@bigminds.online" className="text-blue-600 hover:underline">e-soko@bigminds.online</a></p>
                   <p className="text-sm text-gray-600 mt-2">Use this email for all inquiries including:</p>
                   <ul className="text-sm text-gray-600 space-y-1 ml-4 mt-1">
                     <li>• General questions and support</li>
@@ -2077,7 +2188,7 @@ function App() {
             {/* Header */}
             <div className="mb-8 text-center">
               <h1 className="text-3xl font-bold text-gray-900 mb-2">Privacy Policy</h1>
-              <p className="text-gray-600">Effective Date: March 7, 2026</p>
+              <p className="text-gray-600">Effective Date: June 13, 2026</p>
             </div>
 
             {/* Introduction */}
@@ -2086,8 +2197,11 @@ function App() {
               <p className="text-gray-700 leading-relaxed mb-4">
                 E-Soko operates a campus-focused marketplace accessible at <strong>e-soko.store</strong>. Our platform enables university and college community members to list, discover, and purchase items from fellow students within their campus network.
               </p>
+              <p className="text-gray-700 leading-relaxed mb-4">
+                This Privacy Policy explains how we collect, process, store, and safeguard your personal data when you access or use our platform. It is issued in accordance with the <strong>Kenya Data Protection Act, 2019</strong> and the Data Protection (General) Regulations, 2021, which govern the processing of personal data in Kenya.
+              </p>
               <p className="text-gray-700 leading-relaxed">
-                This Privacy Policy outlines how we collect, process, store, and safeguard your personal information when you access or use our platform. By creating an account or using any of our services, you acknowledge and consent to the data practices described herein.
+                For the purposes of this policy, E-Soko is the <strong>data controller</strong> responsible for your personal data. By creating an account or using our services, you acknowledge the data practices described here. Where we rely on your consent (for example, for non-essential cookies), you may withdraw it at any time as described below.
               </p>
             </div>
 
@@ -2098,35 +2212,75 @@ function App() {
               <div className="mb-5">
                 <h3 className="text-lg font-semibold text-gray-900 mb-2">2.1 Account Registration Data</h3>
                 <p className="text-gray-700 text-sm leading-relaxed">
-                  Upon registration, we collect your <strong>username</strong> and <strong>email address</strong>. These are required for account identification, listing management, and account recovery purposes.
+                  When you register, we collect a <strong>username</strong>, <strong>email address</strong>, and a <strong>password</strong> (which is encrypted and never stored in readable form). Optionally, you may add a <strong>display name</strong>, <strong>phone number</strong>, <strong>WhatsApp number</strong>, <strong>campus</strong>, <strong>short bio</strong>, and <strong>profile photo</strong> to your profile. These are used for account identification, listing management, and account recovery.
                 </p>
               </div>
 
               <div className="mb-5">
                 <h3 className="text-lg font-semibold text-gray-900 mb-2">2.2 Listing Data</h3>
                 <p className="text-gray-700 text-sm leading-relaxed">
-                  When you create a product listing, we collect and publicly display the information you provide, including: item title, description, pricing, condition, category, campus location, uploaded images, and seller contact details (phone number and/or email address). This information is visible to all platform users to facilitate transactions.
+                  When you create a product listing, we collect and <strong>publicly display</strong> the information you provide, including: item title, description, price, condition, category, campus/building location, uploaded images, and the seller contact details you choose to share (phone number, WhatsApp, and/or email). This information is visible to all platform users to facilitate transactions. Please share only contact details you are comfortable making public.
                 </p>
               </div>
 
               <div className="mb-5">
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">2.3 Device Identifiers</h3>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">2.3 Listings Without an Account (Anonymous Sellers)</h3>
                 <p className="text-gray-700 text-sm leading-relaxed">
-                  We generate and store a unique <strong>device identifier</strong> within your browser's local storage. This identifier is used exclusively to associate listings with your device, enabling you to manage your posted items prior to account creation.
+                  You may post a listing without creating an account. In that case we collect the contact information you provide (phone, WhatsApp, email, campus) together with a device identifier (see 2.4) so the listing can be managed from your device. This information is published with your listing.
+                </p>
+              </div>
+
+              <div className="mb-5">
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">2.4 Device Identifiers &amp; Session Data</h3>
+                <p className="text-gray-700 text-sm leading-relaxed">
+                  We generate and store a unique <strong>device identifier</strong> and your authentication session in your browser's local storage. These are used to associate listings with your device, keep you signed in, and protect against abuse. We also process limited technical data such as your IP address for security and rate-limiting (for example, to prevent bulk harvesting of seller contacts).
+                </p>
+              </div>
+
+              <div className="mb-5">
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">2.5 Communications</h3>
+                <p className="text-gray-700 text-sm leading-relaxed">
+                  When you request a password reset or contact support, we process your email address to send the relevant message. We do not send marketing emails.
                 </p>
               </div>
 
               <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">2.4 Usage and Analytics Data</h3>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">2.6 Usage and Analytics Data</h3>
                 <p className="text-gray-700 text-sm leading-relaxed">
-                  We utilize <strong>Google Analytics</strong> to collect aggregated, anonymized usage metrics including page views, session duration, device type, and approximate geographic location (country/city level). This data is used solely for platform optimization and service improvement. Google Analytics may deploy cookies to facilitate this data collection.
+                  Subject to your cookie choice (see Section 5), we use <strong>Google Analytics</strong> to collect aggregated, anonymized usage metrics such as page views, session duration, device type, and approximate (country/city-level) location. This data is used solely to improve the platform. Analytics remains disabled until you accept analytics cookies.
                 </p>
               </div>
             </div>
 
+            {/* Legal Basis */}
+            <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
+              <h2 className="text-2xl font-semibold text-gray-900 mb-4">3. Legal Basis for Processing</h2>
+              <p className="text-gray-700 text-sm leading-relaxed mb-4">
+                Under the Data Protection Act, 2019, we process your personal data only where we have a lawful basis to do so:
+              </p>
+              <ul className="space-y-3 text-gray-700 text-sm">
+                <li className="flex items-start gap-2">
+                  <span className="font-bold mt-1">•</span>
+                  <span><strong>Performance of a contract / your request:</strong> to create and manage your account and publish the listings you ask us to post.</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="font-bold mt-1">•</span>
+                  <span><strong>Consent:</strong> for non-essential analytics cookies, which you accept or decline via our cookie banner and may change at any time.</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="font-bold mt-1">•</span>
+                  <span><strong>Legitimate interests:</strong> to secure the platform, prevent fraud and abuse, and improve our services, balanced against your rights and freedoms.</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="font-bold mt-1">•</span>
+                  <span><strong>Legal obligation:</strong> where we are required to process or retain data to comply with applicable law.</span>
+                </li>
+              </ul>
+            </div>
+
             {/* How We Use Your Information */}
             <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
-              <h2 className="text-2xl font-semibold text-gray-900 mb-4">3. Use of Information</h2>
+              <h2 className="text-2xl font-semibold text-gray-900 mb-4">4. Use of Information</h2>
               <p className="text-gray-700 text-sm leading-relaxed mb-4">
                 We process your personal information for the following purposes:
               </p>
@@ -2156,7 +2310,7 @@ function App() {
 
             {/* Data Storage & Security */}
             <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
-              <h2 className="text-2xl font-semibold text-gray-900 mb-4">4. Data Security</h2>
+              <h2 className="text-2xl font-semibold text-gray-900 mb-4">5. Data Security</h2>
               <p className="text-gray-700 text-sm leading-relaxed mb-4">
                 We implement industry-standard security measures to protect your personal information against unauthorized access, alteration, disclosure, or destruction. These safeguards include:
               </p>
@@ -2183,60 +2337,114 @@ function App() {
               </p>
             </div>
 
-            {/* Third-Party Services */}
+            {/* Data Sharing & Third-Party Services */}
             <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
-              <h2 className="text-2xl font-semibold text-gray-900 mb-4">5. Third-Party Services</h2>
+              <h2 className="text-2xl font-semibold text-gray-900 mb-4">6. Data Sharing &amp; Third-Party Services</h2>
               <p className="text-gray-700 text-sm leading-relaxed mb-4">
-                Our platform integrates the following third-party services, each of which operates under its own privacy policy:
+                We <strong>do not sell</strong> your personal data. We share it only with the service providers (data processors) needed to run the platform, each operating under its own privacy policy and appropriate safeguards:
               </p>
               <ul className="space-y-3 text-gray-700 text-sm">
                 <li className="flex items-start gap-2">
                   <span className="font-bold mt-1">•</span>
-                  <span><strong>Google Analytics:</strong> Collects anonymized website usage statistics. Users may opt out via the <a href="https://tools.google.com/dlpage/gaoptout" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">Google Analytics Opt-out Browser Add-on</a>.</span>
+                  <span><strong>MongoDB Atlas:</strong> Cloud database hosting where account and listing data is securely stored.</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="font-bold mt-1">•</span>
-                  <span><strong>Google AdSense:</strong> Serves advertisements on our platform. Google may utilize cookies to deliver ads based on browsing behavior. For details, refer to <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">Google's Privacy Policy</a>.</span>
-                </li>
-              </ul>
-            </div>
-
-            {/* Cookies & Local Storage */}
-            <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
-              <h2 className="text-2xl font-semibold text-gray-900 mb-4">6. Cookies & Local Storage</h2>
-              <p className="text-gray-700 text-sm leading-relaxed mb-4">
-                E-Soko primarily utilizes browser <strong>local storage</strong> rather than traditional cookies for the following purposes:
-              </p>
-              <ul className="space-y-2 text-gray-700 text-sm">
-                <li className="flex items-start gap-2">
-                  <span className="font-bold mt-1">•</span>
-                  <span>Storing your device identifier for listing ownership verification.</span>
+                  <span><strong>Cloudinary:</strong> Hosting and delivery of the images you upload with your listings or profile.</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="font-bold mt-1">•</span>
-                  <span>Maintaining your authentication session.</span>
+                  <span><strong>Vercel &amp; Render:</strong> Hosting of our website and application servers.</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="font-bold mt-1">•</span>
-                  <span>Caching user profile data for display optimization.</span>
+                  <span><strong>Email delivery (Google/Gmail):</strong> Used to send transactional emails such as password-reset links.</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="font-bold mt-1">•</span>
+                  <span><strong>Google Analytics:</strong> Collects anonymized usage statistics (only after you accept analytics cookies). You may also opt out via the <a href="https://tools.google.com/dlpage/gaoptout" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">Google Analytics Opt-out Browser Add-on</a>.</span>
                 </li>
               </ul>
               <p className="text-gray-700 text-sm leading-relaxed mt-4">
-                Third-party services integrated into our platform (Google Analytics, Google AdSense) may independently set cookies. You may manage or disable cookies through your browser settings at any time.
+                We may also disclose personal data where required by law, court order, or a lawful request from a competent authority, or to protect the rights, safety, and property of our users and the platform.
+              </p>
+            </div>
+
+            {/* International Data Transfers */}
+            <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
+              <h2 className="text-2xl font-semibold text-gray-900 mb-4">7. International Data Transfers</h2>
+              <p className="text-gray-700 text-sm leading-relaxed">
+                Some of the service providers listed above store and process data on servers located outside Kenya. Where personal data is transferred across borders, we take reasonable steps to ensure it is afforded a level of protection consistent with the Data Protection Act, 2019, including relying on providers that implement appropriate security and contractual safeguards. By using the platform, you are informed that such transfers may occur for the purposes described in this policy.
+              </p>
+            </div>
+
+            {/* Data Retention */}
+            <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
+              <h2 className="text-2xl font-semibold text-gray-900 mb-4">8. Data Retention</h2>
+              <p className="text-gray-700 text-sm leading-relaxed">
+                We retain your personal data only for as long as your account is active or as needed to provide our services and comply with legal obligations. When you delete a listing, it is removed from the marketplace. When you <strong>delete your account</strong>, we permanently remove your account and all associated listings from our database. You can do this at any time from your account menu (see "Your Rights" below).
+              </p>
+            </div>
+
+            {/* Cookie Policy */}
+            <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
+              <h2 className="text-2xl font-semibold text-gray-900 mb-4">9. Cookies &amp; Tracking Technologies (Cookie Policy)</h2>
+              <p className="text-gray-700 text-sm leading-relaxed mb-4">
+                Cookies and similar technologies (including browser <strong>local storage</strong>) are small data files placed on your device. We use two categories:
+              </p>
+              <div className="mb-4">
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">9.1 Strictly Necessary (always on)</h3>
+                <p className="text-gray-700 text-sm leading-relaxed mb-2">
+                  These are essential for the platform to function and cannot be switched off. They do not require consent. They are used to:
+                </p>
+                <ul className="space-y-2 text-gray-700 text-sm">
+                  <li className="flex items-start gap-2"><span className="font-bold mt-1">•</span><span>Keep you signed in (authentication session).</span></li>
+                  <li className="flex items-start gap-2"><span className="font-bold mt-1">•</span><span>Store your device identifier so you can manage your own listings.</span></li>
+                  <li className="flex items-start gap-2"><span className="font-bold mt-1">•</span><span>Remember your cookie preference.</span></li>
+                </ul>
+              </div>
+              <div className="mb-4">
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">9.2 Analytics (optional — consent required)</h3>
+                <p className="text-gray-700 text-sm leading-relaxed">
+                  Google Analytics cookies help us understand how the platform is used. These remain <strong>disabled by default</strong> and are only activated if you select <strong>"Accept"</strong> on our cookie banner.
+                </p>
+              </div>
+              <p className="text-gray-700 text-sm leading-relaxed">
+                <strong>Your choice:</strong> When you first visit, a banner lets you <strong>Accept</strong> or <strong>Decline</strong> analytics cookies. If you decline, only strictly necessary technologies are used. You can change your decision at any time by clearing this site's data in your browser (which makes the banner reappear) or by using the Google opt-out tool linked above. You may also block or delete cookies through your browser settings.
+              </p>
+            </div>
+
+            {/* Your Rights */}
+            <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
+              <h2 className="text-2xl font-semibold text-gray-900 mb-4">10. Your Rights Under the Data Protection Act, 2019</h2>
+              <p className="text-gray-700 text-sm leading-relaxed mb-4">
+                As a data subject in Kenya, you have the following rights over your personal data:
+              </p>
+              <ul className="space-y-3 text-gray-700 text-sm">
+                <li className="flex items-start gap-2"><span className="font-bold mt-1">•</span><span><strong>Right to be informed</strong> of how your data is used — addressed by this policy.</span></li>
+                <li className="flex items-start gap-2"><span className="font-bold mt-1">•</span><span><strong>Right of access</strong> to the personal data we hold about you.</span></li>
+                <li className="flex items-start gap-2"><span className="font-bold mt-1">•</span><span><strong>Right to rectification</strong> — you can correct your profile details directly in the app, or request correction.</span></li>
+                <li className="flex items-start gap-2"><span className="font-bold mt-1">•</span><span><strong>Right to erasure ("right to be forgotten")</strong> — you can permanently delete your account and all associated data from your account menu at any time, or request deletion by email.</span></li>
+                <li className="flex items-start gap-2"><span className="font-bold mt-1">•</span><span><strong>Right to object to or restrict processing</strong>, including withdrawing consent for analytics cookies.</span></li>
+                <li className="flex items-start gap-2"><span className="font-bold mt-1">•</span><span><strong>Right to data portability</strong> — to receive your data in a structured, commonly used format.</span></li>
+                <li className="flex items-start gap-2"><span className="font-bold mt-1">•</span><span><strong>Right to lodge a complaint</strong> with the Office of the Data Protection Commissioner (ODPC).</span></li>
+              </ul>
+              <p className="text-gray-700 text-sm leading-relaxed mt-4">
+                To exercise any of these rights, contact us at <a href="mailto:e-soko@bigminds.online" className="text-blue-600 hover:underline">e-soko@bigminds.online</a>. We will respond within the timelines required by law. If you are not satisfied, you may complain to the ODPC at <a href="https://www.odpc.go.ke" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">www.odpc.go.ke</a>.
               </p>
             </div>
 
             {/* Children's Privacy */}
             <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
-              <h2 className="text-2xl font-semibold text-gray-900 mb-4">7. Age Restriction</h2>
+              <h2 className="text-2xl font-semibold text-gray-900 mb-4">11. Age Restriction</h2>
               <p className="text-gray-700 text-sm leading-relaxed">
-                E-Soko is intended exclusively for use by campus community members, primarily university and college students aged 16 and above. We do not knowingly collect or process personal information from individuals under the age of 16. Should we become aware that data has been collected from a minor, we will take immediate steps to delete such information. To report a concern, please contact us at <a href="mailto:esokostore1@gmail.com" className="text-blue-600 hover:underline">esokostore1@gmail.com</a>.
+                E-Soko is intended exclusively for use by campus community members, primarily university and college students aged 16 and above. We do not knowingly collect or process personal information from individuals under the age of 16. Should we become aware that data has been collected from a minor, we will take immediate steps to delete such information. To report a concern, please contact us at <a href="mailto:e-soko@bigminds.online" className="text-blue-600 hover:underline">e-soko@bigminds.online</a>.
               </p>
             </div>
 
             {/* Changes to This Policy */}
             <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
-              <h2 className="text-2xl font-semibold text-gray-900 mb-4">8. Policy Amendments</h2>
+              <h2 className="text-2xl font-semibold text-gray-900 mb-4">12. Policy Amendments</h2>
               <p className="text-gray-700 text-sm leading-relaxed">
                 We reserve the right to modify this Privacy Policy at any time to reflect changes in our practices, services, or applicable legal requirements. Material changes will be indicated by updating the "Effective Date" at the top of this page. Continued use of the platform following any amendments constitutes acceptance of the revised policy. We recommend reviewing this page periodically.
               </p>
@@ -2244,15 +2452,18 @@ function App() {
 
             {/* Contact */}
             <div className="bg-white rounded-xl shadow-sm p-6">
-              <h2 className="text-2xl font-semibold text-gray-900 mb-4">9. Contact Information</h2>
+              <h2 className="text-2xl font-semibold text-gray-900 mb-4">13. Contact Information</h2>
               <p className="text-gray-700 text-sm leading-relaxed mb-3">
-                For questions, concerns, or requests related to this Privacy Policy or our data handling practices, please reach out to us through the following channels:
+                For questions, concerns, or to exercise your data protection rights, please reach out to E-Soko (the data controller) through the following channels:
               </p>
               <div className="bg-blue-50 rounded-lg p-4">
-                <p className="text-gray-700 text-sm"><strong>Email:</strong> <a href="mailto:esokostore1@gmail.com" className="text-blue-600 hover:underline">esokostore1@gmail.com</a></p>
+                <p className="text-gray-700 text-sm"><strong>Email:</strong> <a href="mailto:e-soko@bigminds.online" className="text-blue-600 hover:underline">e-soko@bigminds.online</a></p>
                 <p className="text-gray-700 text-sm mt-1"><strong>Website:</strong> <a href="https://e-soko.store" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">e-soko.store</a></p>
-                <p className="text-sm text-gray-600 mt-2">We endeavor to respond to all privacy-related inquiries within 48 hours.</p>
+                <p className="text-sm text-gray-600 mt-2">We endeavor to respond to all privacy-related inquiries within the timelines required by the Data Protection Act, 2019.</p>
               </div>
+              <p className="text-gray-700 text-sm leading-relaxed mt-4">
+                <strong>Supervisory authority:</strong> You have the right to lodge a complaint with the Office of the Data Protection Commissioner (ODPC), Kenya — <a href="https://www.odpc.go.ke" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">www.odpc.go.ke</a>.
+              </p>
             </div>
           </div>
         )}
@@ -2263,7 +2474,7 @@ function App() {
             {/* Header */}
             <div className="mb-8 text-center">
               <h1 className="text-3xl font-bold text-gray-900 mb-2">Terms of Service</h1>
-              <p className="text-gray-600">Last updated: March 7, 2026</p>
+              <p className="text-gray-600">Last updated: June 13, 2026</p>
             </div>
 
             {/* Introduction */}
@@ -2532,7 +2743,7 @@ function App() {
                 </li>
               </ul>
               <p className="text-gray-700 text-sm leading-relaxed mt-3">
-                We may take these actions without prior notice. If you believe content was removed in error, contact us at <a href="mailto:esokostore1@gmail.com" className="text-blue-600 hover:underline">esokostore1@gmail.com</a>.
+                We may take these actions without prior notice. If you believe content was removed in error, contact us at <a href="mailto:e-soko@bigminds.online" className="text-blue-600 hover:underline">e-soko@bigminds.online</a>.
               </p>
             </div>
 
@@ -2591,15 +2802,23 @@ function App() {
                 </li>
               </ul>
               <p className="text-gray-700 text-sm leading-relaxed mt-3">
-                You may also stop using E-Soko at any time. You can delete your listings and request account deletion by contacting us.
+                You may also stop using E-Soko at any time. You can delete individual listings, or permanently delete your account and all associated data yourself from your account menu — no request needed.
+              </p>
+            </div>
+
+            {/* Privacy & Data Protection */}
+            <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
+              <h2 className="text-2xl font-semibold text-gray-900 mb-4">Privacy &amp; Data Protection</h2>
+              <p className="text-gray-700 text-sm leading-relaxed">
+                Your use of E-Soko is also governed by our <strong>Privacy Policy</strong>, which forms part of these Terms and explains how we collect and process your personal data in line with the <strong>Kenya Data Protection Act, 2019</strong>. You can manage your data directly in the app — edit your profile details at any time, and permanently delete your account and all associated listings from your account menu. Please review the Privacy Policy to understand your rights as a data subject.
               </p>
             </div>
 
             {/* Governing Law */}
             <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
-              <h2 className="text-2xl font-semibold text-gray-900 mb-4">Governing Law</h2>
+              <h2 className="text-2xl font-semibold text-gray-900 mb-4">Governing Law &amp; Dispute Resolution</h2>
               <p className="text-gray-700 text-sm leading-relaxed">
-                These Terms shall be governed by and construed in accordance with applicable local laws. Any disputes arising from these Terms or your use of the Service shall be resolved through good-faith negotiation. If a resolution cannot be reached, disputes shall be submitted to the appropriate courts of competent jurisdiction.
+                These Terms shall be governed by and construed in accordance with the <strong>laws of the Republic of Kenya</strong>, including the Data Protection Act, 2019 in respect of personal data. Any dispute arising from these Terms or your use of the Service shall first be addressed through good-faith negotiation. Where a resolution cannot be reached, the dispute shall be subject to the <strong>exclusive jurisdiction of the courts of Kenya</strong>. Nothing in these Terms limits any right you may have to lodge a complaint with the Office of the Data Protection Commissioner (ODPC).
               </p>
             </div>
 
@@ -2610,7 +2829,7 @@ function App() {
                 If you have any questions about these Terms of Service, please contact us:
               </p>
               <div className="bg-blue-50 rounded-lg p-4">
-                <p className="text-gray-700 text-sm"><strong>Email:</strong> <a href="mailto:esokostore1@gmail.com" className="text-blue-600 hover:underline">esokostore1@gmail.com</a></p>
+                <p className="text-gray-700 text-sm"><strong>Email:</strong> <a href="mailto:e-soko@bigminds.online" className="text-blue-600 hover:underline">e-soko@bigminds.online</a></p>
                 <p className="text-gray-700 text-sm mt-1"><strong>Website:</strong> <a href="https://e-soko.store" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">e-soko.store</a></p>
                 <p className="text-sm text-gray-600 mt-2">We aim to respond to all inquiries within 48 hours.</p>
               </div>
@@ -2620,7 +2839,16 @@ function App() {
 
         {/* Ad Manager Tab */}
         {activeTab === 'ad-manager' && (
-          <AdManager authToken={authToken} showToast={showToast} showConfirmModal={showConfirmModal} closeConfirmModal={closeConfirmModal} />
+          <Suspense fallback={<div className="flex justify-center py-16"><Loader2 className="animate-spin text-slate-400" size={28} /></div>}>
+            <AdManager authToken={authToken} showToast={showToast} showConfirmModal={showConfirmModal} closeConfirmModal={closeConfirmModal} />
+          </Suspense>
+        )}
+
+        {/* User Management Tab (admin only) */}
+        {activeTab === 'users' && isAdmin && (
+          <Suspense fallback={<div className="flex justify-center py-16"><Loader2 className="animate-spin text-slate-400" size={28} /></div>}>
+            <UserManager authToken={authToken} showToast={showToast} showConfirmModal={showConfirmModal} closeConfirmModal={closeConfirmModal} />
+          </Suspense>
         )}
       </main>
 
@@ -3357,56 +3585,59 @@ function App() {
         </div>
       )}
 
-      {/* Admin Login Modal */}
-      {showAdminLogin && (
+      {/* Delete Account Modal */}
+      {showDeleteAccount && (
         <div
-          className="fixed inset-0 bg-black bg-opacity-75 z-50 flex items-center justify-center p-4"
+          className="fixed inset-0 bg-black bg-opacity-75 z-[60] flex items-center justify-center p-4"
           onClick={(e) => {
-            if (e.target === e.currentTarget) {
-              setShowAdminLogin(false)
-              setAdminPassword('')
+            if (e.target === e.currentTarget && !deletingAccount) {
+              setShowDeleteAccount(false)
+              setDeleteAccountPassword('')
             }
           }}
         >
           <div className="bg-white rounded-xl max-w-md w-full p-8">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-2xl font-bold text-gray-900">Admin Login</h2>
-              <button
-                onClick={() => {
-                  setShowAdminLogin(false)
-                  setAdminPassword('')
-                }}
-                className="text-gray-500 hover:text-gray-700"
-              >
-                <X size={24} />
-              </button>
-            </div>
-
-            <form onSubmit={handleAdminLogin}>
-              <div className="mb-6">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Admin Password
-                </label>
-                <input
-                  type="password"
-                  value={adminPassword}
-                  onChange={(e) => setAdminPassword(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Enter admin password"
-                  required
-                  autoComplete="current-password"
-                />
-                <p className="text-xs text-gray-500 mt-2">
-                  🔒 Secure admin access - Contact administrator if you've forgotten your password
-                </p>
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-11 h-11 rounded-full bg-red-100 flex items-center justify-center text-red-600 shrink-0">
+                <Trash2 size={22} />
               </div>
-
-              <button
-                type="submit"
-                className="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition-colors font-medium"
-              >
-                Login as Admin
-              </button>
+              <h2 className="text-2xl font-bold text-gray-900">Delete Account</h2>
+            </div>
+            <p className="text-sm text-slate-600 leading-relaxed mb-5">
+              This permanently deletes your account and <strong>all your product
+              listings</strong>. This action cannot be undone. Enter your password
+              to confirm.
+            </p>
+            <form onSubmit={handleDeleteAccount}>
+              <input
+                type="password"
+                value={deleteAccountPassword}
+                onChange={(e) => setDeleteAccountPassword(e.target.value)}
+                placeholder="Your password"
+                autoFocus
+                className="w-full px-4 py-3 rounded-xl border border-slate-300 focus:border-red-400 focus:ring-2 focus:ring-red-100 outline-none mb-5"
+              />
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  disabled={deletingAccount}
+                  onClick={() => {
+                    setShowDeleteAccount(false)
+                    setDeleteAccountPassword('')
+                  }}
+                  className="flex-1 px-4 py-3 rounded-xl font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 transition-colors disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={deletingAccount}
+                  className="flex-1 px-4 py-3 rounded-xl font-semibold text-white bg-red-600 hover:bg-red-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                >
+                  {deletingAccount ? <Loader2 size={18} className="animate-spin" /> : <Trash2 size={18} />}
+                  {deletingAccount ? 'Deleting…' : 'Delete'}
+                </button>
+              </div>
             </form>
           </div>
         </div>
@@ -3438,7 +3669,7 @@ function App() {
       <section className="bg-[#F5F2ED] border-t border-b border-[#D6D1CA] py-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <AdDisplay position="banner" />
-          <p className="text-center text-xs text-[#5A5A5A] mt-4">Interested in advertising? Contact us at esokostore1@gmail.com</p>
+          <p className="text-center text-xs text-[#5A5A5A] mt-4">Interested in advertising? Contact us at e-soko@bigminds.online</p>
         </div>
       </section>
 
@@ -3569,6 +3800,7 @@ function App() {
               <div className="flex items-center gap-6 text-sm text-slate-500">
                 <button onClick={() => handleTabSwitch('privacy-policy')} className="hover:text-[#B86B3E] transition-colors">Privacy Policy</button>
                 <button onClick={() => handleTabSwitch('terms-of-service')} className="hover:text-[#B86B3E] transition-colors">Terms of Service</button>
+                <button onClick={() => window.dispatchEvent(new Event('open-cookie-settings'))} className="hover:text-[#B86B3E] transition-colors">Cookie Settings</button>
               </div>
             </div>
           </div>
@@ -3592,6 +3824,9 @@ function App() {
           onClose={() => setToast(null)}
         />
       )}
+
+      {/* Cookie Consent Banner */}
+      <CookieConsent />
     </div>
   )
 }

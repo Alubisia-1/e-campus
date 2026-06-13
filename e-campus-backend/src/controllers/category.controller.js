@@ -1,4 +1,5 @@
 const Category = require('../models/Category.model');
+const Product = require('../models/Product.model');
 const asyncHandler = require('../middleware/asyncHandler');
 const { cache, cacheKeys, cacheTTL } = require('../utils/cache');
 
@@ -19,14 +20,30 @@ exports.getAllCategories = asyncHandler(async (req, res) => {
 
   // Fetch from database
   const categories = await Category.find({ isActive: true })
-    .select('name slug description icon color productCount')
+    .select('name slug description icon color')
     .sort('name')
     .lean(); // Use lean() for better performance
 
+  // Compute live product counts per category in a single aggregation so the
+  // category list shows accurate counts without the client loading every product.
+  const counts = await Product.aggregate([
+    { $match: { isActive: true, status: 'available' } },
+    { $group: { _id: '$category', count: { $sum: 1 } } }
+  ]);
+  const countByCategory = counts.reduce((acc, c) => {
+    if (c._id) acc[c._id.toString()] = c.count;
+    return acc;
+  }, {});
+
+  const categoriesWithCounts = categories.map((cat) => ({
+    ...cat,
+    productCount: countByCategory[cat._id.toString()] || 0
+  }));
+
   const responseData = {
     status: 'success',
-    count: categories.length,
-    data: categories
+    count: categoriesWithCounts.length,
+    data: categoriesWithCounts
   };
 
   // Cache for 30 minutes (categories rarely change)

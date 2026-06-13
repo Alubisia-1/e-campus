@@ -258,6 +258,15 @@ export const api = {
     },
   }),
 
+  // Permanently delete the authenticated user's account (requires password)
+  deleteAccount: (token, password) => apiRequest('/auth/me', {
+    method: 'DELETE',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+    },
+    body: JSON.stringify({ password }),
+  }),
+
   // Password Reset
   forgotPassword: (email) => apiRequest('/auth/forgot-password', {
     method: 'POST',
@@ -269,13 +278,24 @@ export const api = {
     body: JSON.stringify({ password }),
   }),
 
-  // Admin authentication
-  adminLogin: (password) => apiRequest('/admin/login', {
-    method: 'POST',
-    body: JSON.stringify({ password }),
+  // User management (Admin)
+  getAllUsers: (token, params = {}) => {
+    const searchParams = new URLSearchParams(params);
+    return apiRequest(`/users?${searchParams}`, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+  },
+
+  getUserById: (id, token) => apiRequest(`/users/${id}`, {
+    headers: {
+      'Authorization': `Bearer ${token}`,
+    },
   }),
 
-  verifyAdmin: (token) => apiRequest('/admin/verify', {
+  deleteUser: (id, token) => apiRequest(`/users/${id}`, {
+    method: 'DELETE',
     headers: {
       'Authorization': `Bearer ${token}`,
     },

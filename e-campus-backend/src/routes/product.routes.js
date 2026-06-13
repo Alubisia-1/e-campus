@@ -2,7 +2,12 @@ const express = require('express');
 const router = express.Router();
 const { body } = require('express-validator');
 const { protect, optionalAuth, authorize } = require('../middleware/auth.middleware');
-const { createProductLimiter, searchLimiter } = require('../middleware/rateLimiter');
+const {
+  createProductLimiter,
+  searchLimiter,
+  revealContactHourlyLimiter,
+  revealContactDailyLimiter
+} = require('../middleware/rateLimiter');
 const {
   getAllProducts,
   getProductById,
@@ -152,6 +157,6 @@ router.put('/:id/unsponsor', protect, authorize('admin'), unsponsorProduct);
 
 // Public routes with :id parameter (must come after specific routes)
 router.get('/:id', getProductById);
-router.post('/:id/reveal-contact', revealContact);
+router.post('/:id/reveal-contact', revealContactHourlyLimiter, revealContactDailyLimiter, revealContact);
 
 module.exports = router;

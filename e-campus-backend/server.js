@@ -2,8 +2,6 @@ const express = require('express');
 const dotenv = require('dotenv');
 const cors = require('cors');
 const helmet = require('helmet');
-const mongoSanitize = require('express-mongo-sanitize');
-const xss = require('xss-clean');
 const compression = require('compression');
 
 // Load environment variables
@@ -15,6 +13,7 @@ const connectDB = require('./src/config/database');
 // Import middleware
 const { errorHandler, notFound } = require('./src/middleware/errorHandler');
 const { apiLimiter } = require('./src/middleware/rateLimiter');
+const sanitizeRequest = require('./src/middleware/sanitize');
 
 // Import routes
 const authRoutes = require('./src/routes/auth.routes');
@@ -24,7 +23,6 @@ const categoryRoutes = require('./src/routes/category.routes');
 const campusRoutes = require('./src/routes/campus.routes');
 const uploadRoutes = require('./src/routes/upload.routes');
 const advertisementRoutes = require('./src/routes/advertisement.routes');
-const adminRoutes = require('./src/routes/admin.routes');
 
 // Initialize Express app
 const app = express();
@@ -142,13 +140,8 @@ app.use((req, res, next) => {
   next();
 });
 
-// Data sanitization against NoSQL injection
-// TODO: Fix compatibility with Express 5.x
-// app.use(mongoSanitize());
-
-// Data sanitization against XSS
-// TODO: Fix compatibility with Express 5.x
-// app.use(xss());
+// Data sanitization against NoSQL injection and XSS (Express 5 compatible)
+app.use(sanitizeRequest);
 
 // Rate limiting (apply to all API routes)
 app.use('/api/', apiLimiter);
@@ -161,7 +154,9 @@ app.use('/api/categories', categoryRoutes);
 app.use('/api/campuses', campusRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/ads', advertisementRoutes);
-app.use('/api/admin', adminRoutes);
+// Note: the legacy password-only admin login (/api/admin) has been retired.
+// Admin access is now granted via the standard auth system to users whose
+// role is 'admin' (log in with the "admin" account). See scripts/create-admin.js.
 
 // Health check route
 app.get('/health', (req, res) => {
@@ -184,8 +179,7 @@ app.get('/', (req, res) => {
       products: '/api/products',
       categories: '/api/categories',
       campuses: '/api/campuses',
-      ads: '/api/ads',
-      admin: '/api/admin'
+      ads: '/api/ads'
     }
   });
 });

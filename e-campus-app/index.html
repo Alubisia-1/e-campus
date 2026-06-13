@@ -1,13 +1,36 @@
 <!doctype html>
 <html lang="en">
   <head>
-    <!-- Google tag (gtag.js) -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-12PVMH4NY8"></script>
+    <!-- Google Consent Mode defaults (MUST run before gtag.js loads) -->
     <script>
       window.dataLayer = window.dataLayer || [];
       function gtag(){dataLayer.push(arguments);}
-      gtag('js', new Date());
+      // Deny storage by default until the visitor accepts the cookie banner.
+      // Applies to Google Analytics.
+      gtag('consent', 'default', {
+        ad_storage: 'denied',
+        ad_user_data: 'denied',
+        ad_personalization: 'denied',
+        analytics_storage: 'denied',
+        wait_for_update: 500
+      });
+      // Re-apply a previously saved choice on repeat visits.
+      try {
+        if (localStorage.getItem('cookieConsent') === 'granted') {
+          gtag('consent', 'update', {
+            ad_storage: 'granted',
+            ad_user_data: 'granted',
+            ad_personalization: 'granted',
+            analytics_storage: 'granted'
+          });
+        }
+      } catch (e) {}
+    </script>
 
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-12PVMH4NY8"></script>
+    <script>
+      gtag('js', new Date());
       gtag('config', 'G-12PVMH4NY8');
     </script>
 
@@ -46,9 +69,6 @@
     <!-- Theme Color - Teal -->
     <meta name="theme-color" content="#0f172a" />
     <meta name="msapplication-TileColor" content="#14b8a6" />
-
-    <!-- Google AdSense -->
-    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-XXXXXXXXXXXXXXXX" crossorigin="anonymous"></script>
 
     <!-- Google Fonts - Inter -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
