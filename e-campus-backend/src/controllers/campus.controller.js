@@ -10,7 +10,7 @@ const { cache, cacheKeys, cacheTTL } = require('../utils/cache');
 exports.getAllCampuses = async (req, res) => {
   try {
     const cacheKey = 'campuses:all';
-    const cachedData = cache.get(cacheKey);
+    const cachedData = await cache.get(cacheKey);
 
     if (cachedData) {
       res.setHeader('X-Cache', 'HIT');
@@ -29,7 +29,7 @@ exports.getAllCampuses = async (req, res) => {
     };
 
     // Cache for 30 minutes (campuses rarely change)
-    cache.set(cacheKey, responseData, cacheTTL.categories);
+    await cache.set(cacheKey, responseData, cacheTTL.categories);
     res.setHeader('X-Cache', 'MISS');
 
     res.status(200).json(responseData);
@@ -113,7 +113,7 @@ exports.createCampus = async (req, res) => {
     const campus = await Campus.create({ name, city });
 
     // Clear cache
-    cache.del('campuses:all');
+    await cache.del('campuses:all');
 
     res.status(201).json({
       status: 'success',
@@ -165,7 +165,7 @@ exports.updateCampus = async (req, res) => {
     await campus.save();
 
     // Clear cache
-    cache.del('campuses:all');
+    await cache.del('campuses:all');
 
     res.status(200).json({
       status: 'success',
@@ -203,7 +203,7 @@ exports.deleteCampus = async (req, res) => {
     await Campus.findByIdAndDelete(id);
 
     // Clear cache
-    cache.del('campuses:all');
+    await cache.del('campuses:all');
 
     res.status(200).json({
       status: 'success',

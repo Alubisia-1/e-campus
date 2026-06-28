@@ -1,4 +1,6 @@
 const rateLimit = require('express-rate-limit');
+const { RedisStore } = require('rate-limit-redis');
+const { redisClient } = require('../config/redis');
 
 // Toggle to switch off all rate limiting (useful for local testing).
 // Set DISABLE_RATE_LIMIT=true in .env. When on, every limiter below becomes a
@@ -11,14 +13,34 @@ if (RATE_LIMIT_DISABLED) {
 
 const passThrough = (req, res, next) => next();
 
+// When REDIS_URL is configured, rate-limit counters live in Redis so the limits
+// are enforced across ALL backend instances (instead of per-process, which would
+// effectively multiply every limit by the number of instances and reset on every
+// deploy). Without REDIS_URL we fall back to express-rate-limit's in-memory store.
+const useRedisStore = !!process.env.REDIS_URL;
+
+// Each limiter needs its OWN store with a distinct prefix, otherwise they would
+// share the same Redis counters and bleed into one another.
+const makeStore = (prefix) => {
+  if (!useRedisStore) return undefined; // undefined => default in-memory MemoryStore
+  return new RedisStore({
+    sendCommand: (...args) => redisClient.sendCommand(args),
+    prefix: `rl:${prefix}:`
+  });
+};
+
 // Returns a real limiter, or a pass-through when rate limiting is disabled.
-const limiter = (options) => (RATE_LIMIT_DISABLED ? passThrough : rateLimit(options));
+// `prefix` namespaces the limiter's keys in Redis and is stripped before the
+// options reach express-rate-limit.
+const limiter = ({ prefix, ...options }) =>
+  RATE_LIMIT_DISABLED ? passThrough : rateLimit({ ...options, store: makeStore(prefix) });
 
 /**
  * General API rate limiter
  * 100 requests per 15 minutes per IP
  */
 const apiLimiter = limiter({
+  prefix: 'api',
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 100,
   message: {
@@ -36,6 +58,7 @@ const apiLimiter = limiter({
  * 5 requests per 15 minutes per IP
  */
 const authLimiter = limiter({
+  prefix: 'auth',
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 5,
   message: {
@@ -52,6 +75,7 @@ const authLimiter = limiter({
  * 10 requests per hour per IP
  */
 const uploadLimiter = limiter({
+  prefix: 'upload',
   windowMs: 60 * 60 * 1000, // 1 hour
   max: 10,
   message: {
@@ -67,6 +91,7 @@ const uploadLimiter = limiter({
  * 20 products per day per IP
  */
 const createProductLimiter = limiter({
+  prefix: 'create-product',
   windowMs: 24 * 60 * 60 * 1000, // 24 hours
   max: 20,
   message: {
@@ -83,6 +108,7 @@ const createProductLimiter = limiter({
  * 50 searches per 15 minutes per IP
  */
 const searchLimiter = limiter({
+  prefix: 'search',
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 50,
   message: {
@@ -98,6 +124,7 @@ const searchLimiter = limiter({
  * 3 requests per hour per IP (prevent abuse)
  */
 const passwordResetLimiter = limiter({
+  prefix: 'password-reset',
   windowMs: 60 * 60 * 1000, // 1 hour
   max: 3,
   message: {
@@ -114,6 +141,7 @@ const passwordResetLimiter = limiter({
  * Stacked: 15 reveals per hour AND 40 reveals per day, per IP.
  */
 const revealContactHourlyLimiter = limiter({
+  prefix: 'reveal-hourly',
   windowMs: 60 * 60 * 1000, // 1 hour
   max: 15,
   message: {
@@ -125,6 +153,7 @@ const revealContactHourlyLimiter = limiter({
 });
 
 const revealContactDailyLimiter = limiter({
+  prefix: 'reveal-daily',
   windowMs: 24 * 60 * 60 * 1000, // 24 hours
   max: 40,
   message: {

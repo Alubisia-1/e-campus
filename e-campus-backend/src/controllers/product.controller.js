@@ -35,7 +35,7 @@ exports.getAllProducts = async (req, res) => {
     });
 
     // Check cache first
-    const cachedData = cache.get(cacheKey);
+    const cachedData = await cache.get(cacheKey);
     if (cachedData) {
       res.setHeader('X-Cache', 'HIT');
       return res.status(200).json(cachedData);
@@ -111,7 +111,7 @@ exports.getAllProducts = async (req, res) => {
     };
 
     // Cache the response for 2 minutes
-    cache.set(cacheKey, responseData, cacheTTL.products);
+    await cache.set(cacheKey, responseData, cacheTTL.products);
     res.setHeader('X-Cache', 'MISS');
 
     res.status(200).json(responseData);
@@ -234,9 +234,9 @@ exports.createProduct = async (req, res) => {
     });
 
     // Invalidate product caches
-    cache.delPattern('products:*');
+    await cache.delPattern('products:*');
     if (category) {
-      cache.del(cacheKeys.category(category));
+      await cache.del(cacheKeys.category(category));
     }
 
     // Populate product data
@@ -396,9 +396,9 @@ exports.deleteProduct = async (req, res) => {
     await Product.findByIdAndDelete(id);
 
     // Invalidate product caches
-    cache.delPattern('products:*');
+    await cache.delPattern('products:*');
     if (product.category) {
-      cache.del(cacheKeys.category(product.category));
+      await cache.del(cacheKeys.category(product.category));
     }
 
     res.status(200).json({

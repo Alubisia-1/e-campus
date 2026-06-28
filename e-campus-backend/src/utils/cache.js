@@ -1,27 +1,58 @@
 const NodeCache = require('node-cache');
+const { redisClient, isRedisReady } = require('../config/redis');
 
 /**
- * Cache configuration
- * - stdTTL: default time-to-live in seconds
- * - checkperiod: automatic delete check interval
- * - useClones: clone variables before returning from cache (safer but slower)
+ * Caching layer with a Redis backend and an in-memory fallback.
+ *
+ * When Redis is connected (REDIS_URL configured), all cache state lives in Redis
+ * so every backend instance shares the same cache and invalidations propagate
+ * across the whole fleet. When Redis is unavailable, the same API transparently
+ * falls back to a per-process node-cache so local dev / single-instance setups
+ * keep working exactly as before.
+ *
+ * NOTE: the public methods are now async (they return Promises). Callers must
+ * `await` get/set/del/delPattern.
  */
-const cache = new NodeCache({
+
+// In-memory fallback store (also used while Redis is still connecting).
+const memCache = new NodeCache({
   stdTTL: 300, // 5 minutes default
   checkperiod: 60, // Check for expired keys every 60 seconds
   useClones: false, // Better performance, be careful with mutations
 });
 
-/**
- * Cache utility functions
- */
+// Namespace every Redis key so the cache can be flushed/scanned without touching
+// other data (e.g. the rate limiter keys) sharing the same Redis instance.
+const PREFIX = process.env.REDIS_PREFIX || 'cache:';
+const rk = (key) => `${PREFIX}${key}`;
+
+// Collect all keys matching a glob via SCAN (non-blocking, unlike KEYS).
+// redis v5's scanIterator yields BATCHES (arrays of keys), not single keys.
+const scanKeys = async (match) => {
+  const found = [];
+  for await (const batch of redisClient.scanIterator({ MATCH: match, COUNT: 100 })) {
+    if (batch.length) found.push(...batch);
+  }
+  return found;
+};
+
 const cacheUtils = {
   /**
-   * Get value from cache
+   * Get value from cache. Returns null on miss or error.
    */
-  get: (key) => {
+  get: async (key) => {
     try {
-      const value = cache.get(key);
+      if (isRedisReady()) {
+        const raw = await redisClient.get(rk(key));
+        if (raw === null) {
+          console.log(`Cache MISS: ${key}`);
+          return null;
+        }
+        console.log(`Cache HIT: ${key}`);
+        return JSON.parse(raw);
+      }
+
+      const value = memCache.get(key);
       if (value !== undefined) {
         console.log(`Cache HIT: ${key}`);
         return value;
@@ -29,92 +60,129 @@ const cacheUtils = {
       console.log(`Cache MISS: ${key}`);
       return null;
     } catch (error) {
-      console.error('Cache get error:', error);
+      console.error('Cache get error:', error.message);
       return null;
     }
   },
 
   /**
-   * Set value in cache with optional TTL
+   * Set value in cache with optional TTL (seconds).
    */
-  set: (key, value, ttl = null) => {
+  set: async (key, value, ttl = null) => {
     try {
-      if (ttl) {
-        cache.set(key, value, ttl);
+      if (isRedisReady()) {
+        const payload = JSON.stringify(value);
+        if (ttl) {
+          await redisClient.set(rk(key), payload, { EX: ttl });
+        } else {
+          await redisClient.set(rk(key), payload);
+        }
+      } else if (ttl) {
+        memCache.set(key, value, ttl);
       } else {
-        cache.set(key, value);
+        memCache.set(key, value);
       }
       console.log(`Cache SET: ${key} (TTL: ${ttl || 'default'})`);
       return true;
     } catch (error) {
-      console.error('Cache set error:', error);
+      console.error('Cache set error:', error.message);
       return false;
     }
   },
 
   /**
-   * Delete specific key from cache
+   * Delete specific key from cache.
    */
-  del: (key) => {
+  del: async (key) => {
     try {
-      cache.del(key);
+      if (isRedisReady()) {
+        await redisClient.del(rk(key));
+      } else {
+        memCache.del(key);
+      }
       console.log(`Cache DELETE: ${key}`);
       return true;
     } catch (error) {
-      console.error('Cache delete error:', error);
+      console.error('Cache delete error:', error.message);
       return false;
     }
   },
 
   /**
-   * Delete keys by pattern (e.g., 'products:*')
+   * Delete keys by pattern (e.g., 'products:*').
    */
-  delPattern: (pattern) => {
+  delPattern: async (pattern) => {
     try {
-      const keys = cache.keys();
-      const matchingKeys = keys.filter(key => {
-        // Convert pattern to regex (simple * wildcard support)
-        const regex = new RegExp('^' + pattern.replace(/\*/g, '.*') + '$');
-        return regex.test(key);
-      });
+      if (isRedisReady()) {
+        const keys = await scanKeys(rk(pattern));
+        if (keys.length > 0) {
+          await redisClient.del(keys);
+          console.log(`Cache DELETE pattern: ${pattern} (${keys.length} keys)`);
+        }
+        return true;
+      }
 
+      const keys = memCache.keys();
+      // Escape regex metacharacters except '*', then turn '*' into '.*'.
+      const regex = new RegExp(
+        '^' + pattern.replace(/[.+?^${}()|[\]\\]/g, '\\$&').replace(/\*/g, '.*') + '$'
+      );
+      const matchingKeys = keys.filter((key) => regex.test(key));
       if (matchingKeys.length > 0) {
-        cache.del(matchingKeys);
+        memCache.del(matchingKeys);
         console.log(`Cache DELETE pattern: ${pattern} (${matchingKeys.length} keys)`);
       }
       return true;
     } catch (error) {
-      console.error('Cache delete pattern error:', error);
+      console.error('Cache delete pattern error:', error.message);
       return false;
     }
   },
 
   /**
-   * Clear all cache
+   * Clear all cache entries owned by this app (namespace-scoped on Redis).
    */
-  flush: () => {
+  flush: async () => {
     try {
-      cache.flushAll();
+      if (isRedisReady()) {
+        const keys = await scanKeys(rk('*'));
+        if (keys.length > 0) {
+          await redisClient.del(keys);
+        }
+      } else {
+        memCache.flushAll();
+      }
       console.log('Cache FLUSHED');
       return true;
     } catch (error) {
-      console.error('Cache flush error:', error);
+      console.error('Cache flush error:', error.message);
       return false;
     }
   },
 
   /**
-   * Get cache statistics
+   * Cache statistics (backend-aware).
    */
   getStats: () => {
-    return cache.getStats();
+    if (isRedisReady()) {
+      return { backend: 'redis' };
+    }
+    return { backend: 'memory', ...memCache.getStats() };
   },
 
   /**
-   * Check if key exists
+   * Check if key exists.
    */
-  has: (key) => {
-    return cache.has(key);
+  has: async (key) => {
+    try {
+      if (isRedisReady()) {
+        return (await redisClient.exists(rk(key))) === 1;
+      }
+      return memCache.has(key);
+    } catch (error) {
+      console.error('Cache has error:', error.message);
+      return false;
+    }
   },
 };
 

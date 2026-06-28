@@ -5,7 +5,7 @@ const { cache, cacheTTL } = require('../utils/cache');
  * Usage: router.get('/endpoint', cacheMiddleware(300), controller)
  */
 function cacheMiddleware(duration = cacheTTL.medium) {
-  return (req, res, next) => {
+  return async (req, res, next) => {
     // Don't cache if explicitly disabled
     if (req.query.nocache === 'true') {
       return next();
@@ -15,7 +15,7 @@ function cacheMiddleware(duration = cacheTTL.medium) {
     const key = generateCacheKey(req);
 
     // Try to get from cache
-    const cachedResponse = cache.get(key);
+    const cachedResponse = await cache.get(key);
 
     if (cachedResponse) {
       // Add cache hit header
