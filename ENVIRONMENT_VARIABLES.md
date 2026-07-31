@@ -1,4 +1,4 @@
-# E-Soko Environment Variables Guide
+# CampusMarket Environment Variables Guide
 
 ## 🔑 Your Current Admin Password
 
@@ -7,7 +7,7 @@ esokostore1@gmail.com
 ```
 
 **How to use it:**
-1. Tap the E-Soko logo 7 times (mobile) OR press `Ctrl+Shift+A` (desktop)
+1. Tap the CampusMarket logo 7 times (mobile) OR press `Ctrl+Shift+A` (desktop)
 2. Enter: `esokostore1@gmail.com`
 3. Click "Login as Admin"
 
@@ -26,7 +26,7 @@ When deploying to **Vercel**, **Railway**, **Netlify**, or any hosting platform,
 VITE_API_URL=https://e-campus-backend-production.up.railway.app/api
 
 # 2. App Name
-VITE_APP_NAME=E-Soko
+VITE_APP_NAME=CampusMarket
 
 # 3. App Version
 VITE_APP_VERSION=1.0.0
@@ -70,7 +70,7 @@ VITE_ADSENSE_SLOT_DEFAULT=1979531774
 | Variable Name | Value |
 |--------------|-------|
 | `VITE_API_URL` | `https://e-campus-backend-production.up.railway.app/api` |
-| `VITE_APP_NAME` | `E-Soko` |
+| `VITE_APP_NAME` | `CampusMarket` |
 | `VITE_APP_VERSION` | `1.0.0` |
 | `VITE_ADMIN_PASSWORD` | `esokostore1@gmail.com` (or your own) |
 | `VITE_ADSENSE_CLIENT` | `ca-pub-7406671560728064` |
@@ -156,7 +156,7 @@ Use a password manager or generator:
 **Example strong passwords:**
 ```
 Xk9@mP3$vL7#qR2!wN8
-E-Soko#2024!MySecret*Admin
+CampusMarket#2024!MySecret*Admin
 Qw7$Rt9@Yp2!Ui3#Op5%As8
 ```
 
@@ -188,7 +188,7 @@ VITE_API_URL
 https://e-campus-backend-production.up.railway.app/api
 
 VITE_APP_NAME
-E-Soko
+CampusMarket
 
 VITE_APP_VERSION
 1.0.0

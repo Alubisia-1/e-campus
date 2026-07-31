@@ -13,7 +13,7 @@ const UserManager = lazy(() => import('./components/UserManager'))
 import AdDisplay from './components/AdDisplay'
 import SponsoredBadge from './components/SponsoredBadge'
 import CampusList from './components/CampusList'
-import CookieConsent from './components/CookieConsent'
+import ConsentBanner from './components/ConsentBanner'
 import { trackProductView, trackSearch, trackListingCreated, trackListingDeleted, trackCategoryView, trackLogin, trackSignUp } from './utils/analytics'
 
 // ===========================================
@@ -990,7 +990,7 @@ function App() {
 
           {/* Heading */}
           <h1 className="text-3xl md:text-4xl font-bold text-white mb-3">
-            E-Soko is Under Maintenance
+            CampusMarket is Under Maintenance
           </h1>
           <div className="w-16 h-1 bg-teal-500 mx-auto rounded-full mb-6"></div>
 
@@ -1033,7 +1033,7 @@ function App() {
             All your data is safe. We'll be back shortly.
           </p>
           <p className="text-slate-600 text-xs mt-4">
-            E-Soko &mdash; Campus Marketplace
+            CampusMarket &mdash; Campus Marketplace for Students
           </p>
         </div>
       </div>
@@ -1049,13 +1049,13 @@ function App() {
             {/* Logo */}
             <div
               className="flex items-center gap-3 select-none"
-              title="E-Soko"
+              title="CampusMarket"
             >
               <div className="bg-gradient-to-br from-teal-400 to-teal-600 p-2 rounded-xl shadow-lg">
                 <ShoppingBag className="text-white" size={24} />
               </div>
               <div className="flex flex-col">
-                <span className="text-xl font-bold text-white tracking-tight">E-Soko</span>
+                <span className="text-xl font-bold text-white tracking-tight">CampusMarket</span>
                 <span className="text-[10px] text-slate-400 font-medium -mt-1 hidden sm:block">Campus Marketplace</span>
               </div>
               {/* API Connection Status */}
@@ -1785,7 +1785,7 @@ function App() {
                     <ShoppingBag className="text-white" size={48} />
                   </div>
                   <h3 className="text-3xl font-bold text-slate-800 mb-3">
-                    Welcome to E-Soko!
+                    Welcome to CampusMarket!
                   </h3>
                   <p className="text-slate-600 mb-8 max-w-md mx-auto text-lg">
                     No items listed yet. Be the first to share what you're selling with the campus community!
@@ -2082,7 +2082,7 @@ function App() {
           <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
             {/* Header */}
             <div className="mb-8 text-center">
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">About E-Soko</h1>
+              <h1 className="text-3xl font-bold text-gray-900 mb-2">About CampusMarket</h1>
               <p className="text-gray-600">Your trusted marketplace</p>
             </div>
 
@@ -2090,10 +2090,10 @@ function App() {
             <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
               <h2 className="text-2xl font-semibold text-gray-900 mb-4">What We Are</h2>
               <p className="text-gray-700 leading-relaxed mb-4">
-                E-Soko is a <strong>free advertisement platform</strong> designed to connect campus community members for buying and selling items. We provide a space where students can post and browse listings for textbooks, electronics, furniture, and more.
+                CampusMarket is a <strong>free advertisement platform</strong> designed to connect campus community members for buying and selling items. We provide a space where students can post and browse listings for textbooks, electronics, furniture, and more.
               </p>
               <p className="text-gray-700 leading-relaxed">
-                <strong>Important:</strong> E-Soko is purely an advertisement website. We do not process payments, facilitate transactions, or handle any in-app purchases. All transactions occur directly between buyers and sellers.
+                <strong>Important:</strong> CampusMarket is purely an advertisement website. We do not process payments, facilitate transactions, or handle any in-app purchases. All transactions occur directly between buyers and sellers.
               </p>
             </div>
 
@@ -2109,7 +2109,7 @@ function App() {
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="font-bold mt-1">•</span>
-                  <span><strong>No Liability:</strong> E-Soko is not responsible for any fraudulent activities, scams, or disputes between buyers and sellers.</span>
+                  <span><strong>No Liability:</strong> CampusMarket is not responsible for any fraudulent activities, scams, or disputes between buyers and sellers.</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="font-bold mt-1">•</span>
@@ -2195,13 +2195,13 @@ function App() {
             <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
               <h2 className="text-2xl font-semibold text-gray-900 mb-4">1. Introduction</h2>
               <p className="text-gray-700 leading-relaxed mb-4">
-                E-Soko operates a campus-focused marketplace accessible at <strong>e-soko.store</strong>. Our platform enables university and college community members to list, discover, and purchase items from fellow students within their campus network.
+                CampusMarket operates a campus-focused marketplace accessible at <strong>campusmarket.bigminds.online</strong>. Our platform enables university and college community members to list, discover, and purchase items from fellow students within their campus network.
               </p>
               <p className="text-gray-700 leading-relaxed mb-4">
                 This Privacy Policy explains how we collect, process, store, and safeguard your personal data when you access or use our platform. It is issued in accordance with the <strong>Kenya Data Protection Act, 2019</strong> and the Data Protection (General) Regulations, 2021, which govern the processing of personal data in Kenya.
               </p>
               <p className="text-gray-700 leading-relaxed">
-                For the purposes of this policy, E-Soko is the <strong>data controller</strong> responsible for your personal data. By creating an account or using our services, you acknowledge the data practices described here. Where we rely on your consent (for example, for non-essential cookies), you may withdraw it at any time as described below.
+                For the purposes of this policy, CampusMarket is the <strong>data controller</strong> responsible for your personal data. By creating an account or using our services, you acknowledge the data practices described here. Where we rely on your consent (for example, for non-essential cookies), you may withdraw it at any time as described below.
               </p>
             </div>
 
@@ -2438,7 +2438,7 @@ function App() {
             <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
               <h2 className="text-2xl font-semibold text-gray-900 mb-4">11. Age Restriction</h2>
               <p className="text-gray-700 text-sm leading-relaxed">
-                E-Soko is intended exclusively for use by campus community members, primarily university and college students aged 16 and above. We do not knowingly collect or process personal information from individuals under the age of 16. Should we become aware that data has been collected from a minor, we will take immediate steps to delete such information. To report a concern, please contact us at <a href="mailto:e-soko@bigminds.online" className="text-blue-600 hover:underline">e-soko@bigminds.online</a>.
+                CampusMarket is intended exclusively for use by campus community members, primarily university and college students aged 16 and above. We do not knowingly collect or process personal information from individuals under the age of 16. Should we become aware that data has been collected from a minor, we will take immediate steps to delete such information. To report a concern, please contact us at <a href="mailto:e-soko@bigminds.online" className="text-blue-600 hover:underline">e-soko@bigminds.online</a>.
               </p>
             </div>
 
@@ -2454,11 +2454,11 @@ function App() {
             <div className="bg-white rounded-xl shadow-sm p-6">
               <h2 className="text-2xl font-semibold text-gray-900 mb-4">13. Contact Information</h2>
               <p className="text-gray-700 text-sm leading-relaxed mb-3">
-                For questions, concerns, or to exercise your data protection rights, please reach out to E-Soko (the data controller) through the following channels:
+                For questions, concerns, or to exercise your data protection rights, please reach out to CampusMarket (the data controller) through the following channels:
               </p>
               <div className="bg-blue-50 rounded-lg p-4">
                 <p className="text-gray-700 text-sm"><strong>Email:</strong> <a href="mailto:e-soko@bigminds.online" className="text-blue-600 hover:underline">e-soko@bigminds.online</a></p>
-                <p className="text-gray-700 text-sm mt-1"><strong>Website:</strong> <a href="https://e-soko.store" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">e-soko.store</a></p>
+                <p className="text-gray-700 text-sm mt-1"><strong>Website:</strong> <a href="https://campusmarket.bigminds.online" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">campusmarket.bigminds.online</a></p>
                 <p className="text-sm text-gray-600 mt-2">We endeavor to respond to all privacy-related inquiries within the timelines required by the Data Protection Act, 2019.</p>
               </div>
               <p className="text-gray-700 text-sm leading-relaxed mt-4">
@@ -2481,10 +2481,10 @@ function App() {
             <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
               <h2 className="text-2xl font-semibold text-gray-900 mb-4">Agreement to Terms</h2>
               <p className="text-gray-700 leading-relaxed mb-4">
-                Welcome to E-Soko. These Terms of Service govern your access to and use of the E-Soko platform, accessible at <strong>e-soko.store</strong>, including all related services and features. E-Soko operates as a free campus marketplace advertisement platform designed primarily for university and college students, while also welcoming members of the general public.
+                Welcome to CampusMarket. These Terms of Service govern your access to and use of the CampusMarket platform, accessible at <strong>campusmarket.bigminds.online</strong>, including all related services and features. CampusMarket operates as a free campus marketplace advertisement platform designed primarily for university and college students, while also welcoming members of the general public.
               </p>
               <p className="text-gray-700 leading-relaxed">
-                By accessing or using E-Soko, you acknowledge that you have read, understood, and agree to be bound by these Terms of Service. If you do not agree to these Terms, please discontinue use of the platform immediately. E-Soko reserves the right to modify these Terms at any time, and your continued use of the platform following any such changes constitutes your acceptance of the revised Terms.
+                By accessing or using CampusMarket, you acknowledge that you have read, understood, and agree to be bound by these Terms of Service. If you do not agree to these Terms, please discontinue use of the platform immediately. CampusMarket reserves the right to modify these Terms at any time, and your continued use of the platform following any such changes constitutes your acceptance of the revised Terms.
               </p>
             </div>
 
@@ -2492,7 +2492,7 @@ function App() {
             <div className="bg-yellow-50 border-l-4 border-yellow-400 p-6 mb-6 rounded-lg">
               <h3 className="text-lg font-semibold text-yellow-900 mb-3">Important: Nature of Our Service</h3>
               <p className="text-yellow-800 text-sm leading-relaxed mb-3">
-                E-Soko is <strong>strictly an advertisement platform</strong>. We provide a space for campus community members to post and browse listings. Please understand the following:
+                CampusMarket is <strong>strictly an advertisement platform</strong>. We provide a space for campus community members to post and browse listings. Please understand the following:
               </p>
               <ul className="space-y-2 text-yellow-800 text-sm">
                 <li className="flex items-start gap-2">
@@ -2518,7 +2518,7 @@ function App() {
             <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
               <h2 className="text-2xl font-semibold text-gray-900 mb-4">Eligibility</h2>
               <p className="text-gray-700 text-sm leading-relaxed mb-3">
-                To use E-Soko, you must:
+                To use CampusMarket, you must:
               </p>
               <ul className="space-y-2 text-gray-700 text-sm">
                 <li className="flex items-start gap-2">
@@ -2563,7 +2563,7 @@ function App() {
             <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
               <h2 className="text-2xl font-semibold text-gray-900 mb-4">Listing Guidelines</h2>
               <p className="text-gray-700 text-sm leading-relaxed mb-3">
-                When posting items on E-Soko, you agree to the following:
+                When posting items on CampusMarket, you agree to the following:
               </p>
 
               <div className="mb-4">
@@ -2619,7 +2619,7 @@ function App() {
             <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
               <h2 className="text-2xl font-semibold text-gray-900 mb-4">User Conduct</h2>
               <p className="text-gray-700 text-sm leading-relaxed mb-3">
-                When using E-Soko, you agree not to:
+                When using CampusMarket, you agree not to:
               </p>
               <ul className="space-y-2 text-gray-700 text-sm">
                 <li className="flex items-start gap-2">
@@ -2673,7 +2673,7 @@ function App() {
             <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
               <h2 className="text-2xl font-semibold text-gray-900 mb-4">Limitation of Liability</h2>
               <p className="text-gray-700 text-sm leading-relaxed mb-3">
-                To the fullest extent permitted by law, E-Soko shall not be liable for:
+                To the fullest extent permitted by law, CampusMarket shall not be liable for:
               </p>
               <ul className="space-y-2 text-gray-700 text-sm">
                 <li className="flex items-start gap-2">
@@ -2705,11 +2705,11 @@ function App() {
               <ul className="space-y-3 text-gray-700 text-sm">
                 <li className="flex items-start gap-2">
                   <span className="font-bold mt-1">•</span>
-                  <span>The E-Soko name, logo, design, and all original content are the property of E-Soko and are protected by applicable intellectual property laws.</span>
+                  <span>The CampusMarket name, logo, design, and all original content are the property of CampusMarket and are protected by applicable intellectual property laws.</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="font-bold mt-1">•</span>
-                  <span>By posting content (images, descriptions) on E-Soko, you grant us a non-exclusive, royalty-free license to display that content on our platform for the purpose of providing the Service.</span>
+                  <span>By posting content (images, descriptions) on CampusMarket, you grant us a non-exclusive, royalty-free license to display that content on our platform for the purpose of providing the Service.</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="font-bold mt-1">•</span>
@@ -2751,7 +2751,7 @@ function App() {
             <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
               <h2 className="text-2xl font-semibold text-gray-900 mb-4">Safety Recommendations</h2>
               <p className="text-gray-700 text-sm leading-relaxed mb-3">
-                For your safety when conducting transactions arranged through E-Soko:
+                For your safety when conducting transactions arranged through CampusMarket:
               </p>
               <ul className="space-y-2 text-gray-700 text-sm">
                 <li className="flex items-start gap-2">
@@ -2802,7 +2802,7 @@ function App() {
                 </li>
               </ul>
               <p className="text-gray-700 text-sm leading-relaxed mt-3">
-                You may also stop using E-Soko at any time. You can delete individual listings, or permanently delete your account and all associated data yourself from your account menu — no request needed.
+                You may also stop using CampusMarket at any time. You can delete individual listings, or permanently delete your account and all associated data yourself from your account menu — no request needed.
               </p>
             </div>
 
@@ -2810,7 +2810,7 @@ function App() {
             <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
               <h2 className="text-2xl font-semibold text-gray-900 mb-4">Privacy &amp; Data Protection</h2>
               <p className="text-gray-700 text-sm leading-relaxed">
-                Your use of E-Soko is also governed by our <strong>Privacy Policy</strong>, which forms part of these Terms and explains how we collect and process your personal data in line with the <strong>Kenya Data Protection Act, 2019</strong>. You can manage your data directly in the app — edit your profile details at any time, and permanently delete your account and all associated listings from your account menu. Please review the Privacy Policy to understand your rights as a data subject.
+                Your use of CampusMarket is also governed by our <strong>Privacy Policy</strong>, which forms part of these Terms and explains how we collect and process your personal data in line with the <strong>Kenya Data Protection Act, 2019</strong>. You can manage your data directly in the app — edit your profile details at any time, and permanently delete your account and all associated listings from your account menu. Please review the Privacy Policy to understand your rights as a data subject.
               </p>
             </div>
 
@@ -2830,7 +2830,7 @@ function App() {
               </p>
               <div className="bg-blue-50 rounded-lg p-4">
                 <p className="text-gray-700 text-sm"><strong>Email:</strong> <a href="mailto:e-soko@bigminds.online" className="text-blue-600 hover:underline">e-soko@bigminds.online</a></p>
-                <p className="text-gray-700 text-sm mt-1"><strong>Website:</strong> <a href="https://e-soko.store" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">e-soko.store</a></p>
+                <p className="text-gray-700 text-sm mt-1"><strong>Website:</strong> <a href="https://campusmarket.bigminds.online" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">campusmarket.bigminds.online</a></p>
                 <p className="text-sm text-gray-600 mt-2">We aim to respond to all inquiries within 48 hours.</p>
               </div>
             </div>
@@ -3685,7 +3685,7 @@ function App() {
                   <ShoppingBag className="text-white" size={24} />
                 </div>
                 <div>
-                  <span className="text-xl font-bold text-white">E-Soko</span>
+                  <span className="text-xl font-bold text-white">CampusMarket</span>
                   <p className="text-xs text-[#D6D1CA]">Campus Marketplace</p>
                 </div>
               </div>
@@ -3795,7 +3795,7 @@ function App() {
           <div className="border-t border-slate-700/50 mt-12 pt-8">
             <div className="flex flex-col md:flex-row items-center justify-between gap-4">
               <p className="text-slate-500 text-sm">
-                © {new Date().getFullYear()} E-Soko. All rights reserved.
+                © {new Date().getFullYear()} CampusMarket. All rights reserved.
               </p>
               <div className="flex items-center gap-6 text-sm text-slate-500">
                 <button onClick={() => handleTabSwitch('privacy-policy')} className="hover:text-[#B86B3E] transition-colors">Privacy Policy</button>
@@ -3826,7 +3826,7 @@ function App() {
       )}
 
       {/* Cookie Consent Banner */}
-      <CookieConsent />
+      <ConsentBanner />
     </div>
   )
 }

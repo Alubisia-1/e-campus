@@ -83,6 +83,8 @@ const allowedOrigins = [
   'http://localhost:5174',
   'http://localhost:5173',
   'https://e-campus-nine.vercel.app',
+  'https://campusmarket.bigminds.online',
+  // Previous domain - kept so anything still served there keeps working
   'https://www.e-soko.store',
   'https://e-soko.store',
   process.env.FRONTEND_URL

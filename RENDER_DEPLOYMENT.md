@@ -1,4 +1,4 @@
-# E-Soko Backend Deployment to Render
+# CampusMarket Backend Deployment to Render
 
 ## 🚨 URGENT: Deploy to Fix CORS Errors
 
@@ -26,7 +26,7 @@ JWT_EXPIRE=30d
 ADMIN_PASSWORD=$2b$10$Bej4dltyFSrEhgXtf3z14O0YoauEOnNWznL7AQWO06YA8f/uPmzHq
 
 # Frontend URL for CORS
-FRONTEND_URL=https://www.e-soko.store
+FRONTEND_URL=https://campusmarket.bigminds.online
 
 # Cloudinary (for image uploads)
 CLOUDINARY_CLOUD_NAME=your-cloudinary-cloud-name
@@ -134,7 +134,7 @@ Should return categories without CORS error.
 
 ### 3. Test Admin Login
 
-On your site (https://www.e-soko.store):
+On your site (https://campusmarket.bigminds.online):
 1. Press `Ctrl + Shift + A`
 2. Enter password: `Mylifeline8`
 3. Should successfully login without errors

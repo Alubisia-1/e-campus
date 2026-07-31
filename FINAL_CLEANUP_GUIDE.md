@@ -1,4 +1,4 @@
-# Final Cleanup Guide for E-Soko
+# Final Cleanup Guide for CampusMarket
 
 ## ✅ Completed Work
 
@@ -36,7 +36,7 @@ Open `e-campus-app/src/App.jsx` and make these changes:
                   <Store className="text-white" size={48} />
                   <div>
                     <div className="flex items-center gap-2 mb-2">
-                      <h2 className="text-2xl md:text-3xl font-bold">Official E-Soko Store</h2>
+                      <h2 className="text-2xl md:text-3xl font-bold">Official CampusMarket Store</h2>
                       <span className="bg-white bg-opacity-20 text-white text-xs px-3 py-1 rounded-full font-bold">
                         OFFICIAL
                       </span>
@@ -73,7 +73,7 @@ Open `e-campus-app/src/App.jsx` and make these changes:
                   </span>
                 </div>
                 <h1 className="text-4xl md:text-6xl font-bold mb-6">
-                  E-Soko Official Store
+                  CampusMarket Official Store
                 </h1>
                 <p className="text-xl md:text-2xl text-white mb-8 max-w-3xl mx-auto">
                   Premium quality merchandise and exclusive campus gear. Coming soon!

@@ -22,9 +22,9 @@ exports.sendPasswordResetEmail = async (email, resetUrl) => {
   const transporter = createTransporter();
 
   const mailOptions = {
-    from: `E-Soko Marketplace <${process.env.GMAIL_USER}>`,
+    from: `CampusMarket Marketplace <${process.env.GMAIL_USER}>`,
     to: email,
-    subject: 'Password Reset Request - E-Soko',
+    subject: 'Password Reset Request - CampusMarket',
     html: `
       <!DOCTYPE html>
       <html>
@@ -37,7 +37,7 @@ exports.sendPasswordResetEmail = async (email, resetUrl) => {
           <div style="background-color: white; border-radius: 16px; padding: 40px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
             <!-- Logo/Header -->
             <div style="text-align: center; margin-bottom: 32px;">
-              <h1 style="color: #2563eb; font-size: 28px; margin: 0;">E-Soko</h1>
+              <h1 style="color: #2563eb; font-size: 28px; margin: 0;">CampusMarket</h1>
               <p style="color: #6b7280; margin-top: 8px;">Campus Marketplace</p>
             </div>
 
@@ -47,7 +47,7 @@ exports.sendPasswordResetEmail = async (email, resetUrl) => {
             </h2>
 
             <p style="color: #4b5563; font-size: 16px; line-height: 1.6; margin-bottom: 24px;">
-              You requested to reset your password for your E-Soko account. Click the button below to create a new password:
+              You requested to reset your password for your CampusMarket account. Click the button below to create a new password:
             </p>
 
             <!-- CTA Button -->
@@ -74,7 +74,7 @@ exports.sendPasswordResetEmail = async (email, resetUrl) => {
 
             <!-- Footer -->
             <p style="color: #9ca3af; font-size: 12px; text-align: center; margin: 0;">
-              E-Soko Campus Marketplace<br>
+              CampusMarket<br>
               This is an automated message, please do not reply.
             </p>
           </div>
@@ -83,9 +83,9 @@ exports.sendPasswordResetEmail = async (email, resetUrl) => {
       </html>
     `,
     text: `
-Password Reset Request - E-Soko
+Password Reset Request - CampusMarket
 
-You requested to reset your password for your E-Soko account.
+You requested to reset your password for your CampusMarket account.
 
 Click this link to reset your password: ${resetUrl}
 
@@ -93,7 +93,7 @@ This link expires in 10 minutes.
 
 If you didn't request this, please ignore this email.
 
-E-Soko Campus Marketplace
+CampusMarket
     `
   };
 

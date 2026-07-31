@@ -8,8 +8,13 @@ import { Cookie } from 'lucide-react'
  * Analytics stays dormant until the visitor makes a choice here.
  * Accepting flips consent to "granted"; the choice is remembered in
  * localStorage and re-applied on future visits (handled in index.html).
+ *
+ * Named ConsentBanner, not CookieConsent: ad blockers' "cookie notice" filter
+ * lists match any URL containing "cookieconsent", and Vite serves each module
+ * at its own path in dev. The blocked import broke the whole module graph and
+ * left a blank page. Don't rename it back.
  */
-function CookieConsent() {
+function ConsentBanner() {
   const [visible, setVisible] = useState(false)
 
   useEffect(() => {
@@ -61,7 +66,7 @@ function CookieConsent() {
             <Cookie size={20} />
           </div>
           <p className="text-sm text-slate-600 leading-relaxed">
-            We use essential cookies to keep E-Soko working, and optional analytics
+            We use essential cookies to keep CampusMarket working, and optional analytics
             cookies to understand how it's used. Analytics stays <strong>off</strong> unless
             you accept. You can change your choice anytime. See our Cookie Policy in the
             Privacy Policy for details.
@@ -86,4 +91,4 @@ function CookieConsent() {
   )
 }
 
-export default CookieConsent
+export default ConsentBanner

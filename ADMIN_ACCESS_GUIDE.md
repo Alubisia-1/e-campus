@@ -1,4 +1,4 @@
-# E-Soko Admin Access Guide
+# CampusMarket Admin Access Guide
 
 ## 🔐 Security Improvements
 
@@ -18,10 +18,10 @@ Your admin authentication has been upgraded with the following security enhancem
 
 ### Method 1: Mobile/Touch Devices (New! 📱)
 
-**Tap the E-Soko logo 7 times quickly:**
+**Tap the CampusMarket logo 7 times quickly:**
 
-1. Open E-Soko on your phone
-2. Look for the E-Soko logo (shopping bag icon + text) at the top left
+1. Open CampusMarket on your phone
+2. Look for the CampusMarket logo (shopping bag icon + text) at the top left
 3. Tap it 7 times within 3 seconds
 4. You'll see toast messages:
    - After 4 taps: "Keep tapping... 👆"
@@ -35,7 +35,7 @@ Your admin authentication has been upgraded with the following security enhancem
 
 **Press `Ctrl + Shift + A`:**
 
-1. Open E-Soko in your browser
+1. Open CampusMarket in your browser
 2. Press and hold: `Ctrl` + `Shift` + `A`
 3. Admin login modal will appear
 4. Enter your secure password
@@ -71,9 +71,9 @@ The current password is temporary. **Change it immediately:**
 
 **Example strong passwords:**
 ```
-MyE-Soko2024!SecureAdmin
-Admin#E-Soko$2024*Strong
-E-Soko!Admin@2024#Secure
+MyCampusMarket2024!SecureAdmin
+Admin#CampusMarket$2024*Strong
+CampusMarket!Admin@2024#Secure
 ```
 
 ### Password Generator Ideas:
@@ -111,7 +111,7 @@ E-Soko!Admin@2024#Secure
 
 ### On Mobile Phone:
 
-1. **Open E-Soko** on your mobile browser
+1. **Open CampusMarket** on your mobile browser
 2. **Practice the tap gesture:**
    - Tap logo once - nothing happens (normal)
    - Tap 4 times fast - see "Keep tapping... 👆"
@@ -123,7 +123,7 @@ E-Soko!Admin@2024#Secure
 
 ### On Desktop:
 
-1. **Open E-Soko** in browser
+1. **Open CampusMarket** in browser
 2. **Press** `Ctrl + Shift + A`
 3. **Login modal appears**
 4. **Enter password**
@@ -160,7 +160,7 @@ VITE_ADMIN_PASSWORD=esokostore1@gmail.com
 ```env
 VITE_ADMIN_PASSWORD=ChangeMeToSecurePassword123!
 # How to access admin portal:
-# Method 1: Tap the E-Soko logo 7 times (mobile-friendly)
+# Method 1: Tap the CampusMarket logo 7 times (mobile-friendly)
 # Method 2: Press Ctrl+Shift+A (desktop shortcut)
 ```
 

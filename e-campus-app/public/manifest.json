@@ -1,6 +1,6 @@
 {
-  "name": "E-Soko - Campus Marketplace",
-  "short_name": "E-Soko",
+  "name": "CampusMarket - Buy & Sell Student Items",
+  "short_name": "CampusMarket",
   "description": "Buy and sell student items on campus",
   "start_url": "/",
   "display": "standalone",

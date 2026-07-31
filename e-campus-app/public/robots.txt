@@ -1,11 +1,11 @@
-# E-Soko Robots.txt
+# CampusMarket Robots.txt
 User-agent: *
 Allow: /
 Disallow: /admin
 Disallow: /api/
 
 # Sitemap location
-Sitemap: https://e-soko.com/sitemap.xml
+Sitemap: https://campusmarket.bigminds.online/sitemap.xml
 
 # Crawl delay (optional - be nice to servers)
 Crawl-delay: 1
