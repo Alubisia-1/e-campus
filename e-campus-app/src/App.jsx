@@ -3779,7 +3779,7 @@ function App() {
               <p className="text-slate-400 text-sm mb-4">Follow us for updates and tips</p>
               <div className="flex items-center gap-3">
                 <a
-                  href="https://www.instagram.com/e_sokostore/"
+                  href="https://www.instagram.com/bigminds_online/"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center justify-center w-10 h-10 bg-slate-700/50 hover:bg-gradient-to-br hover:from-purple-500 hover:to-pink-500 rounded-xl transition-all duration-300 group"
