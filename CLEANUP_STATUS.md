@@ -68,7 +68,7 @@ Replace the official-store tab section with a clean professional banner (no item
         {/* CTA */}
         <div className="flex flex-col sm:flex-row gap-4 justify-center mt-8">
           <a
-            href="mailto:partner@e-soko.com"
+            href="mailto:support@bigminds.online"
             className="inline-flex items-center gap-2 bg-white text-orange-600 px-8 py-4 rounded-lg hover:bg-opacity-90 transition-all font-bold"
           >
             <Mail size={20} />

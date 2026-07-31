@@ -25,7 +25,7 @@ CLOUDINARY_CLOUD_NAME=your_cloud_name
 CLOUDINARY_API_KEY=your_api_key
 CLOUDINARY_API_SECRET=your_api_secret
 FRONTEND_URL=https://your-frontend-url.com
-OFFICIAL_STORE_EMAIL=store@ecampus.edu
+OFFICIAL_STORE_EMAIL=support@bigminds.online
 OFFICIAL_STORE_PHONE=+1-555-XXX-XXXX
 ```
 
@@ -58,7 +58,7 @@ node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 
 Replace placeholder contact info in the app:
 - In `e-campus-app/src/App.jsx` (lines 412-446)
-- Update email: `store@ecampus.edu` → your real email
+- Update email: `support@bigminds.online` → your real email
 - Update phone: `+1 (555) 123-4567` → your real phone
 
 ---

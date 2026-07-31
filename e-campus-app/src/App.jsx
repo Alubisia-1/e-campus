@@ -2151,7 +2151,7 @@ function App() {
               <p className="text-gray-700 mb-4">Have questions, need assistance, or want to report an issue? Reach out to us:</p>
               <div className="space-y-3 text-gray-700">
                 <div className="bg-blue-50 rounded-lg p-4">
-                  <p className="text-lg"><strong>Email:</strong> <a href="mailto:e-soko@bigminds.online" className="text-blue-600 hover:underline">e-soko@bigminds.online</a></p>
+                  <p className="text-lg"><strong>Email:</strong> <a href="mailto:support@bigminds.online" className="text-blue-600 hover:underline">support@bigminds.online</a></p>
                   <p className="text-sm text-gray-600 mt-2">Use this email for all inquiries including:</p>
                   <ul className="text-sm text-gray-600 space-y-1 ml-4 mt-1">
                     <li>• General questions and support</li>
@@ -2430,7 +2430,7 @@ function App() {
                 <li className="flex items-start gap-2"><span className="font-bold mt-1">•</span><span><strong>Right to lodge a complaint</strong> with the Office of the Data Protection Commissioner (ODPC).</span></li>
               </ul>
               <p className="text-gray-700 text-sm leading-relaxed mt-4">
-                To exercise any of these rights, contact us at <a href="mailto:e-soko@bigminds.online" className="text-blue-600 hover:underline">e-soko@bigminds.online</a>. We will respond within the timelines required by law. If you are not satisfied, you may complain to the ODPC at <a href="https://www.odpc.go.ke" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">www.odpc.go.ke</a>.
+                To exercise any of these rights, contact us at <a href="mailto:support@bigminds.online" className="text-blue-600 hover:underline">support@bigminds.online</a>. We will respond within the timelines required by law. If you are not satisfied, you may complain to the ODPC at <a href="https://www.odpc.go.ke" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">www.odpc.go.ke</a>.
               </p>
             </div>
 
@@ -2438,7 +2438,7 @@ function App() {
             <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
               <h2 className="text-2xl font-semibold text-gray-900 mb-4">11. Age Restriction</h2>
               <p className="text-gray-700 text-sm leading-relaxed">
-                CampusMarket is intended exclusively for use by campus community members, primarily university and college students aged 16 and above. We do not knowingly collect or process personal information from individuals under the age of 16. Should we become aware that data has been collected from a minor, we will take immediate steps to delete such information. To report a concern, please contact us at <a href="mailto:e-soko@bigminds.online" className="text-blue-600 hover:underline">e-soko@bigminds.online</a>.
+                CampusMarket is intended exclusively for use by campus community members, primarily university and college students aged 16 and above. We do not knowingly collect or process personal information from individuals under the age of 16. Should we become aware that data has been collected from a minor, we will take immediate steps to delete such information. To report a concern, please contact us at <a href="mailto:support@bigminds.online" className="text-blue-600 hover:underline">support@bigminds.online</a>.
               </p>
             </div>
 
@@ -2457,7 +2457,7 @@ function App() {
                 For questions, concerns, or to exercise your data protection rights, please reach out to CampusMarket (the data controller) through the following channels:
               </p>
               <div className="bg-blue-50 rounded-lg p-4">
-                <p className="text-gray-700 text-sm"><strong>Email:</strong> <a href="mailto:e-soko@bigminds.online" className="text-blue-600 hover:underline">e-soko@bigminds.online</a></p>
+                <p className="text-gray-700 text-sm"><strong>Email:</strong> <a href="mailto:support@bigminds.online" className="text-blue-600 hover:underline">support@bigminds.online</a></p>
                 <p className="text-gray-700 text-sm mt-1"><strong>Website:</strong> <a href="https://campusmarket.bigminds.online" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">campusmarket.bigminds.online</a></p>
                 <p className="text-sm text-gray-600 mt-2">We endeavor to respond to all privacy-related inquiries within the timelines required by the Data Protection Act, 2019.</p>
               </div>
@@ -2743,7 +2743,7 @@ function App() {
                 </li>
               </ul>
               <p className="text-gray-700 text-sm leading-relaxed mt-3">
-                We may take these actions without prior notice. If you believe content was removed in error, contact us at <a href="mailto:e-soko@bigminds.online" className="text-blue-600 hover:underline">e-soko@bigminds.online</a>.
+                We may take these actions without prior notice. If you believe content was removed in error, contact us at <a href="mailto:support@bigminds.online" className="text-blue-600 hover:underline">support@bigminds.online</a>.
               </p>
             </div>
 
@@ -2829,7 +2829,7 @@ function App() {
                 If you have any questions about these Terms of Service, please contact us:
               </p>
               <div className="bg-blue-50 rounded-lg p-4">
-                <p className="text-gray-700 text-sm"><strong>Email:</strong> <a href="mailto:e-soko@bigminds.online" className="text-blue-600 hover:underline">e-soko@bigminds.online</a></p>
+                <p className="text-gray-700 text-sm"><strong>Email:</strong> <a href="mailto:support@bigminds.online" className="text-blue-600 hover:underline">support@bigminds.online</a></p>
                 <p className="text-gray-700 text-sm mt-1"><strong>Website:</strong> <a href="https://campusmarket.bigminds.online" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">campusmarket.bigminds.online</a></p>
                 <p className="text-sm text-gray-600 mt-2">We aim to respond to all inquiries within 48 hours.</p>
               </div>
@@ -3669,7 +3669,7 @@ function App() {
       <section className="bg-[#F5F2ED] border-t border-b border-[#D6D1CA] py-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <AdDisplay position="banner" />
-          <p className="text-center text-xs text-[#5A5A5A] mt-4">Interested in advertising? Contact us at e-soko@bigminds.online</p>
+          <p className="text-center text-xs text-[#5A5A5A] mt-4">Interested in advertising? Contact us at support@bigminds.online</p>
         </div>
       </section>
 
